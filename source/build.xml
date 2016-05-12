@@ -1,0 +1,69 @@
+<project name="monitoring" default="usage" basedir=".">
+
+  <!-- Initializations -->
+  <target name="init">    
+    <echo message="------------ Building 5GEx Monitoring ----------"/>
+    <echo message=""/>
+    <property name="sources" value="${basedir}"/>
+    <property name="classes" value="../classes"/>
+    <property name="external.jars" value="../libs/koala-xmlstore-0.5.4.jar:../libs/libvirt-0.2.1.jar:../libs/dht.jar" />
+    <property name="api" value="${basedir}/docs"/>    
+    <property name="year" value="2016"/>
+    <property name="jars" value="../jars"/>
+    <property name="release" value="0.7.1" />
+  </target>
+
+  <!-- Build -->
+  <target name="build" depends="init">
+    <echo message="------ Compiling application"/>
+    <mkdir dir="${classes}"/>
+    <javac debug="on" srcdir="${sources}" classpath="${external.jars}"
+           source="1.6" target="1.6" includeantruntime="false"
+	   destdir="${classes}">
+    <include name="eu/reservoir/**" />
+    </javac>
+
+  </target>
+
+  <!-- Archive -->
+  <target name="dist" depends="build">
+    <echo message="------ Building Jar file"/>
+    <!-- <jar jarfile="${jars}/monitoring-${release}.jar" basedir="${basedir}" includes="eu/**" /> --> 
+    <jar jarfile="${jars}/monitoring-bin-${release}.jar" basedir="${classes}" includes="eu/**" excludes="**/*.java" />
+    <jar jarfile="${jars}/monitoring-src-${release}.jar" basedir="${basedir}" includes="eu/**" excludes="**/*.class" />
+  </target>
+
+  <!-- JavaDoc -->
+  <target name="javadoc" depends="build">
+     <echo message="------ Running JavaDoc"/>
+     <javadoc packagenames="eu.reservoir.*"
+              sourcepath="${sources}"
+              destdir="${api}"
+	      classpath="${external.jars}"
+	      excludepackagenames="eu.reservoir.demo, eu.reservoir.demo.OLD"
+              bottom="5GEx Monitoring ${release}"
+              author="false">
+      <classpath>
+        <pathelement location="${classes}"/>
+      </classpath>
+     </javadoc>
+  </target>
+
+  <!-- ALL -->
+  <target name="all" depends="dist, javadoc">
+  </target>
+
+  <!-- Usage -->
+  <target name="usage">
+     <echo message="*** 5GEx Monitoring ANT build script ***"/>
+     <echo message="Usage : "/>
+     <echo message="   ant [target]"/>
+     <echo message=""/>     
+     <echo message="   target : "/>     
+     <echo message="            build : Build Application"/>     
+     <echo message="            dist  : Build Application + Archive (JAR)"/>     
+     <echo message="            javadoc  : Build Application + Javadoc"/>     
+     <echo message="            all   : Build Application + Archive + JavaDoc"/>       
+  </target>
+       
+</project>
