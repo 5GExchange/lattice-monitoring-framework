@@ -70,6 +70,11 @@ public class UDPReceiver implements Runnable {
     int length;
 
     /*
+     * The source port of the last packet received
+     */
+    int srcPort;
+    
+    /*
      * The last exception received.
      */
     Exception lastException;
@@ -106,7 +111,7 @@ public class UDPReceiver implements Runnable {
     public void listen()  throws IOException {
 	// already bind to the address
 	//socket.bind(address);
-
+        System.out.println("Starting Receiving thread");
 	// start the thread
 	myThread = new Thread(this, "UDPReceiver-" + Integer.toString(port));
 
@@ -143,11 +148,11 @@ public class UDPReceiver implements Runnable {
 	    // receive from socket
 	    socket.receive(packet);
 
-            /*
-	     System.out.println("UDPReceiver Received " + packet.getLength() +
+            
+	     System.out.println("FT: UDPReceiver Received " + packet.getLength() +
 			   " bytes from "+ packet.getAddress() + 
-			   "/" + packet.getPort()); 
-            */
+			   ":" + packet.getPort()); 
+            
 
 	    // get an input stream over the data bytes of the packet
 	    ByteArrayInputStream theBytes = new ExposedByteArrayInputStream(packet.getData(), 0, packet.getLength());
@@ -155,6 +160,7 @@ public class UDPReceiver implements Runnable {
 	    byteStream = theBytes;
 	    srcAddr = packet.getAddress();
 	    length = packet.getLength();
+            srcPort = packet.getPort();
 
 	    // Currently we reuse the packet.
 	    // This could be dangerous.
@@ -174,19 +180,45 @@ public class UDPReceiver implements Runnable {
 	    return false;
 	}
     }
+    
+    public int sendReply(ByteArrayOutputStream byteStream){
+        DatagramPacket reply = new DatagramPacket(byteStream.toByteArray(), byteStream.size(), srcAddr, srcPort);
+        
+        /*
+        packet.setData(byteStream.toByteArray());
+	packet.setLength(byteStream.size());
+        
+        //setting addr and port to the endpoint that initially sent out the message
+        
+        packet.setAddress(srcAddr);
+        
+        packet.setPort(srcPort);
+        */
 
+        try {
+            // now send it
+            socket.send(reply);
+        } catch (IOException ex) {
+            System.out.println("IO error occurred" + ex.getMessage());
+            return -1;
+        }
+        System.out.println("FT: UDPReceiver.SendReply - sent REPLY through the socket to :" + srcAddr + " port: " + srcPort + " - " + byteStream.size() + " bytes");
+	return byteStream.size();
+        
+    }
+    
     /**
      * The Runnable body
      */
     public void run() {
 	// if we get here the thread must be running
 	threadRunning = true;
-
+        
 	while (threadRunning) {
-
+            
 	    if (receive()) {
 		// construct the transmission meta data
-		UDPTransmissionMetaData metaData = new UDPTransmissionMetaData(length, srcAddr, dstAddr);
+		UDPTransmissionMetaData metaData = new UDPTransmissionMetaData(length, srcAddr, dstAddr, srcPort);
 
 
 		// now notify the receiver with the message

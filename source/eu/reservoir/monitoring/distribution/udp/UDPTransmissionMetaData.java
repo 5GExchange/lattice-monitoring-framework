@@ -17,7 +17,8 @@ public class UDPTransmissionMetaData implements MetaData, Serializable {
     public final int length;
     public final InetAddress srcIPAddr;
     public final InetAddress dstIPAddr;
-
+    public int srcPort = -1;
+    
     /**
      * Construct a UDPTransmissionMetaData object.
      */
@@ -26,11 +27,16 @@ public class UDPTransmissionMetaData implements MetaData, Serializable {
 	srcIPAddr = sia;
 	dstIPAddr = dia;
     }
+    
+    public UDPTransmissionMetaData(int l, InetAddress sia, InetAddress dia, int port) {
+        this(l, sia, dia);
+        srcPort = port;
+    }
 
     /**
      * UDPTransmissionMetaData to string.
      */
     public String toString() {
-	return dstIPAddr + ": "  + srcIPAddr + " => " + length;
+	return dstIPAddr + ": "  + srcIPAddr + ":" + srcPort + " => " + length;
     }
 }

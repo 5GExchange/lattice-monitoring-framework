@@ -16,7 +16,7 @@ public class MulticastTransmitter {
     /*
      * The transmitting that interacts with a DataSourceDelegate.
      */
-    Transmitting transmitting = null;
+    TransmittingData transmitting = null;
 
     /*
      * The multicast addres being transmitted to
@@ -51,7 +51,7 @@ public class MulticastTransmitter {
     /**
      * Construct a transmitter for a particular multicast address
      */
-    public MulticastTransmitter(Transmitting transmitting, MulticastAddress mcastAddr, int ttl) throws IOException {
+    public MulticastTransmitter(TransmittingData transmitting, MulticastAddress mcastAddr, int ttl) throws IOException {
 	maddr = mcastAddr;
 
 	this.transmitting = transmitting;

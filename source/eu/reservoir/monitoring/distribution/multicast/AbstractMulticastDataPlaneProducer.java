@@ -23,7 +23,7 @@ import java.io.IOException;
  * It is also a DataSourceDelegateInteracter so it can, if needed,
  * talk to the DataSource object it gets bound to.
  */
-public abstract class AbstractMulticastDataPlaneProducer implements DataPlane, DataSourceDelegateInteracter, Transmitting {
+public abstract class AbstractMulticastDataPlaneProducer implements DataPlane, DataSourceDelegateInteracter, TransmittingData {
     // The address we are sending to
     MulticastAddress address;
 

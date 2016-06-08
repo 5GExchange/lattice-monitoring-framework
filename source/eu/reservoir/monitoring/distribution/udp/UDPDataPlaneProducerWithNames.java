@@ -26,7 +26,7 @@ import java.net.InetSocketAddress;
  * It is also a DataSourceDelegateInteracter so it can, if needed,
  * talk to the DataSource object it gets bound to.
  */
-public class UDPDataPlaneProducerWithNames extends AbstractUDPDataPlaneProducer implements DataPlane, DataSourceDelegateInteracter, Transmitting {
+public class UDPDataPlaneProducerWithNames extends AbstractUDPDataPlaneProducer implements DataPlane, DataSourceDelegateInteracter, TransmittingData {
     /**
      * Construct a UDPDataPlaneProducerWithNames
      */
@@ -45,6 +45,8 @@ public class UDPDataPlaneProducerWithNames extends AbstractUDPDataPlaneProducer 
 	// convert DataPlaneMessage into a ByteArrayOutputStream
 	// then transmit it
 
+        System.out.println("UDPDataPlaneProducerWithNames.transmit " + dsp.toString());
+        
 	try {
 	    // convert the object to a byte []
 	    ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
@@ -84,6 +86,9 @@ public class UDPDataPlaneProducerWithNames extends AbstractUDPDataPlaneProducer 
 	    //System.err.println("DP: " + dsp + " AS " + byteStream);
 
 	    // now tell the multicaster to transmit this byteStream
+            
+            
+            
 	    udpTransmitter.transmit(byteStream, seqNo);
 
 	    return 1;

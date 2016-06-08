@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.EnumSet;
 
 /**
- * The types of message allowed in the Data Plane.
+ * The types of message allowed in the Data Plane (??).
  */
 public enum MessageType {
     /*
@@ -21,7 +21,12 @@ public enum MessageType {
     /*
      * A data source sends a measurement.
      */
-    MEASUREMENT(102);
+    MEASUREMENT(102),
+    
+    
+    CONTROL(103), 
+    
+    CONTROL_REPLY(104);
 
     /*
      * A lookup table so we can go from value to enum.

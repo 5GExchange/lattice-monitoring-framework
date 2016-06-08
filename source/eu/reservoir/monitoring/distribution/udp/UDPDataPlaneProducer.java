@@ -25,7 +25,7 @@ import java.net.InetSocketAddress;
  * It is also a DataSourceDelegateInteracter so it can, if needed,
  * talk to the DataSource object it gets bound to.
  */
-public class UDPDataPlaneProducer extends UDPDataPlaneProducerWithNames implements DataPlane, DataSourceDelegateInteracter, Transmitting {
+public class UDPDataPlaneProducer extends UDPDataPlaneProducerWithNames implements DataPlane, DataSourceDelegateInteracter, TransmittingData {
     /**
      * Construct a UDPDataPlaneProducer.
      */

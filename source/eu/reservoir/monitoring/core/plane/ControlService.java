@@ -28,7 +28,13 @@ public interface ControlService {
      * Set the Probe ID
      */
     // NOT NOW // public Probe setID(ID probeID, ID id);
-
+    
+    
+    /**
+     * Load a probe given his description as a ProbeLoader object 
+     */
+    public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception;
+    
     /**
      * Get the name of the Probe
      */
@@ -92,12 +98,12 @@ public interface ControlService {
     /**
      * Turn on a Probe
      */
-    public boolean turnOnProbe(ID probeID);
+    public boolean turnOnProbe(ID probeID) throws Exception;
 
     /**
      * Turn off a Probe
      */
-    public boolean turnOffProbe(ID probeID);
+    public boolean turnOffProbe(ID probeID) throws Exception;
 
     /**
      * Is this Probe turned on.

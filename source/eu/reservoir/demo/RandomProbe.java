@@ -27,6 +27,25 @@ public class RandomProbe extends AbstractProbe implements Probe  {
 	randomNo = new Random();
 	this.scaleFactor = scaleFactor;
     }
+    
+    
+    public RandomProbe(String name, String fieldName, Integer scaleFactor) {
+        setName(name);
+        setDataRate(new EveryNSeconds(2));
+        addProbeAttribute(new DefaultProbeAttribute(0, fieldName, ProbeAttributeType.FLOAT, "milliseconds"));
+	randomNo = new Random();
+	this.scaleFactor = scaleFactor;
+    }
+    
+    //FT: this has been added for testing
+    public RandomProbe(String name, String fieldName, int scaleFactor, String sID) {
+        super(sID);
+        setName(name);
+        setDataRate(new EveryNSeconds(2));
+        addProbeAttribute(new DefaultProbeAttribute(0, fieldName, ProbeAttributeType.FLOAT, "milliseconds"));
+	randomNo = new Random();
+	this.scaleFactor = scaleFactor;
+    }
 
 
     /**

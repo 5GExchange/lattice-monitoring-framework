@@ -100,7 +100,11 @@ public class IMNode {
      */
     public IMNode addDataSource(DataSource ds) throws IOException {
 	putDHT("/datasource/" + ds.getID() + "/name", ds.getName());
-
+        //putDHT("/datasource/" + ds.getID() + "/controlAddress", ds.getControlPlane().getControlEndPoint().getHostName());
+        //putDHT("/datasource/" + ds.getID() + "/controlPort", ds.getControlPlane().getControlEndPoint().getPort());
+        putDHT("/datasource/" + ds.getID() + "/inetSocketAddress", ds.getControlPlane().getControlEndPoint());
+        
+        
 	Collection<Probe> probes = ds.getProbes();
 
 	// skip through all probes
@@ -309,5 +313,11 @@ public class IMNode {
 
 	return result;
     }
+    
+    
+    public String toString() {
+        return dht.toString();
+    }
+    
 
 }

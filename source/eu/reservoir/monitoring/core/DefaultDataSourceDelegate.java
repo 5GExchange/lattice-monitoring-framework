@@ -5,6 +5,7 @@
 
 package eu.reservoir.monitoring.core;
 
+import eu.reservoir.monitoring.appl.BasicDataSource;
 import eu.reservoir.monitoring.core.plane.*;
 import java.io.Serializable;
 import java.io.IOException;
@@ -127,6 +128,8 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
      * @return 0 if there is no delegate or no data plane
      */
     public int sendData(DataPlaneMessage dpm) throws Exception {
+        
+        System.out.println("FT: DefaultDataSourceDelegate.sendData");
 	if (dataPlane != null) {
 	    return dataPlane.sendData(dpm);
 	} else {
@@ -516,5 +519,12 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
 	return true;
     }
 
-
+    
+    public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception {
+        /*if (dataSource instanceof BasicDataSource)
+            return ((BasicDataSource)dataSource).addProbe(p);
+        else
+        */
+        return null;
+    }
 }

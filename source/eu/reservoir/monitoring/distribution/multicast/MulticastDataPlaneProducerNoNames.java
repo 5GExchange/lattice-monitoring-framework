@@ -24,7 +24,7 @@ import java.io.IOException;
  * It is also a DataSourceDelegateInteracter so it can, if needed,
  * talk to the DataSource object it gets bound to.
  */
-public class MulticastDataPlaneProducerNoNames extends AbstractMulticastDataPlaneProducer implements DataPlane, DataSourceDelegateInteracter, Transmitting {
+public class MulticastDataPlaneProducerNoNames extends AbstractMulticastDataPlaneProducer implements DataPlane, DataSourceDelegateInteracter, TransmittingData {
 
     /**
      * Construct a MulticastDataPlaneProducerNoNames.

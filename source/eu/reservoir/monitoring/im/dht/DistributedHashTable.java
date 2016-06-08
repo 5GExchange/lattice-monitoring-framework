@@ -140,7 +140,11 @@ public class DistributedHashTable {
 
 	return this;
     }
-
+    
+  
+    public String toString() {
+            return kademlia.toString();
+        }
 
 
 }

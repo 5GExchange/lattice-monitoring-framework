@@ -5,6 +5,8 @@
 
 package eu.reservoir.monitoring.distribution.udp;
 
+import eu.reservoir.monitoring.control.udp.TransmittingControl;
+import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.distribution.*;
 import java.net.*;
 import java.io.*;
@@ -43,16 +45,23 @@ public class UDPTransmitter {
      */
     int port;
 
+    
+    static int PACKET_SIZE = 65535; // was 1500;
+    
     /**
      * Construct a transmitter for a particular IP address
      */
-    public UDPTransmitter(Transmitting transmitting, InetSocketAddress dstAddr) throws IOException {
+    public UDPTransmitter(eu.reservoir.monitoring.distribution.Transmitting transmitting, InetSocketAddress dstAddr) throws IOException {
 	udpAddr = dstAddr;
 
 	this.transmitting = transmitting;
 	this.address = dstAddr.getAddress();
 	this.port = dstAddr.getPort();
 
+        System.out.println("FT: dst address " + this.address);
+        System.out.println("FT: dst port " + this.port);
+        
+        
 	setUpSocket();
     }
 
@@ -74,6 +83,7 @@ public class UDPTransmitter {
      */
     public void connect()  throws IOException {
 	// connect to the remote UDP socket
+        
 	socket.connect(udpAddr);
 
     }
@@ -94,17 +104,50 @@ public class UDPTransmitter {
 	packet.setData(byteStream.toByteArray());
 	packet.setLength(byteStream.size());
 
-
 	// now send it
 	socket.send(packet);
-
+        
+        
+        
 	//System.err.println("trans: " + id + " = " + byteStream.size());
 
 	// notify the transmitting object
 	if (transmitting != null) {
 	    transmitting.transmitted(id);
-	}
+        }
 
 	return byteStream.size();
     }
+    
+    
+    public Object transmitAndWaitReply(ByteArrayOutputStream byteStream) throws IOException, TypeException {
+        /* testing receive */
+        
+        packet.setData(byteStream.toByteArray());
+	packet.setLength(byteStream.size());
+
+	// now send it
+	socket.send(packet);
+        
+	//System.err.println("trans: " + id + " = " + byteStream.size());
+
+	// notify the transmitting object
+	if (transmitting != null) {
+            DatagramPacket replyPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
+
+            //this sets the timeout to 5 secs
+            socket.setSoTimeout(5000);
+            socket.receive(replyPacket);
+            System.out.println("Received reply from Src address: " + replyPacket.getAddress() + " Src port: " + replyPacket.getPort());
+            
+            if (transmitting instanceof TransmittingControl) {
+                ByteArrayInputStream theBytes = new ExposedByteArrayInputStream(replyPacket.getData(), 0, replyPacket.getLength());
+                return ((TransmittingControl)transmitting).receivedReply(theBytes, null);
+            }
+           
+        }
+
+	return null;    
+    }
+    
 }

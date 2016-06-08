@@ -84,8 +84,10 @@ public class ID implements Serializable {
      * is a ID object, has the same variant, and contains the same value, 
      * bit for bit, as this ID.
      */
-    public boolean equals(Object obj) {
-        return uuid.equals(obj);
+    
+    public boolean equals(Object val) {
+        ID other = (ID) val;
+        return uuid.equals(other.uuid);
     }
 
     /**

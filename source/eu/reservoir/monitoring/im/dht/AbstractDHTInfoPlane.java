@@ -87,5 +87,10 @@ public abstract class AbstractDHTInfoPlane implements InfoPlane  {
     public boolean removeInfo(String key) {
 	return imNode.remDHT(key);
     }
+    
+    public String toString() {
+        return imNode.toString();
+    }
+    
  
 }

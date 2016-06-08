@@ -111,6 +111,17 @@ public abstract class AbstractDataSource implements DataSource, PlaneInteracter,
 	}
     }
 
+    
+    /**
+     * Add a new probe from its ProbeLoader object
+     */
+    public ID addProbe(ProbeLoader p) {  
+        addProbe(p.getProbe());
+        return p.getProbe().getID();
+    }  
+    
+    
+    
     /**
      * Add a new probe.
      */
@@ -147,6 +158,7 @@ public abstract class AbstractDataSource implements DataSource, PlaneInteracter,
 	// set this as it's ProbeManger
 	probe.setProbeManager((ProbeManager)this);
 	// add the Probe to the probe map
+
 	probeMap.put(name, probe);
 	probeIDMap.put(probeID, probe);
     }
@@ -307,7 +319,8 @@ public abstract class AbstractDataSource implements DataSource, PlaneInteracter,
      * Get a probe by ID
      * @return the Probe with ID, null otherwise
      */
-    public Probe getProbeByID(ID probeID) {
+    public Probe getProbeByID(ID probeID) { 
+        //System.out.println("-----> object collected " + probeIDMap.get(probeID));
 	return probeIDMap.get(probeID);
     }
 
@@ -427,7 +440,8 @@ public abstract class AbstractDataSource implements DataSource, PlaneInteracter,
      * Deactivate a Probe by ID
      */
     public DataSource deactivateProbe(ID probeID) {
-	Probe p = probeIDMap.get(probeID);
+	Probe p = probeIDMap.get(probeID);        
+        //System.out.println(p.toString());
 	return ((p != null) ? deactivateProbe(p) : null);
     }
 
@@ -782,7 +796,6 @@ public abstract class AbstractDataSource implements DataSource, PlaneInteracter,
 	beginThreadBody();
 
 	while (threadRunning) {
-	    
 	    // get Measurement off queue
 	    // we know here it is a ProbeMeasurement
 	    ProbeMeasurement m = null;
@@ -956,7 +969,8 @@ public abstract class AbstractDataSource implements DataSource, PlaneInteracter,
     public boolean connect() {
 	// start QueueHandling
 	startQueueHandlingThread();
-
+        //FT
+        System.out.println("FT: abstractDataSource.connect");
 	return dataSourceDelegate.connect();
     }
 

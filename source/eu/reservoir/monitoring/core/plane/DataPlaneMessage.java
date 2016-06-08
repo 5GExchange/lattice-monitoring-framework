@@ -14,7 +14,7 @@ import java.io.IOException;
 /**
  * This implements the header parts for the Data Plane messages.
  */
-public abstract class DataPlaneMessage {
+public abstract class DataPlaneMessage extends Message {
     /*
      * Instance variables
      */

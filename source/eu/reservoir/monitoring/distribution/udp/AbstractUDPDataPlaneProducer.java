@@ -25,7 +25,7 @@ import java.net.InetSocketAddress;
  * It is also a DataSourceDelegateInteracter so it can, if needed,
  * talk to the DataSource object it gets bound to.
  */
-public abstract class AbstractUDPDataPlaneProducer implements DataPlane, DataSourceDelegateInteracter, Transmitting {
+public abstract class AbstractUDPDataPlaneProducer implements DataPlane, DataSourceDelegateInteracter, TransmittingData {
     // The address we are sending to
     InetSocketAddress address;
 
@@ -48,6 +48,7 @@ public abstract class AbstractUDPDataPlaneProducer implements DataPlane, DataSou
      * Connect to a delivery mechansim.
      */
      public boolean connect() {
+         System.out.println("FT: AbstractUDPDataPLaneProducer.connect");
 	try {
 	    // only connect if we're not already connected
 	    if (udpTransmitter == null) {
@@ -133,6 +134,7 @@ public abstract class AbstractUDPDataPlaneProducer implements DataPlane, DataSou
      * Send a message.
      */
     public synchronized int sendData(DataPlaneMessage dpm) throws Exception {
+        System.out.println("FT: AbstractUDPDataPlaneProducer.sendData");
         if (udpTransmitter != null) {
             return transmit(dpm);
         } else {

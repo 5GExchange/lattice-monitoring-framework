@@ -24,7 +24,7 @@ import java.io.IOException;
  * talk to the DataSource object it gets bound to.
  * @deprecated Choose either MulticastDataPlaneProducerWithNames or MulticastDataPlaneProducerNoNames
  */
-public class MulticastDataPlaneProducer extends MulticastDataPlaneProducerWithNames implements DataPlane, DataSourceDelegateInteracter, Transmitting {
+public class MulticastDataPlaneProducer extends MulticastDataPlaneProducerWithNames implements DataPlane, DataSourceDelegateInteracter, TransmittingData {
     /**
      * Construct a MulticastDataPlaneProducer.
      */

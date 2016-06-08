@@ -139,6 +139,16 @@ public abstract class AbstractProbe implements Probe {
 	groupID = new ID(0, 0);
     }
 
+    //FT: this has been added for testing
+    public AbstractProbe(String sID) {
+        myID = ID.fromString(sID);
+        System.out.println("Probe: ID = " + myID);
+	serviceID = new ID(0, 0);
+	groupID = new ID(0, 0);
+    }
+    
+            
+            
     /*
      * Get the name of the Probe
      */

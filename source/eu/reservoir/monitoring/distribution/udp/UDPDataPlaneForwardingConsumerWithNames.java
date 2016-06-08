@@ -25,7 +25,7 @@ import java.net.InetSocketAddress;
 /**
  * This consumer also forwards every recevied Measurement.
  */
-public class UDPDataPlaneForwardingConsumerWithNames extends UDPDataPlaneConsumerWithNames implements DataPlane, MeasurementReporting, Receiving, Transmitting {
+public class UDPDataPlaneForwardingConsumerWithNames extends UDPDataPlaneConsumerWithNames implements DataPlane, MeasurementReporting, Receiving, TransmittingData {
 
     // The address we are sending to
     InetSocketAddress transmitAddress;
@@ -186,7 +186,7 @@ public class UDPDataPlaneForwardingConsumerWithNames extends UDPDataPlaneConsume
 
     /**
      * Never called in the class.
-     * Needed in order to implement Transmitting
+     * Needed in order to implement TransmittingData
      */
     public int transmit(DataPlaneMessage dsp) throws Exception {
         return 0;

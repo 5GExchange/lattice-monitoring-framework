@@ -9,5 +9,5 @@ package eu.reservoir.monitoring.distribution;
  * An interface for distribution components that need
  * to do transmitting and receiving.
  */
-public interface Interacter extends Transmitting, Receiving {
+public interface Interacter extends TransmittingData, Receiving {
 }
