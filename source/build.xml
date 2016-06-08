@@ -29,9 +29,17 @@
   <target name="dist" depends="build">
     <echo message="------ Building Jar file"/>
     <!-- <jar jarfile="${jars}/monitoring-${release}.jar" basedir="${basedir}" includes="eu/**" /> --> 
-    <jar jarfile="${jars}/monitoring-bin-${release}.jar" basedir="${classes}" includes="eu/**" excludes="**/*.java" />
+    <jar jarfile="${jars}/monitoring-bin-${release}.jar" 
+	    basedir="${classes}" includes="eu/**" excludes="**/*.java" > 
+	    <zipgroupfileset dir="../libs">
+		<include name="**/*.jar" />
+	    </zipgroupfileset>
+    </jar>
+    
+    
     <jar jarfile="${jars}/monitoring-src-${release}.jar" basedir="${basedir}" includes="eu/**" excludes="**/*.class" />
-  </target>
+      
+</target>
 
   <!-- JavaDoc -->
   <target name="javadoc" depends="build">
