@@ -55,8 +55,6 @@ public class Controller {
     }
     
     
-    
-    
     public static Controller getInstance() {
         return controller;
     }
@@ -96,6 +94,24 @@ public class Controller {
         try {
             invocationResult = this.getControlHandle().turnOnProbe(ID.fromString(id));
             result.put("success", invocationResult);
+        } catch (Exception ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+        }
+        
+        return result;
+        }
+    
+    
+    JSONObject loadProbe(String id, String probeClassName, Object ... probeArgs) throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        ID createdProbeID;
+        
+        try {
+            createdProbeID = this.getControlHandle().loadProbe(ID.fromString(id), probeClassName, probeArgs);
+            result.put("success", true);
+            result.put("probeID", createdProbeID.toString());
         } catch (Exception ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());

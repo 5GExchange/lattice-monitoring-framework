@@ -8,7 +8,6 @@ package eu.reservoir.demo;
 import eu.reservoir.monitoring.appl.BasicDataSource;
 import eu.reservoir.monitoring.control.udp.UDPControlPlaneConsumer;
 import eu.reservoir.monitoring.core.AbstractDataSource;
-import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.DataSourceInteracter;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
@@ -22,7 +21,7 @@ import java.util.Scanner;
  * This monitor sends emulated response times  uses a UDP Data Plane.
  */
 public class ResponseTimeEmulatorUDP {
-    // The DataSource
+    // The DataSource, TODO: maybe we should modify the definition of the DataSource interface to include loadProbe
     AbstractDataSource ds;
 
     /*

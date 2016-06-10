@@ -19,9 +19,8 @@ import java.io.ByteArrayInputStream;
  * @author uceeftu
  */
 public abstract class AbstractUDPControlPlaneProducer implements ControlPlane, TransmittingControl {
-    InetSocketAddress address;
-    
-    UDPTransmitterAndReceiver udpTransmitterAndReceiver;
+    //InetSocketAddress address;
+    //UDPTransmitterAndReceiver udpTransmitterAndReceiver;
     
     InfoResolver resolver;
    
@@ -33,49 +32,43 @@ public abstract class AbstractUDPControlPlaneProducer implements ControlPlane, T
     */
     
     public AbstractUDPControlPlaneProducer(InfoResolver resolver) {
-        this.address = null; // we are not connecting to a specific endpoint
+        //this.address = null; // we are not connecting to a specific endpoint
         this.resolver = resolver;
     }
     
 
     @Override
     public boolean connect() {
-         System.out.println("FT: AbstractUDPControlPLaneProducer.connect");
+        // this method does nothing as we do not create a Datagramsocket 
+        // connected to a specific DS. We will create a different udpTransmitterAndReceiver
+        // for each received request in the transmit method implementation
+        
+        System.out.println("FT: AbstractUDPControlPLaneProducer.connect");
+        
+        /*
 	try {
 	    // only connect if we're not already connected
 	    if (udpTransmitterAndReceiver == null) {
-		// Now connect to the IP address
-                UDPTransmitterAndReceiver ttAndRcv;
                 
-                /*
-                if (address != null) {
-                    ttAndRcv = new UDPTransmitterAndReceiver(this, address);
-                    ttAndRcv.connect();
-                }
-                else */
-                
-                ttAndRcv = new UDPTransmitterAndReceiver(this);
-                    
-		udpTransmitterAndReceiver = ttAndRcv;
-                
-                // start listening for replies
-                //udpTransmitterAndReceiver.listen();
+                udpTransmitterAndReceiver = new UDPTransmitterAndReceiver(this);
                 
 		return true;
 	    } else {
 		return true;
 	    }
-
 	} catch (IOException ioe) {
 	    // Current implementation will be to do a stack trace
 	    //ioe.printStackTrace();
 
 	    return false;
 	}
+    */
+    return true;
     }
 
     @Override
     public boolean disconnect() {
+        /*
         try {
 	    udpTransmitterAndReceiver.end();
 	    udpTransmitterAndReceiver = null;
@@ -84,6 +77,8 @@ public abstract class AbstractUDPControlPlaneProducer implements ControlPlane, T
 	    udpTransmitterAndReceiver = null;
 	    return false;
 	}
+        */
+    return true;
     }
 
     @Override
@@ -108,6 +103,6 @@ public abstract class AbstractUDPControlPlaneProducer implements ControlPlane, T
     
     @Override
     public InetSocketAddress getControlEndPoint() {
-        return this.address;
+        return null;
     }  
 }

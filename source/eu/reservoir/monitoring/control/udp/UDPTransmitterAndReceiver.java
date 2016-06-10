@@ -7,7 +7,6 @@ package eu.reservoir.monitoring.control.udp;
 
 import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.distribution.*;
-import eu.reservoir.monitoring.distribution.udp.UDPTransmissionMetaData;
 import java.net.*;
 import java.io.*;
 

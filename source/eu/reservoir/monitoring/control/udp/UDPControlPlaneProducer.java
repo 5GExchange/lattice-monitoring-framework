@@ -36,10 +36,6 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
     }
     */
     
-    
-    
-    
-    
     public UDPControlPlaneProducer(InfoResolver resolver) {
         super(resolver);
     }
@@ -47,10 +43,9 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
 
     @Override
     public Object transmit(ControlPlaneMessage cpMessage, MetaData metadata) throws Exception {
-        System.out.println("UDPDataPlaneProducerWithNames.transmit " + cpMessage.toString() + " to " + metadata);
+        System.out.println("UDPControlPlaneProducer.transmit " + cpMessage.toString() + " to " + metadata);
         Object result=null;
         
-	
         // convert the object to a byte []
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         DataOutput dataOutput = new XDRDataOutputStream(byteStream);
@@ -75,8 +70,8 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
             case CONTROL:
                 System.out.println("--------- Type Control ----------");
                 System.out.println("Message ID: " + messageID);
+                SyncUDPTransmitterAndReceiver udpTransmitterAndReceiver = new SyncUDPTransmitterAndReceiver(this);
                 result = udpTransmitterAndReceiver.transmitAndWaitReply(byteStream, ((UDPControlTransmissionMetaData)metadata).getInetSocketAddress(), 0);
-
                 //udpTransmitterAndReceiver.transmit(byteStream, ((UDPControlTransmissionMetaData)metadata).getInetSocketAddress(), 0);
                 break;
         }
