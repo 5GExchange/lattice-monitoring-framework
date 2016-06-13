@@ -31,9 +31,16 @@ public interface ControlService {
     
     
     /**
-     * Load a probe given his description as a ProbeLoader object 
+     * Load a probe given its description as a ProbeLoader object 
      */
     public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception;
+    
+    
+    /**
+     * unload a probe given its probeID 
+     */
+    public boolean unloadProbe(ID probeID) throws Exception;
+    
     
     /**
      * Get the name of the Probe

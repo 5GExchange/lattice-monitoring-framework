@@ -520,11 +520,20 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
     }
 
     
-    public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception {
-        /*if (dataSource instanceof BasicDataSource)
-            return ((BasicDataSource)dataSource).addProbe(p);
+    public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception {   
+        ProbeLoader p = new ProbeLoader(probeClassName, probeArgs);
+        if (dataSource instanceof BasicDataSource)
+           return ((BasicDataSource)dataSource).addProbe(p);
         else
-        */
-        return null;
+           throw new Exception("Probe cannot be loaded on that DS");
+        }
+
+    @Override
+    public boolean unloadProbe(ID probeID) {
+        Probe p = dataSource.getProbeByID(probeID);
+        dataSource.removeProbe(p);
+        return true;
     }
+    
+    
 }

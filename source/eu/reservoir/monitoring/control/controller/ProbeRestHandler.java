@@ -106,15 +106,21 @@ class ProbeRestHandler extends BasicRequestHandler {
         String operation = segments[2];
         
         
-        if (operation.equals("off"))
-            jsobj = controller_.turnOffProbe(probeID);
-        else if (operation.equals("on"))
-            jsobj = controller_.turnOnProbe(probeID);
-        else {
+        switch (operation) {
+            case "off":
+                jsobj = controller_.turnOffProbe(probeID);
+                break;
+            case "on":
+                jsobj = controller_.turnOnProbe(probeID);
+                break;
+            case "unload":
+                jsobj = controller_.unloadProbe(probeID);
+                break;
+            default:
                 badRequest(response, " arg is not valid operation: " + operation);
                 response.close();
                 return;
-             }
+        }
 
         if (jsobj.get("success").equals(false)) {
             failMessage = (String)jsobj.get("msg");
@@ -124,15 +130,14 @@ class ProbeRestHandler extends BasicRequestHandler {
         }
 
         if (success) {
-            // now lookup all the saved details
-            // and send them back as the return value
-            PrintStream out = response.getPrintStream();
-
-            // WAS JSONObject jsobj = controller_.findRouterInfoAsJSON(rID);
-
+            PrintStream out = response.getPrintStream();       
             out.println(jsobj.toString());
-        } else {
-            complain(response, "Error while managing probe: " + failMessage);
+        }
+        
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
         }
     }
 }

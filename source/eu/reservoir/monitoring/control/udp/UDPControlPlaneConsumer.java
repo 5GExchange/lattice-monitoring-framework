@@ -8,6 +8,7 @@ package eu.reservoir.monitoring.control.udp;
 import eu.reservoir.monitoring.appl.BasicDataSource;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Measurement;
+import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeLoader;
 import eu.reservoir.monitoring.core.Rational;
 import eu.reservoir.monitoring.core.Timestamp;
@@ -87,7 +88,7 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
                 System.out.println("Operation Method: " + ctrlOperationMethod);
                 System.out.println("Source Message ID: " + sourceMessageID);
                 
-                byte [] args = new byte[1024];
+                byte [] args = new byte[2048];
                 dataIn.readFully(args);
 
                 List<Object> methodArgs;
@@ -122,13 +123,11 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
 	    }
 
         } catch (Exception ex) {
-                ex.printStackTrace();
-                
                 ControlPlaneReplyMessage errorMessage = new ControlPlaneReplyMessage((Object)ex, ctrlOperationName, sourceMessageID);
                 try {
                     transmitReply(errorMessage, metaData);
                 } catch (Exception ex1) {
-                    ex1.printStackTrace();
+                    System.err.println("ControPlaneConsumer (exception detected): failed to transmit control error message: " + ex1.getMessage());
                 }
                 
                 System.err.println("ControPlaneConsumer (exception detected): failed to process control message: " + ex.getMessage());
@@ -192,7 +191,16 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
             throw new Exception(ex.getMessage());
         }
     }
+
+    @Override
+    public boolean unloadProbe(ID probeID) throws Exception {
+        System.out.println("******* UDPControlPlaneConsumer -> unloadProbe");
+        Probe p = dataSource.getProbeByID(probeID);
+        dataSource.removeProbe(p);
+        return true;
+    }
     
+
     @Override
     public String getProbeName(ID probeID) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.

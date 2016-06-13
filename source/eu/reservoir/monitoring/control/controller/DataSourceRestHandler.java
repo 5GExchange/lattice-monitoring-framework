@@ -125,23 +125,20 @@ class DataSourceRestHandler extends BasicRequestHandler {
         if (jsobj.get("success").equals(false)) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("createProbe: failure detected: " + failMessage);
-            success = false;
-            
-        }
-
+            success = false;   
+        }   
+    
         if (success) {
-            // now lookup all the saved details
-            // and send them back as the return value
-            PrintStream out = response.getPrintStream();
-
-            out.println(jsobj.toString());
-        } else {
-            //String dsID = jsobj.get("");
-            //String 
-            //complain(response, "Error while loading probe: " + failMessage);
-            PrintStream out = response.getPrintStream();
+            PrintStream out = response.getPrintStream();       
             out.println(jsobj.toString());
         }
+        
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+        
     }
 }
     

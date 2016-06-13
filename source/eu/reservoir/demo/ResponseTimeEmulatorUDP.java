@@ -135,11 +135,11 @@ public class ResponseTimeEmulatorUDP {
             
             String unique = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
             
-            Probe random = new RandomProbe(currentHost + ".elapsedTime" + "." + unique, "elapsedTime", 15, "de25f5b5-c73e-4fb8-80dd-ca6d97675943");
-            Probe random2 = new RandomProbe(currentHost + ".elapsedTime" + "." + unique, "elapsedTime", 15, "593f0db0-a5a0-4ae3-a5bb-8dc80d6e6aa7");
+            //Probe random = new RandomProbe(currentHost + ".elapsedTime" + "." + unique, "elapsedTime", 15, "de25f5b5-c73e-4fb8-80dd-ca6d97675943");
+            //Probe random2 = new RandomProbe(currentHost + ".elapsedTime" + "." + unique, "elapsedTime", 15, "593f0db0-a5a0-4ae3-a5bb-8dc80d6e6aa7");
             
-            hostMon.turnOnProbe(random);
-            hostMon.turnOnProbe(random2);
+            //hostMon.turnOnProbe(random);
+            //hostMon.turnOnProbe(random2);
 
             /*
             Probe testProbe = new UserProcTableProbe("ttys000");

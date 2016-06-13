@@ -174,6 +174,29 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
           }
         return probeID;
     }
+
+    @Override
+    public boolean unloadProbe(ID probeID) throws Exception {
+        List<Object> args = new ArrayList();
+        args.add(probeID);
+        Boolean result = false;
+        
+        ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.UNLOAD_PROBE, args);
+        try {
+            InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
+            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            System.out.println("ThreadName: --------> " + Thread.currentThread().getName());
+            result = (Boolean) transmit(m, mData);
+        } //catch (ProbeIDNotFoundException idEx) {
+          //  throw idEx; 
+          //}
+          catch (Exception ex) {
+            System.out.println("Error while sending unload probe command " + ex.getMessage());
+            throw ex;
+          }
+        
+        return result;
+    }
     
     @Override
     public String getProbeName(ID probeID) {

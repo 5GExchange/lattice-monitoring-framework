@@ -16,7 +16,8 @@ public enum ControlOperation {
     
     TURN_OFF_PROBE("turnOffProbe"),
     TURN_ON_PROBE("turnOnProbe"),
-    LOAD_PROBE("loadProbe");
+    LOAD_PROBE("loadProbe"),
+    UNLOAD_PROBE("unloadProbe");
     
     private static final HashMap<String, ControlOperation> lookup = new HashMap<>();
 
