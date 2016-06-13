@@ -230,6 +230,10 @@ public class UDPReceiver implements Runnable {
 		} catch (TypeException te) {
 		    receiver.error(te);
 		}
+                  catch (Exception e) {
+                      receiver.error(e);
+                }
+                  
 	    } else {
 		// the receive() failed
 		// we find the exception in lastException

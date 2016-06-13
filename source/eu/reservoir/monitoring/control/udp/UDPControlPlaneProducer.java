@@ -73,6 +73,10 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
                 SyncUDPTransmitterAndReceiver udpTransmitterAndReceiver = new SyncUDPTransmitterAndReceiver(this);
                 result = udpTransmitterAndReceiver.transmitAndWaitReply(byteStream, ((UDPControlTransmissionMetaData)metadata).getInetSocketAddress(), 0);
                 //udpTransmitterAndReceiver.transmit(byteStream, ((UDPControlTransmissionMetaData)metadata).getInetSocketAddress(), 0);
+                
+                if (result instanceof Exception)
+                    throw new Exception((Exception)result);
+                
                 break;
         }
     return result;    
@@ -117,7 +121,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
 
                 //System.out.println("Operation code: " + ctrlOperationName);
                 
-                byte [] args = new byte[1024];
+                byte [] args = new byte[2048];
                 dataIn.readFully(args);
 
                 ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(args));
@@ -136,10 +140,10 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
                     System.out.println(o.toString() + " ");
                 }*/    
                 
-            }  
-        
-    }   catch (ClassNotFoundException ex) {
-            System.out.println("Error while reading result from reply message" + ex.getMessage());
+            }         
+        }
+        catch (Exception exception) {
+            System.out.println("Error while reading result from reply message: " + exception.getMessage());
         }
         return result;
     }
@@ -165,7 +169,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
           //  throw idEx; 
           //}
           catch (Exception ex) {
-            System.out.println("Error while sending turn on probe command " + ex.getMessage());
+            System.out.println("Error while sending load probe command " + ex.getMessage());
             throw ex;
           }
         return probeID;

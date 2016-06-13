@@ -100,11 +100,6 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, D
     @Override
     public void eof() {
         disconnect();
-    }   
-    
-    
-    @Override
-    public void error(Exception e) {
     }
     
     

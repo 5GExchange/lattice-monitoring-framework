@@ -74,6 +74,9 @@ public class Controller {
         JSONObject result = new JSONObject();
         Boolean invocationResult;
         
+        result.put("operation", "turnOffProbe");
+        result.put("probeID",id);
+        
         try {
             invocationResult = this.getControlHandle().turnOffProbe(ID.fromString(id));
             result.put("success", invocationResult);
@@ -93,6 +96,8 @@ public class Controller {
         
         try {
             invocationResult = this.getControlHandle().turnOnProbe(ID.fromString(id));
+            result.put("operation", "turnOnProbe");
+            result.put("probeID",id);
             result.put("success", invocationResult);
         } catch (Exception ex) {
             result.put("success", false);
@@ -107,11 +112,13 @@ public class Controller {
         JSONObject result = new JSONObject();
         
         ID createdProbeID;
+        result.put("operation", "loadProbe");
+        result.put("probeClassName",probeClassName);
         
         try {
             createdProbeID = this.getControlHandle().loadProbe(ID.fromString(id), probeClassName, probeArgs);
+            result.put("createdProbeID", createdProbeID.toString());
             result.put("success", true);
-            result.put("probeID", createdProbeID.toString());
         } catch (Exception ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());

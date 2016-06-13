@@ -28,8 +28,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.lang.reflect.Method;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 
 
 public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
@@ -42,6 +41,9 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
     public void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException {
         //System.out.println("FT: ------- UDPControlPlaneConsumer.received  - Received ------- " + metaData);
 
+        ControlOperation ctrlOperationName=null;
+        ID sourceMessageID=null;
+                
 	try {
 	    DataInput dataIn = new XDRDataInputStream(bis);
 
@@ -74,12 +76,12 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
                 System.out.println("-------- Control Message Received ---------");
                 
                 String ctrlOperationMethod = dataIn.readUTF();
-                ControlOperation ctrlOperationName = ControlOperation.lookup(ctrlOperationMethod);
+                ctrlOperationName = ControlOperation.lookup(ctrlOperationMethod);
 
                 // get the Message ID
                 long messageIDMSB = dataIn.readLong();
                 long messageIDLSB = dataIn.readLong();
-                ID sourceMessageID = new ID(messageIDMSB, messageIDLSB);
+                sourceMessageID = new ID(messageIDMSB, messageIDLSB);
                 
                 System.out.println("Operation String: " + ctrlOperationName);
                 System.out.println("Operation Method: " + ctrlOperationMethod);
@@ -104,7 +106,7 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
                         break;
                     }
                 }
-                
+                     
                 /* Some Debug output
                 System.out.println(methodToInvoke.getName());
                 
@@ -114,23 +116,25 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
                 for (Object o: methodArgs) System.out.println(methodArgs);
                 */
                 
-                if (methodToInvoke != null) {
-                    Object result = methodToInvoke.invoke(this, methodArgs.toArray());
-                    ControlPlaneReplyMessage message = new ControlPlaneReplyMessage(result, ctrlOperationName, sourceMessageID);
-                    transmitReply(message, metaData); 
-                }
+                Object result = methodToInvoke.invoke(this, methodArgs.toArray());
+                ControlPlaneReplyMessage message = new ControlPlaneReplyMessage(result, ctrlOperationName, sourceMessageID);
+                transmitReply(message, metaData);
 	    }
 
-
-	} catch (IOException ioe) {
-	    System.err.println("ControPlaneConsumer: failed to process control message: " + ioe.getMessage());
-	    throw ioe;
-	} catch (ClassNotFoundException e) {
-	    System.err.println("ControPlaneConsumer: failed to process control message: " + e.getMessage());
-            throw new TypeException(e.getMessage());
         } catch (Exception ex) {
-            System.err.println("ControPlaneConsumer: failed to process control message: " + ex.getMessage());
-            throw new TypeException(ex.getMessage());
+                ex.printStackTrace();
+                
+                ControlPlaneReplyMessage errorMessage = new ControlPlaneReplyMessage((Object)ex, ctrlOperationName, sourceMessageID);
+                try {
+                    transmitReply(errorMessage, metaData);
+                } catch (Exception ex1) {
+                    ex1.printStackTrace();
+                }
+                
+                System.err.println("ControPlaneConsumer (exception detected): failed to process control message: " + ex.getMessage());
+                throw new IOException(ex.getMessage());
+                
+            
         }
     }
     
@@ -156,7 +160,7 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
 
         // write result Object 
         dataOutput.write(answer.getPayloadAsByte());
-
+        
         int sendReply = udpReceiver.sendReply(byteStream);
         
         return sendReply;
@@ -167,18 +171,25 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
         // creating a message to announce the IP address of the DS control endpoint
         return true;
         }
+    
+    
+     @Override
+    public void error(Exception e) {
+        System.err.println("ControPlaneConsumer - invoked error method : failed to process control message: " + e.getMessage());
+    }
 
+    
     @Override
-    public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) {
+    public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception {
         try {
             System.out.println("******* UDPControlPlaneConsumer -> loadProbe");
             ProbeLoader p = new ProbeLoader(probeClassName, probeArgs);
             if (dataSource instanceof BasicDataSource)
                 return ((BasicDataSource)dataSource).addProbe(p);
             else
-                return null;
+                throw new Exception("Probe cannot be loaded on that DS");
         } catch (Exception ex) {
-            return null;
+            throw new Exception(ex.getMessage());
         }
     }
     
