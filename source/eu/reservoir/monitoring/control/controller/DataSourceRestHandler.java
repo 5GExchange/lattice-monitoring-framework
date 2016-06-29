@@ -112,7 +112,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
             rawArgs = query.get("args");
 
             rawArgs = rawArgs.trim();
-            rawArgs = rawArgs.replaceAll("  +", " ");
+            rawArgs = rawArgs.replaceAll("\\+", " ");
 
         }
 

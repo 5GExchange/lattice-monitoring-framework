@@ -13,6 +13,7 @@ import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 import eu.reservoir.monitoring.im.dht.DHTInfoPlaneRoot;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Scanner;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
@@ -70,7 +71,7 @@ public class Controller {
     }
     
     
-    public JSONObject turnOffProbe(String id) throws JSONException {
+    JSONObject turnOffProbe(String id) throws JSONException {
         JSONObject result = new JSONObject();
         Boolean invocationResult;
         
@@ -109,7 +110,7 @@ public class Controller {
         }
     
     
-    JSONObject loadProbe(String id, String probeClassName, Object ... probeArgs) throws JSONException {
+    JSONObject loadProbe(String id, String probeClassName, String probeArgs) throws JSONException {
         JSONObject result = new JSONObject();
         
         ID createdProbeID;
@@ -117,8 +118,14 @@ public class Controller {
         result.put("operation", "loadProbe");
         result.put("probeClassName",probeClassName);
         
+        Object [] probeArgsAsObjects = (Object[])probeArgs.split(" ");
+        
+        System.out.println("Received arguments:");
+        for (Object o : probeArgsAsObjects)
+            System.out.println((String)o);
+        
         try {
-            createdProbeID = this.getControlHandle().loadProbe(ID.fromString(id), probeClassName, probeArgs);
+            createdProbeID = this.getControlHandle().loadProbe(ID.fromString(id), probeClassName, probeArgsAsObjects);
             result.put("createdProbeID", createdProbeID.toString());
             result.put("success", true);
         } catch (Exception ex) {
@@ -148,73 +155,27 @@ public class Controller {
         }
     
     public static void main(String[] args) throws IOException {
-        try {
-            Controller myController = Controller.getInstance();
+        //try {
+        Controller myController = Controller.getInstance();
+
+        //set the control plane host and port: this will be the root of the DHT
+
+        String currentHost="localhost";
+        int infoPlaneLocalPort = 6699;
+        int restConsolePort = 6666;
+
+         try {
+            currentHost = InetAddress.getLocalHost().getHostName();   
+            System.out.println(currentHost);
+        } catch (Exception e) {
+        }        
+
+
+        myController.init(currentHost, infoPlaneLocalPort, restConsolePort);
             
-            //set the control plane host and port: this will be the root of the DHT
-            myController.init("localhost", 6699, 6666);
-            //System.in.read();
-            
-            /*
-            Thread thread = new Thread(){
-            public void run(){
-            System.out.println("Thread1 Running");
-            System.out.println(myController.getControlHandle().turnOffProbe(ID.fromString("0-1-2-3-4")));
-            System.out.println(System.currentTimeMillis());
-            }
-            };
-            
-            thread.start();
-            
-            
-            
-            Thread thread2 = new Thread(){
-            public void run(){
-            System.out.println("Thread2 Running");
-            System.out.println(myController.getControlHandle().turnOffProbe(ID.fromString("0-3-5-2-4")));
-            System.out.println(System.currentTimeMillis());
-            }
-            };
-            
-            thread2.start();
-            */
-            
-            /*
-            System.out.println(myController.getControlHandle().turnOffProbe(ID.fromString("0-1-2-3-4")));
-            System.out.println(System.currentTimeMillis());
-            
-            System.out.println(myController.getControlHandle().turnOffProbe(ID.fromString("0-3-5-2-4")));
-            System.out.println(System.currentTimeMillis());
-            */
-            
-            /*
-            Scanner keyboard = new Scanner(System.in);
-            System.out.println("Enter the probe ID to switch off: ");
-            String ID1 = keyboard.nextLine();
-            
-            myController.getControlHandle().turnOffProbe(ID.fromString(ID1));
-            
-            System.out.println("Enter the probe ID to switch off: ");
-            String ID2 = keyboard.nextLine();
-            
-            myController.getControlHandle().turnOffProbe(ID.fromString(ID2));
-            */
-            
-            /*
-            Scanner keyboard = new Scanner(System.in);
-            String dsID = keyboard.nextLine();
-            
-            myController.getControlHandle().loadProbe(ID.fromString(dsID), "eu.reservoir.demo.UserProcTableProbe", "ttys000");
-            
-            //myController.getControlHandle().loadProbe(ID.fromString(dsID), "eu.reservoir.demo.RandomProbe",  "MyelapsedTime", "elapsedTime", 15);
-            
-            
-            String probeID = keyboard.nextLine();
-            myController.getControlHandle().turnOnProbe(ID.fromString(probeID));
-            */
-        } catch (Exception ex) {
-            System.out.println("Error while creating new probe" + ex.getMessage());
-        }
+       // } catch (Exception ex) {
+        //    System.out.println("Error while creating new probe" + ex.getMessage());
+       // }
         
     }
 }

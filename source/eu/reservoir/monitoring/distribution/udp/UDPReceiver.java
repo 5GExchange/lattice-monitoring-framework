@@ -33,7 +33,7 @@ public class UDPReceiver implements Runnable {
     /*
      * The IP address
      */
-    InetSocketAddress address;
+    //InetSocketAddress address;
 
     InetAddress dstAddr;
 
@@ -84,7 +84,7 @@ public class UDPReceiver implements Runnable {
      * Construct a receiver for a particular IP address
      */
     public UDPReceiver(Receiving receiver, InetSocketAddress ipAddr) throws IOException {
-	address = ipAddr;
+	//address = ipAddr;
 
 	this.receiver = receiver;
 	this.dstAddr = ipAddr.getAddress();
