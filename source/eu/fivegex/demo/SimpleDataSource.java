@@ -70,58 +70,54 @@ public class SimpleDataSource {
 
 
     public static void main(String [] args) throws InterruptedException {
+        System.out.println(args.length);
 	try {
+            String currentHost = "localhost";
             String dataConsumerAddr = "localhost";
             int dataConsumerPort = 22997;
+            String infoHost="localhost";
+            int infoRemotePort= 6699;
             int infoLocalPort = 9999;
             int controlLocalPort = 1111;
             
             
             if (args.length == 0) {
                 // use existing settings
-            } else if (args.length == 5) {
-                dataConsumerAddr = args[0];
+            } else if (args.length == 7) {
+                currentHost = args[0];
                 
+                dataConsumerAddr = args[1];
                 
                 Scanner sc = new Scanner(args[2]);
                 dataConsumerPort = sc.nextInt();
                 
-                sc= new Scanner(args[3]);
+                infoHost = args[3];
+                
+                sc = new Scanner(args[4]);
+                infoRemotePort = sc.nextInt();
+                
+                sc= new Scanner(args[5]);
                 infoLocalPort = sc.nextInt();
                 
-                sc= new Scanner(args[4]);
-                controlLocalPort = sc.nextInt();
-                
-            } else if (args.length == 4) {
-                
-                dataConsumerAddr = args[0];
-                
-                
-                Scanner sc = new Scanner(args[1]);
-                dataConsumerPort = sc.nextInt();
-                
-                sc= new Scanner(args[2]);
-                infoLocalPort = sc.nextInt();
-                
-                sc= new Scanner(args[3]);
+                sc= new Scanner(args[6]);
                 controlLocalPort = sc.nextInt();
                 
             } else {
-                System.err.println("EmptyDataSource ip-address [probeID] port infoLocalPort controlLocalPort");
+                System.err.println("use: SimpleDataSource localAddress dcAddress dcPort infoHost infoRemotePort infoLocalPort controlLocalPort");
                 System.exit(1);
             }
             
             // try and get the real current hostname
-            String currentHost ="localhost";
+            //String currentHost ="localhost";
             
-            try {
-                currentHost = InetAddress.getLocalHost().getHostName();   
-                System.out.println(currentHost);
-            } catch (Exception e) {
-            }
+            //try {
+            //    currentHost = InetAddress.getLocalHost().getHostName();   
+            //    System.out.println(currentHost);
+            //} catch (Exception e) {
+            //}
           
             // we got a hostname
-            SimpleDataSource hostMon = new SimpleDataSource(currentHost, dataConsumerAddr, dataConsumerPort, "localhost", 6699, infoLocalPort, controlLocalPort);
+            SimpleDataSource hostMon = new SimpleDataSource(currentHost, dataConsumerAddr, dataConsumerPort, infoHost, infoRemotePort, infoLocalPort, controlLocalPort);
            
         } catch (Exception ex) {
             System.out.println("Error while starting the Data Source " + ex.getMessage());

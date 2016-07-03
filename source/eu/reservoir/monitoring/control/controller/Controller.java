@@ -155,7 +155,6 @@ public class Controller {
         }
     
     public static void main(String[] args) throws IOException {
-        //try {
         Controller myController = Controller.getInstance();
 
         //set the control plane host and port: this will be the root of the DHT
@@ -172,10 +171,6 @@ public class Controller {
 
 
         myController.init(currentHost, infoPlaneLocalPort, restConsolePort);
-            
-       // } catch (Exception ex) {
-        //    System.out.println("Error while creating new probe" + ex.getMessage());
-       // }
         
     }
 }

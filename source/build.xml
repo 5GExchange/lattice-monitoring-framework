@@ -20,7 +20,7 @@
     <javac debug="on" srcdir="${sources}" classpath="${external.jars}"
            source="1.7" target="1.7" includeantruntime="false"
 	   destdir="${classes}">
-    <include name="eu/reservoir/**" />
+    <include name="eu/**" />
     </javac>
 
   </target>
