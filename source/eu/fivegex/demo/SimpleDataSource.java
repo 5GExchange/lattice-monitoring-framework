@@ -61,7 +61,7 @@ public class SimpleDataSource {
         
         ds.setControlPlane(controlPlane);
         
-        //the root of the DHT is by default on dataConsumerPort 6699
+        //the root of the DHT is by default on infoPlaneRootName 6699
         ds.setInfoPlane(new DHTInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
         
 	ds.connect();
@@ -107,16 +107,17 @@ public class SimpleDataSource {
                 System.exit(1);
             }
             
-            // try and get the real current hostname
-            //String currentHost ="localhost";
             
-            //try {
-            //    currentHost = InetAddress.getLocalHost().getHostName();   
-            //    System.out.println(currentHost);
-            //} catch (Exception e) {
-            //}
-          
-            // we got a hostname
+            /*
+            currentHost: is saved in the infoplane to be used as the control endpoint for the DS
+            dataConsumerAddr: address of the destination dataConsumer 
+            dataConsumerPort: port of the destination dataConsumer
+            infoHost: host where the infoplane root node is running
+            infoRemotePort: port where the info plane root node is listening
+            infoLocalPort: port to be used by this DS to connect to the info plane
+            controlLocalPort: port to be used locally for the contro plane
+            */
+            
             SimpleDataSource hostMon = new SimpleDataSource(currentHost, dataConsumerAddr, dataConsumerPort, infoHost, infoRemotePort, infoLocalPort, controlLocalPort);
            
         } catch (Exception ex) {

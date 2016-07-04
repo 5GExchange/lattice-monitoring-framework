@@ -5,7 +5,9 @@
  */
 package eu.reservoir.monitoring.control.udp;
 
+import eu.reservoir.monitoring.control.controller.DSNotFoundException;
 import eu.reservoir.monitoring.control.controller.InfoResolver;
+import eu.reservoir.monitoring.control.controller.ProbeIDNotFoundException;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Measurement;
 import eu.reservoir.monitoring.core.Rational;
@@ -165,7 +167,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
             System.out.println("ThreadName: --------> " + Thread.currentThread().getName());
             //we return the ID of the new created probe as result
             probeID = (ID) transmit(m, mData);
-        } //catch (ProbeIDNotFoundException idEx) {
+        } //catch (DSNotFoundException idEx) {
           //  throw idEx; 
           //}
           catch (Exception ex) {

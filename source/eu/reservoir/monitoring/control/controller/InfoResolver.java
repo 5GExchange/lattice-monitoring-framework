@@ -21,23 +21,27 @@ public class InfoResolver {
     }
     
     public InetSocketAddress getDSAddressFromProbeID(ID probe) throws ProbeIDNotFoundException, DSNotFoundException {
-        ID dataSourceID;
-        try {
-            dataSourceID = ID.fromString((String)info.lookupProbeInfo(probe, "datasource"));
-        } catch (NullPointerException ex) {
-            throw new ProbeIDNotFoundException("probe with ID " + probe.toString() + " not found in the infoplane");
+        String dsID = (String)info.lookupProbeInfo(probe, "datasource");
+        
+        if (dsID != null) {
+            ID dataSourceID = ID.fromString(dsID);
+            System.out.println("Found this data source ID: " + dataSourceID);
+            InetSocketAddress dsAddress = getDSAddressFromID(dataSourceID);
+            if (dsAddress != null)
+                return dsAddress;
+            else
+                throw new DSNotFoundException("Data Source with ID " + dataSourceID.toString() + " not found in the infoplane");
         }
-        System.out.println("Found this data source ID: " + dataSourceID);
-        return getDSAddressFromID(dataSourceID);
+        else
+            throw new ProbeIDNotFoundException("probe with ID " + probe.toString() + " not found in the infoplane");
     }
     
     public InetSocketAddress getDSAddressFromID(ID dataSource) throws DSNotFoundException {
-        try {
-            return (InetSocketAddress)info.lookupDataSourceInfo(dataSource, "inetSocketAddress");
-            }
-        catch (NullPointerException ex) {
+        InetSocketAddress dsAddress = (InetSocketAddress)info.lookupDataSourceInfo(dataSource, "inetSocketAddress");
+        if (dsAddress != null)
+            return dsAddress;
+        else 
             throw new DSNotFoundException("Data Source with ID " + dataSource.toString() + " not found in the infoplane");
-        }
     }
     
 }
