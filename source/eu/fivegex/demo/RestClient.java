@@ -30,7 +30,7 @@ public class RestClient {
 
     /**
      * Construct a VimClient
-     * using defaults of localhost and port 8888
+     * using defaults of localhost and port 6666
      */
     public RestClient() throws UnknownHostException, IOException {
         this("localhost", 6666);
@@ -76,7 +76,7 @@ public class RestClient {
     }
 
     
-    //curl -X POST http://localhost:6666/datasource/<dsName>/probe/?className=<probeClassName>\&args=<arg1>+<arg2>+<argN>
+    //curl -X POST http://localhost:6666/datasource/<dsUUID>/probe/?className=<probeClassName>\&args=<arg1>+<arg2>+<argN>
     public JSONObject loadProbeOnDsByID(String ID, String name, String args) throws JSONException {
         try {
             String uri = vimURI + "/datasource/" + ID + "/probe/?className=" + name + "&args=" + java.net.URLEncoder.encode(args, "UTF-8");
@@ -170,7 +170,7 @@ public class RestClient {
         String dsName = keyboard.nextLine();
         
         //creating a random probe on DS dsName
-        JSONObject out = new JSONObject();
+        JSONObject out;
         System.out.println("Creating probe");
         out = client.loadProbeOnDsByName(dsName, "eu.fivegex.demo.RandomProbe", "myProbe+myAttribute+15");
         System.in.read();
