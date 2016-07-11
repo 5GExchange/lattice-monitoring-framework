@@ -78,7 +78,6 @@ public class DHTInfoPlane extends AbstractDHTInfoPlane implements InfoPlane, Dat
 	try {
 	    DataSource dataSource = dataSourceDelegate.getDataSource();
 	    imNode.addDataSource(dataSource);
-
 	    System.err.println("DHTInfoPlane: just announced DataSource " + dataSource);
 	    return true;
 	} catch (IOException ioe) {
@@ -117,8 +116,9 @@ public class DHTInfoPlane extends AbstractDHTInfoPlane implements InfoPlane, Dat
      */
     public boolean addDataSourceInfo(DataSource ds) {
 	try {
-	    imNode.addDataSource(ds);
-
+	    //imNode.addDataSource(ds);
+            // FT announce the hostname -> ID of the DataSource
+            imNode.addDataSourceName(ds);
 	    System.err.println("DHTInfoPlane: just added DataSource " + ds);
 	    return true;
 	} catch (IOException ioe) {

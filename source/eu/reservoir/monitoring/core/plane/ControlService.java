@@ -60,7 +60,7 @@ public interface ControlService {
     /**
      * Set the Service ID for a Probe
      */
-    public boolean setProbeServiceID(ID probeID, ID id);
+    public boolean setProbeServiceID(ID probeID, ID id) throws Exception;
 
     /**
      * Get the Group ID of the Probe.

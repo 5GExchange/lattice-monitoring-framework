@@ -52,7 +52,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         // Get the method
         String method = request.getMethod();
 
-        //request.getQuery();
+        /*request.getQuery();
         
         System.out.println("method: " + request.getMethod());
         System.out.println("target: " + request.getTarget());
@@ -62,13 +62,13 @@ class DataSourceRestHandler extends BasicRequestHandler {
         System.out.println("segments: " + java.util.Arrays.asList(request.getPath().getSegments()));
         System.out.println("query: " + request.getQuery());
         System.out.println("keys: " + request.getQuery().keySet());
-        
+        */
         
         try {
             if (method.equals("POST")) {
                 System.out.println("Received Post");
                 if (name == null && segments.length == 3)
-                    createProbe(request, response);   
+                    createProbe(request, response);  
                 else
                     notFound(response, "POST bad request");
             }
@@ -96,7 +96,8 @@ class DataSourceRestHandler extends BasicRequestHandler {
         String[] segments = path.getSegments(); 
         Query query = request.getQuery();
         
-        String dsID = segments[1];
+        String dsID;
+        String dsName;
         String className;
         String rawArgs="";
         
@@ -120,8 +121,18 @@ class DataSourceRestHandler extends BasicRequestHandler {
         String failMessage = null;
         JSONObject jsobj = null;
         
-        jsobj = controller_.loadProbe(dsID, className, rawArgs);
-
+        if (segments[1].matches("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
+            dsID = segments[1];
+            jsobj = controller_.loadProbe(dsID, className, rawArgs);
+        }
+        else {
+            dsName = segments[1];
+            System.out.println("dsName: " + dsName);
+            dsID = controller_.getResolver().getDSIDFromName(dsName);
+            System.out.println("dsID: " + dsID);
+            jsobj = controller_.loadProbe(dsID, className, rawArgs);  
+        }
+        
         if (jsobj.get("success").equals(false)) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("createProbe: failure detected: " + failMessage);
@@ -141,7 +152,3 @@ class DataSourceRestHandler extends BasicRequestHandler {
         
     }
 }
-    
-    
-    
-

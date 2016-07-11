@@ -43,5 +43,13 @@ public class InfoResolver {
         else 
             throw new DSNotFoundException("Data Source with ID " + dataSource.toString() + " not found in the infoplane");
     }
-    
+
+    public String getDSIDFromName(String dsName) throws DSNotFoundException {
+        //using generic getInfo method for getting DS ID from DS name
+        String dsID = (String)info.getInfo("/datasource/name/" + dsName);
+        if (dsID != null)
+            return dsID;
+        else 
+            throw new DSNotFoundException("Data Source with name " + dsName + " not found in the infoplane");
+        }  
 }

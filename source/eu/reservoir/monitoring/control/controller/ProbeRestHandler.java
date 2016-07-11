@@ -9,9 +9,9 @@ import cc.clayman.console.BasicRequestHandler;
 import eu.reservoir.monitoring.core.ID;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Scanner;
 import org.simpleframework.http.Path;
+import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
 import us.monoid.json.JSONException;
@@ -52,8 +52,9 @@ class ProbeRestHandler extends BasicRequestHandler {
         // Get the method
         String method = request.getMethod();
 
-        //request.getQuery();
         /*
+        request.getQuery();
+        
         System.out.println("method: " + request.getMethod());
         System.out.println("target: " + request.getTarget());
         System.out.println("path: " + request.getPath());
@@ -65,13 +66,27 @@ class ProbeRestHandler extends BasicRequestHandler {
         */
         
         try {
-            if (method.equals("POST")) {
-                System.out.println("Received Post");
-                if (name != null && segments.length == 3)
+            if (method.equals("PUT")) {
+                System.out.println("Received PUT");
+                if (name == null && segments.length == 2)
                     probeOperation(request, response);   
                 else
-                    notFound(response, "POST bad request");
+                    notFound(response, "PUT bad request");
             }
+            
+            else if (method.equals("DELETE")) {
+                    if (name != null && segments.length == 2) {
+                        // looks like a delete
+                        deleteProbe(request, response);
+                    } else {
+                        notFound(response, "DELETE bad request");
+                    }   
+            }
+            
+            else {
+                badRequest(response, "Unknown method" + method);
+            }
+            
             
             return true;
             
@@ -92,34 +107,82 @@ class ProbeRestHandler extends BasicRequestHandler {
     }
 
     private void probeOperation(Request request, Response response) throws JSONException, IOException, ProbeIDNotFoundException {
-        
-        
-        
+        Scanner scanner;
         boolean success = true;
         String failMessage = null;
-        JSONObject jsobj = null;
+        JSONObject jsobj = new JSONObject();
         
+        Query query = request.getQuery();
         Path path = request.getPath();
         String[] segments = path.getSegments(); 
         
-        String probeID = segments[1];
-        String operation = segments[2];
+        String probeID;
         
+        System.out.println("checking segment: " + segments[1]);
         
-        switch (operation) {
+        scanner = new Scanner (segments[1]);
+        if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
+            probeID = scanner.next();
+            System.out.println("probeID " + probeID);
+            scanner.close();
+        }
+        else {
+            System.out.println("probeID is not valid");
+            scanner.close();
+            complain(response, "probe ID is not a valid UUID: " + segments[1]);
+            return;
+        }
+
+        if (query.containsKey("serviceid")) {
+            System.out.println("Setting service ID");
+            
+            scanner = new Scanner(query.get("serviceid"));
+            String serviceID;
+            
+            if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
+                serviceID = scanner.next();
+                scanner.close();
+            } else {
+            	scanner.close();
+                complain(response, "service ID is not a valid UUID");
+                return;
+            }   
+            
+        jsobj = controller_.setProbeServiceID(probeID, serviceID);    
+        }
+        
+        else if (query.containsKey("status")) {
+            System.out.println("status");
+            scanner = new Scanner(query.get("status"));
+            
+            String status;
+            
+            if (scanner.hasNext()) {
+                status = scanner.next();
+                scanner.close();
+            } else {
+            	scanner.close();
+                complain(response, "status arg is empty");
+                return;
+            }
+            
+            switch (status) {
             case "off":
                 jsobj = controller_.turnOffProbe(probeID);
                 break;
             case "on":
                 jsobj = controller_.turnOnProbe(probeID);
                 break;
-            case "unload":
-                jsobj = controller_.unloadProbe(probeID);
-                break;
             default:
-                badRequest(response, " arg is not valid operation: " + operation);
+                complain(response, status + " is not a valid probe status");
                 response.close();
                 return;
+            }
+        
+        }
+        
+        else {
+            complain(response, "no args have been specified");
         }
 
         if (jsobj.get("success").equals(false)) {
@@ -139,5 +202,47 @@ class ProbeRestHandler extends BasicRequestHandler {
             PrintStream out = response.getPrintStream();       
             out.println(jsobj.toString());
         }
+    }
+    
+    
+    
+    private void deleteProbe(Request request, Response response) throws JSONException, IOException, ProbeIDNotFoundException {
+        System.out.println("Delete Probe");
+        boolean success = true;
+        String failMessage = null;
+        JSONObject jsobj = null;
+        
+        String name = request.getPath().getName();
+        Scanner sc = new Scanner(name);
+
+        if (sc.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
+            String probeID = sc.next();
+            sc.close();
+
+            jsobj = controller_.unloadProbe(probeID);
+
+            if (jsobj.get("success").equals(false)) {
+                failMessage = (String)jsobj.get("msg");
+                System.out.println("ProbeRestHandler: failure detected: " + failMessage);
+                success = false;   
+            }
+
+            if (success) {
+                PrintStream out = response.getPrintStream();       
+                out.println(jsobj.toString());
+            }
+
+            else {
+                response.setCode(302);
+                PrintStream out = response.getPrintStream();       
+                out.println(jsobj.toString());
+            }
+        
+        }
+        
+        else {
+            complain(response, "probe ID is not valid: " + name);
+        }
+    
     }
 }

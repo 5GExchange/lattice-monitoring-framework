@@ -1,5 +1,6 @@
 package eu.fivegex.demo;
 
+import eu.reservoir.monitoring.core.ID;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -11,6 +12,9 @@ import us.monoid.web.Resty;
 
 import static us.monoid.web.Resty.delete;
 import static us.monoid.web.Resty.put;
+import static us.monoid.web.Resty.content;
+import static us.monoid.web.Resty.data;
+import static us.monoid.web.Resty.form;
 import static us.monoid.web.Resty.content;
 import static us.monoid.web.Resty.data;
 import static us.monoid.web.Resty.form;
@@ -72,7 +76,8 @@ public class RestClient {
     }
 
     
-    public JSONObject loadProbe(String ID, String name, String args) throws JSONException {
+    //curl -X POST http://localhost:6666/datasource/<dsName>/probe/?className=<probeClassName>\&args=<arg1>+<arg2>+<argN>
+    public JSONObject loadProbeOnDsByID(String ID, String name, String args) throws JSONException {
         try {
             String uri = vimURI + "/datasource/" + ID + "/probe/?className=" + name + "&args=" + java.net.URLEncoder.encode(args, "UTF-8");
             
@@ -86,17 +91,113 @@ public class RestClient {
         }
     }
     
+    
+    //curl -X POST http://localhost:6666/datasource/<dsName>/probe/?className=<probeClassName>\&args=<arg1>+<arg2>+<argN>
+    public JSONObject loadProbeOnDsByName(String dsName, String name, String args) throws JSONException {
+        try {
+            String uri = vimURI + "/datasource/" + dsName + "/probe/?className=" + name + "&args=" + java.net.URLEncoder.encode(args, "UTF-8");
+            
+            // adding form data causes a POST
+            JSONObject jsobj = rest.json(uri, form("")).toObject();
+
+            return jsobj;
+
+        } catch (IOException ioe) {
+            throw new JSONException("loadProbe FAILED" + " IOException: " + ioe.getMessage());
+        }
+    }
+    
+    // curl -X PUT http://localhost:6666/probe/<probeUUID>/?status=on
+    public JSONObject turnProbeOn(String probeID) throws JSONException {
+        try {
+            String uri = vimURI + "/probe/" + probeID + "/?status=on";
+            
+            JSONObject jsobj = rest.json(uri, put(content(""))).toObject();
+
+            return jsobj;
+        } catch (IOException ioe) {
+            throw new JSONException("turnProbeOn FAILED" + " IOException: " + ioe.getMessage());
+        }
+    }
+    
+    
+    // curl -X PUT http://localhost:6666/probe/<probeUUID>/?status=off
+    public JSONObject turnProbeOff(String probeID) throws JSONException {
+        try {
+            String uri = vimURI + "/probe/" + probeID + "/?status=off";
+            
+            JSONObject jsobj = rest.json(uri, put(content(""))).toObject();
+
+            return jsobj;
+        } catch (IOException ioe) {
+            throw new JSONException("turnProbeOff FAILED" + " IOException: " + ioe.getMessage());
+        }
+    }
+    
+    
+    // curl -X PUT http://localhost:6666/probe/<probeUUID>/?serviceid=<serviceUUID>
+    public JSONObject setProbeServiceID(String probeID, String serviceID) throws JSONException {
+        try {
+            String uri = vimURI + "/probe/" + probeID + "/?serviceid=" + serviceID;
+            
+            JSONObject jsobj = rest.json(uri, put(content(""))).toObject();
+
+            return jsobj;
+        } catch (IOException ioe) {
+            throw new JSONException("setProbeServiceID FAILED" + " IOException: " + ioe.getMessage());
+        }
+    }
+    
+    // curl -X DELETE http://localhost:6666/probe/<probeUUID>
+    public JSONObject unloadProbe(String probeID) throws JSONException {
+        try {
+            String uri = vimURI + "/probe/" + probeID;
+            
+            JSONObject jsobj = rest.json(uri, delete()).toObject();
+
+            return jsobj;
+        } catch (IOException ioe) {
+            throw new JSONException("unloadProbe FAILED" + " IOException: " + ioe.getMessage());
+        }
+    }
+    
+    
     public static void main(String[] args) throws IOException, JSONException {
         RestClient client = new RestClient("localhost", 6666);
         
         Scanner keyboard = new Scanner(System.in);
-        System.out.println("Enter the DS ID to load the probe on: ");
-        String ID1 = keyboard.nextLine();
+        System.out.println("Enter the DS name to load the probe on: ");
+        String dsName = keyboard.nextLine();
         
-        //client.loadProbe(ID1, "eu.reservoir.demo.UserProcProbe", "ttys000");
+        //creating a random probe on DS dsName
+        JSONObject out = new JSONObject();
+        System.out.println("Creating probe");
+        out = client.loadProbeOnDsByName(dsName, "eu.fivegex.demo.RandomProbe", "myProbe+myAttribute+15");
+        System.in.read();
         
-        client.loadProbe(ID1, "eu.fivegex.demo.RandomProbe", "example+XXX+15");
-    }
+        //getting created probe ID
+        String probeID = (String) out.get("createdProbeID");
+        
+        //setting (random generated) service ID to the created probe
+        System.out.println("Setting service ID on probe: " + probeID);
+        client.setProbeServiceID(probeID, ID.generate().toString());
+        System.in.read();
+        
+        //turning probe on
+        System.out.println("turning on probe: " + probeID);
+        client.turnProbeOn(probeID);
+        System.in.read();
+        
+        //turing probe off
+        System.out.println("turning off probe: " + probeID);
+        client.turnProbeOff(probeID);
+        System.in.read();
+        
+        //unloading the probe
+        System.out.println("unloading probe: " + probeID);
+        client.unloadProbe(probeID);
+        System.in.read();
+        }
 }
 
     

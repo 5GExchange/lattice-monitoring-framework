@@ -218,8 +218,10 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
 
     @Override
     public boolean setProbeServiceID(ID probeID, ID id) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+        System.out.println("******* UDPControlPlaneConsumer -> setProbeServiceID");
+        dataSource.setProbeServiceID(probeID, id);
+        return true;
+        }
 
     @Override
     public ID getProbeGroupID(ID probeID) {

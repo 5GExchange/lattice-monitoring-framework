@@ -154,6 +154,29 @@ public class Controller {
         return result;
         }
     
+    JSONObject setProbeServiceID(String probeID, String serviceID) throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        Boolean invocationResult;
+        
+        result.put("operation", "setProbeServiceID");
+        result.put("probeID",probeID);
+        result.put("serviceID",serviceID);
+        
+        try {
+            invocationResult = this.getControlHandle().setProbeServiceID(ID.fromString(probeID), ID.fromString(serviceID));
+            result.put("success", invocationResult);
+        } catch (Exception ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+        }
+        
+        return result;
+    }
+
+    
+    
+    
     public static void main(String[] args) throws IOException {
         Controller myController = Controller.getInstance();
 

@@ -99,11 +99,8 @@ public class IMNode {
      * Add data for a DataSource
      */
     public IMNode addDataSource(DataSource ds) throws IOException {
-	putDHT("/datasource/" + ds.getID() + "/name", ds.getName());
-        //putDHT("/datasource/" + ds.getID() + "/controlAddress", ds.getControlPlane().getControlEndPoint().getHostName());
-        //putDHT("/datasource/" + ds.getID() + "/controlPort", ds.getControlPlane().getControlEndPoint().getPort());
+	putDHT("/datasource/" + ds.getID() + "/name", ds.getName());        
         putDHT("/datasource/" + ds.getID() + "/inetSocketAddress", ds.getControlPlane().getControlEndPoint());
-        
         
 	Collection<Probe> probes = ds.getProbes();
 
@@ -114,7 +111,13 @@ public class IMNode {
 	    
 	return this;
     }
-
+    
+    public IMNode addDataSourceName(DataSource ds) throws IOException {
+	putDHT("/datasource/name/" + ds.getName(), ds.getID().toString());    
+	return this;
+    }
+    
+    
     /**
      * Add data for a Probe.
      */

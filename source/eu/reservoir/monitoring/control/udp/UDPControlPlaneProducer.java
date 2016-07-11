@@ -216,8 +216,28 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
     }
 
     @Override
-    public boolean setProbeServiceID(ID probeID, ID id) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public boolean setProbeServiceID(ID probeID, ID id) throws Exception {
+        List<Object> args = new ArrayList();
+        args.add(probeID);
+        args.add(id);
+        Boolean result = false;
+        
+        ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.SET_PROBE_SERVICE_ID, args);
+        try {
+            InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
+            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            System.out.println("ThreadName: --------> " + Thread.currentThread().getName());
+            result = (Boolean) transmit(m, mData);
+        } //catch (ProbeIDNotFoundException idEx) {
+          //  throw idEx; 
+          //}
+          catch (Exception ex) {
+            System.out.println("Error while sending set probe service ID command " + ex.getMessage());
+            throw ex;
+          }
+        
+        return result;
+        
     }
 
     @Override

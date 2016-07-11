@@ -36,8 +36,12 @@ public class SimpleDataSource {
                            int infoPlaneRootPort,
                            int infoPlaneLocalPort,
                            int controlPlaneLocalPort) throws UnknownHostException {
+        
+        
+        InetAddress localAddress = InetAddress.getByName(myHostName);
+        
 	// set up data source
-	ds = new BasicDataSource(myHostName);
+	ds = new BasicDataSource(localAddress.getHostName());
 
         
         System.out.println("Sending data to: " + dataConsumerName + ":" + dataConsumerPort);
@@ -50,7 +54,7 @@ public class SimpleDataSource {
 	// set up an IPaddress for data
 	InetSocketAddress DataAddress = new InetSocketAddress(InetAddress.getByName(dataConsumerName), dataConsumerPort);
 
-        InetSocketAddress ctrlAddress = new InetSocketAddress(InetAddress.getByName(myHostName), controlPlaneLocalPort);
+        InetSocketAddress ctrlAddress = new InetSocketAddress(localAddress, controlPlaneLocalPort);
         
 	// set up data plane
 	ds.setDataPlane(new UDPDataPlaneProducer(DataAddress));
@@ -65,6 +69,8 @@ public class SimpleDataSource {
         ds.setInfoPlane(new DHTInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
         
 	ds.connect();
+        
+        ds.getDataSourceDelegate().addDataSourceInfo(ds);
         
     }
 
@@ -119,7 +125,7 @@ public class SimpleDataSource {
             */
             
             SimpleDataSource hostMon = new SimpleDataSource(currentHost, dataConsumerAddr, dataConsumerPort, infoHost, infoRemotePort, infoLocalPort, controlLocalPort);
-           
+            
         } catch (Exception ex) {
             System.out.println("Error while starting the Data Source " + ex.getMessage());
 	}

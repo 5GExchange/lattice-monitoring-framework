@@ -43,7 +43,7 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, D
 	    // only connect if we're not already connected
 	    if (udpReceiver == null) {
                 
-                System.out.println("FT: -------- AbstractUDPDataPlaneConsumer.connect - Connecting to the Control Plane ----------");
+                System.out.println("FT: -------- AbstractUDPControPlaneConsumer.connect - Connecting to the Control Plane ----------");
                 
 		UDPReceiver rr = new UDPReceiver(this, address);
 
