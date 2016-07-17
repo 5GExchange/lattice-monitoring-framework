@@ -3,7 +3,7 @@
 // Email: sclayman@ee.ucl.ac.uk
 // Date: Oct 2008
 
-package eu.fivegex.demo;
+package eu.fivegex.demo.probes;
 
 import eu.reservoir.monitoring.core.*;
 import eu.reservoir.monitoring.appl.datarate.*;
