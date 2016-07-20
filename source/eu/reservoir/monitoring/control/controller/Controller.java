@@ -5,6 +5,8 @@
  */
 package eu.reservoir.monitoring.control.controller;
 
+import eu.fivegex.demo.JSONProbeCatalogue;
+import eu.fivegex.demo.SSHDeploymentManager;
 import eu.reservoir.monitoring.appl.BasicConsumer;
 import eu.reservoir.monitoring.control.udp.UDPControlPlaneProducer;
 import eu.reservoir.monitoring.core.ID;
@@ -29,11 +31,12 @@ public class Controller {
     private InfoResolver resolver;
     
     private ControllerManagementConsole console = null;
-    
+    private DeploymentDelegate deploymentManager; 
+    private JSONProbeCatalogue probeCatalogue;
     
     private Controller() {}
     
-    private void init(String infoPlaneAddr, int infoPlanePort, int managementPort) {
+    private void init(String infoPlaneAddr, int infoPlanePort, int managementPort, String probesPackage) {
         
         // we create an object to interact to the Lattice planes  
         planeInteracter = new BasicConsumer();
@@ -49,6 +52,14 @@ public class Controller {
         planeInteracter.setControlPlane(new UDPControlPlaneProducer(resolver));
         
         planeInteracter.connect();
+        
+        // paramaters should be read from a conf file
+        deploymentManager = new SSHDeploymentManager("/Users/uceeftu/Work/lattice-monitoring-framework/5Gex-Lattice/dist",
+                                                     "5GEx-Lattice.jar",
+                                                     "/tmp",
+                                                     "eu.fivegex.demo.SimpleDataSource");
+        
+        probeCatalogue = new JSONProbeCatalogue(probesPackage);
         
         console=new ControllerManagementConsole(this, managementPort);
         console.start();
@@ -175,6 +186,51 @@ public class Controller {
     }
 
     
+    JSONObject startDS(String endPoint, String userName) throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        ID createdDsID;
+        
+        result.put("operation", "startDS");
+        result.put("endpoint",endPoint);
+        
+        try {
+            // we should check here if a DS is already deployed/running on that endpoint
+            //if (
+                this.deploymentManager.deployDS(endPoint, userName); //{
+                createdDsID = this.deploymentManager.startDS(endPoint, userName, "");
+                result.put("createdDsID", createdDsID.toString());
+                result.put("success", true);
+            //}
+        } catch (DeploymentException ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+          }
+        
+        return result;
+    }
+    
+    
+    JSONObject getProbesCatalogue() throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        result.put("operation", "getProbesCatalogue");
+        
+        try {
+            this.probeCatalogue.searchForProbes();
+            this.probeCatalogue.generateProbesCatalogue();
+            JSONObject catalogue = this.probeCatalogue.getProbeCatalogue();
+            result.put("probesCatalogue", catalogue);
+            result.put("success", true);
+        } catch (JSONException | ClassNotFoundException | IOException ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+          }
+        
+        return result;   
+    }
+    
+    
     
     
     public static void main(String[] args) throws IOException {
@@ -185,6 +241,7 @@ public class Controller {
         String currentHost="localhost";
         int infoPlaneLocalPort = 6699;
         int restConsolePort = 6666;
+        String probePackage = "eu.fivegex.demo.probes";
 
          try {
             currentHost = InetAddress.getLocalHost().getHostName();   
@@ -193,7 +250,7 @@ public class Controller {
         }        
 
 
-        myController.init(currentHost, infoPlaneLocalPort, restConsolePort);
+        myController.init(currentHost, infoPlaneLocalPort, restConsolePort, probePackage);
         
     }
 }

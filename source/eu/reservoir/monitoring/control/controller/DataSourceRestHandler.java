@@ -52,7 +52,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         // Get the method
         String method = request.getMethod();
 
-        /*request.getQuery();
+        request.getQuery();
         
         System.out.println("method: " + request.getMethod());
         System.out.println("target: " + request.getTarget());
@@ -62,13 +62,16 @@ class DataSourceRestHandler extends BasicRequestHandler {
         System.out.println("segments: " + java.util.Arrays.asList(request.getPath().getSegments()));
         System.out.println("query: " + request.getQuery());
         System.out.println("keys: " + request.getQuery().keySet());
-        */
+        
         
         try {
             if (method.equals("POST")) {
                 System.out.println("Received Post");
                 if (name == null && segments.length == 3)
-                    createProbe(request, response);  
+                    createProbe(request, response);
+                else if (name == null && segments.length == 1) {
+                    deployDS(request,response);
+                }
                 else
                     notFound(response, "POST bad request");
             }
@@ -150,5 +153,54 @@ class DataSourceRestHandler extends BasicRequestHandler {
             out.println(jsobj.toString());
         }
         
+    }
+    
+    
+    private void deployDS(Request request, Response response) throws JSONException, IOException, DSNotFoundException {
+        Path path = request.getPath();
+        String[] segments = path.getSegments(); 
+        Query query = request.getQuery();
+        
+        String endPoint;
+        String userName;
+        
+        if (query.containsKey("endpoint"))
+            endPoint = query.get("endpoint");
+        else {
+            badRequest(response, "missing endpoint arg");
+            response.close();
+            return;
+        }
+        
+        if (query.containsKey("username"))
+            userName = query.get("username");
+        else {
+            badRequest(response, "missing username args");
+            response.close();
+            return;
+        }
+        
+        boolean success = true;
+        String failMessage = null;
+        JSONObject jsobj = null;
+        
+        jsobj = controller_.startDS(endPoint, userName);
+        
+        if (jsobj.get("success").equals(false)) {
+            failMessage = (String)jsobj.get("msg");
+            System.out.println("startDS: failure detected: " + failMessage);
+            success = false;   
+        }   
+    
+        if (success) {
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+        
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }  
     }
 }

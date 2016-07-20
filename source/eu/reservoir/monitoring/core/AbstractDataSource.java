@@ -969,8 +969,6 @@ public abstract class AbstractDataSource implements DataSource, PlaneInteracter,
     public boolean connect() {
 	// start QueueHandling
 	startQueueHandlingThread();
-        //FT
-        System.out.println("FT: abstractDataSource.connect");
 	return dataSourceDelegate.connect();
     }
 

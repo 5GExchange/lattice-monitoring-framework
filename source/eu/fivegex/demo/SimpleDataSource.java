@@ -9,7 +9,6 @@ import eu.reservoir.monitoring.appl.BasicDataSource;
 import eu.reservoir.monitoring.control.udp.UDPControlPlaneConsumer;
 import eu.reservoir.monitoring.core.AbstractDataSource;
 import eu.reservoir.monitoring.core.DataSourceInteracter;
-import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
 import eu.reservoir.monitoring.im.dht.DHTInfoPlane;
@@ -51,6 +50,10 @@ public class SimpleDataSource {
         System.out.println("Connecting to InfoPlaneRoot using : " + infoPlaneLocalPort + ":" + infoPlaneRootName + ":" + infoPlaneRootPort);
         System.out.println("Connecting to ControPlane using: " + controlPlaneLocalPort + ":" + myHostName);
         
+        System.out.println("DataSource ID: " + ds.getID());
+        System.out.close();
+        System.err.close();
+        
 	// set up an IPaddress for data
 	InetSocketAddress DataAddress = new InetSocketAddress(InetAddress.getByName(dataConsumerName), dataConsumerPort);
 
@@ -76,7 +79,7 @@ public class SimpleDataSource {
 
 
     public static void main(String [] args) throws InterruptedException {
-        System.out.println(args.length);
+        //System.out.println(args.length);
 	try {
             String currentHost = "localhost";
             String dataConsumerAddr = "localhost";
@@ -115,7 +118,7 @@ public class SimpleDataSource {
             
             
             /*
-            currentHost: is saved in the infoplane to be used as the control endpoint for the DS
+            currentHost: is saved in the infoplane to be used as the control endpoint for the DS (and as DS name)
             dataConsumerAddr: address of the destination dataConsumer 
             dataConsumerPort: port of the destination dataConsumer
             infoHost: host where the infoplane root node is running
@@ -126,12 +129,9 @@ public class SimpleDataSource {
             
             SimpleDataSource hostMon = new SimpleDataSource(currentHost, dataConsumerAddr, dataConsumerPort, infoHost, infoRemotePort, infoLocalPort, controlLocalPort);
             
+            
         } catch (Exception ex) {
             System.out.println("Error while starting the Data Source " + ex.getMessage());
 	}
-        
-        
-        
-        
     }
 }

@@ -78,15 +78,16 @@ class ProbeRestHandler extends BasicRequestHandler {
                     if (name != null && segments.length == 2) {
                         // looks like a delete
                         deleteProbe(request, response);
-                    } else {
-                        notFound(response, "DELETE bad request");
-                    }   
+                    } else
+                        notFound(response, "DELETE bad request");  
             }
             
-            else {
-                badRequest(response, "Unknown method" + method);
+            else if (method.equals("GET")) {
+                    if (name == null && segments.length == 2)
+                        getProbesCatalogue(request, response);
+                    else 
+                        badRequest(response, "Unknown method" + method);
             }
-            
             
             return true;
             
@@ -178,7 +179,6 @@ class ProbeRestHandler extends BasicRequestHandler {
                 response.close();
                 return;
             }
-        
         }
         
         else {
@@ -245,4 +245,40 @@ class ProbeRestHandler extends BasicRequestHandler {
         }
     
     }
+    
+    private void getProbesCatalogue(Request request, Response response) throws JSONException, IOException {
+        boolean success = true;
+        String failMessage = null;
+        JSONObject jsobj = null;
+        
+        Path path = request.getPath();
+        String[] segments = path.getSegments();
+        
+        if (!segments[1].equals("catalogue")) {
+            badRequest(response, segments[1] + "is not a valid path");
+            response.close();
+            return;
+        }
+        
+        jsobj = controller_.getProbesCatalogue();
+
+        if (jsobj.get("success").equals(false)) {
+            failMessage = (String)jsobj.get("msg");
+            System.out.println("getProbesCatalogue: failure detected: " + failMessage);
+            success = false;   
+        }
+
+        if (success) {
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+
+    }
+    
 }
