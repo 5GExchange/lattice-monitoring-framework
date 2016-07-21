@@ -45,7 +45,7 @@ public class UDPDataPlaneProducerWithNames extends AbstractUDPDataPlaneProducer 
 	// convert DataPlaneMessage into a ByteArrayOutputStream
 	// then transmit it
 
-        System.out.println("UDPDataPlaneProducerWithNames.transmit " + dsp.toString());
+        //System.out.println("UDPDataPlaneProducerWithNames.transmit " + dsp.toString());
         
 	try {
 	    // convert the object to a byte []

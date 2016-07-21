@@ -23,7 +23,7 @@ public class SSHDeploymentManager implements DeploymentDelegate {
     private final String jarFileName;
     private final String dsFileName;
     private final JSch jsch; 
-    private Session session;
+    //private Session session;
     
     // we should also create a data structure to keep track of what is deployed where
     // we should also create a data structure to keep track of what is running where
@@ -38,28 +38,30 @@ public class SSHDeploymentManager implements DeploymentDelegate {
     }
     
     // if we do not use pkey authentication, we may use the same credentials for all the endpoints
-    private void connect(String endPoint, String userName) throws JSchException {
-        this.session=this.jsch.getSession(userName, endPoint, 22);
+    private Session connect(String endPoint, String userName) throws JSchException {
+        Session session = this.jsch.getSession(userName, endPoint, 22);
         
         //this is just for testing: using the same password here regardless of the actual userName 
         session.setPassword("osboxes.org");
         session.setConfig("StrictHostKeyChecking", "no"); //ignore unknown hosts
         session.connect(5000);
+        return session;
     }
     
     
     @Override
     public ID startDS(String endPoint, String userName, String confFile) throws DeploymentException {
         String dsID="";
+        Session session=null;
         Channel channel=null;
         try {
-            this.connect(endPoint, userName);
+            session = this.connect(endPoint, userName);
             
             // we are starting the DS here without providing paramaters, this should be done either using a DS conf file
             // or passing the paramaters as an array
             String command="java -cp " + this.remoteJarFilePath + "/" + this.jarFileName + " " + this.dsFileName + " <&- &";
             
-            channel=this.session.openChannel("exec");
+            channel=session.openChannel("exec");
             ((ChannelExec)channel).setCommand(command);
 
             channel.setInputStream(null);
@@ -125,10 +127,11 @@ public class SSHDeploymentManager implements DeploymentDelegate {
     
     @Override
     public boolean deployDS(String endPoint, String userName) throws DeploymentException {
+        Session session=null;
         ChannelSftp c = null;
         try {
-            this.connect(endPoint, userName);
-            Channel channel = this.session.openChannel("sftp");
+            session = this.connect(endPoint, userName);
+            Channel channel = session.openChannel("sftp");
             channel.connect(5000);
             c = (ChannelSftp) channel;
             
@@ -163,7 +166,7 @@ public class SSHDeploymentManager implements DeploymentDelegate {
             SSHDeploymentManager dm = new SSHDeploymentManager("/Users/uceeftu/Work/lattice-monitoring-framework/5Gex-Lattice/dist",
                                                                "5GEx-Lattice.jar",
                                                                "/tmp",
-                                                               "eu.fivegex.demo.SimpleDataSource"
+                                                               "eu.fivegex.demo.SimpleDataSourceDaemon"
                                                               );
             
             System.out.println(dm.deployDS("192.168.56.101", "osboxes"));

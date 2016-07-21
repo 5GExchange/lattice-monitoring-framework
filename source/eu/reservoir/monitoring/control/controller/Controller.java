@@ -57,7 +57,7 @@ public class Controller {
         deploymentManager = new SSHDeploymentManager("/Users/uceeftu/Work/lattice-monitoring-framework/5Gex-Lattice/dist",
                                                      "5GEx-Lattice.jar",
                                                      "/tmp",
-                                                     "eu.fivegex.demo.SimpleDataSource");
+                                                     "eu.fivegex.demo.SimpleDataSourceDaemon");
         
         probeCatalogue = new JSONProbeCatalogue(probesPackage);
         

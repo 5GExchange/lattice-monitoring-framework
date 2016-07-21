@@ -20,15 +20,15 @@ import java.util.Scanner;
 /**
  * This DataSource in a basic control point for probes that uses a Control Plane and an Info Plane
  */
-public class SimpleDataSource {
+public class SimpleDataSourceDaemon {
     // The DataSource, TODO: maybe we should modify the definition of the DataSource interface to include loadProbe
     // or creating a ControllableDataSource interface
     AbstractDataSource ds;
 
     /*
-     * Construct a SimpleDataSource with no loaded probes.
+     * Construct a SimpleDataSource with no loaded probes running as a daemon.
      */
-    public SimpleDataSource(String myHostName, 
+    public SimpleDataSourceDaemon(String myHostName, 
                            String dataConsumerName, 
                            int dataConsumerPort,
                            String infoPlaneRootName,   
@@ -51,6 +51,8 @@ public class SimpleDataSource {
         System.out.println("Connecting to ControPlane using: " + controlPlaneLocalPort + ":" + myHostName);
         
         System.out.println("DataSource ID: " + ds.getID());
+        System.out.close();
+        System.err.close();
         
 	// set up an IPaddress for data
 	InetSocketAddress DataAddress = new InetSocketAddress(InetAddress.getByName(dataConsumerName), dataConsumerPort);
@@ -125,7 +127,7 @@ public class SimpleDataSource {
             controlLocalPort: port to be used locally for the contro plane
             */
             
-            SimpleDataSource hostMon = new SimpleDataSource(currentHost, dataConsumerAddr, dataConsumerPort, infoHost, infoRemotePort, infoLocalPort, controlLocalPort);
+            SimpleDataSourceDaemon hostMon = new SimpleDataSourceDaemon(currentHost, dataConsumerAddr, dataConsumerPort, infoHost, infoRemotePort, infoLocalPort, controlLocalPort);
             
             
         } catch (Exception ex) {

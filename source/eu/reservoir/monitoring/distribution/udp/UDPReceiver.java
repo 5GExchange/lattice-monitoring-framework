@@ -111,7 +111,7 @@ public class UDPReceiver implements Runnable {
     public void listen()  throws IOException {
 	// already bind to the address
 	//socket.bind(address);
-        System.out.println("Starting Receiving thread");
+        
 	// start the thread
 	myThread = new Thread(this, "UDPReceiver-" + Integer.toString(port));
 
