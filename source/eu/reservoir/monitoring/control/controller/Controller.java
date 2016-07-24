@@ -14,9 +14,11 @@ import eu.reservoir.monitoring.core.PlaneInteracter;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 import eu.reservoir.monitoring.im.dht.DHTInfoPlaneRoot;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
-import java.util.Scanner;
+import java.util.Properties;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
@@ -33,10 +35,11 @@ public class Controller {
     private ControllerManagementConsole console = null;
     private DeploymentDelegate deploymentManager; 
     private JSONProbeCatalogue probeCatalogue;
+    private Boolean usingDeploymentManager;
     
     private Controller() {}
     
-    private void init(String infoPlaneAddr, int infoPlanePort, int managementPort, String probesPackage) {
+    private void init(String infoPlaneAddr, int infoPlanePort, int managementPort, String probesPackage, Properties pr) {
         
         // we create an object to interact to the Lattice planes  
         planeInteracter = new BasicConsumer();
@@ -53,17 +56,24 @@ public class Controller {
         
         planeInteracter.connect();
         
-        // paramaters should be read from a conf file
-        deploymentManager = new SSHDeploymentManager("/Users/uceeftu/Work/lattice-monitoring-framework/5Gex-Lattice/dist",
-                                                     "5GEx-Lattice.jar",
-                                                     "/tmp",
-                                                     "eu.fivegex.demo.SimpleDataSourceDaemon");
+        this.usingDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.enabled", "false"));
+        
+        String localJarPath = pr.getProperty("deployment.localJarPath");
+        String jarFileName = pr.getProperty("deployment.jarFileName");
+        String remoteJarPath = pr.getProperty("deployment.remoteJarPath");
+        String dsClassName = pr.getProperty("deployment.dsClassName");
+        
+        if (this.usingDeploymentManager && localJarPath != null && jarFileName != null && remoteJarPath != null && dsClassName != null) {
+            System.out.println("Starting Deployment Manager");
+            deploymentManager = new SSHDeploymentManager(localJarPath, jarFileName, remoteJarPath, dsClassName);
+        }
+        else
+            System.out.println("Deployment Manager was not started");
         
         probeCatalogue = new JSONProbeCatalogue(probesPackage);
         
         console=new ControllerManagementConsole(this, managementPort);
-        console.start();
-        
+        console.start();   
     }
     
     
@@ -194,18 +204,24 @@ public class Controller {
         result.put("operation", "startDS");
         result.put("endpoint",endPoint);
         
-        try {
-            // we should check here if a DS is already deployed/running on that endpoint
-            //if (
-                this.deploymentManager.deployDS(endPoint, userName); //{
-                createdDsID = this.deploymentManager.startDS(endPoint, userName, "");
-                result.put("createdDsID", createdDsID.toString());
-                result.put("success", true);
-            //}
-        } catch (DeploymentException ex) {
-            result.put("success", false);
-            result.put("msg", ex.getMessage());
-          }
+        if (this.usingDeploymentManager) {
+            try {
+                // we should check here if a DS is already deployed/running on that endpoint
+                //if (
+                    this.deploymentManager.deployDS(endPoint, userName); //{
+                    createdDsID = this.deploymentManager.startDS(endPoint, userName, "");
+                    result.put("createdDsID", createdDsID.toString());
+                    result.put("success", true);
+                //}
+            } catch (DeploymentException ex) {
+                result.put("success", false);
+                result.put("msg", ex.getMessage());
+              }
+            }
+        else {
+             result.put("success", false);
+             result.put("msg", "Deployment Manager is not running");
+        }
         
         return result;
     }
@@ -217,7 +233,7 @@ public class Controller {
         result.put("operation", "getProbesCatalogue");
         
         try {
-            this.probeCatalogue.searchForProbes();
+            this.probeCatalogue.searchForProbesInJars();
             this.probeCatalogue.generateProbesCatalogue();
             JSONObject catalogue = this.probeCatalogue.getProbeCatalogue();
             result.put("probesCatalogue", catalogue);
@@ -234,23 +250,60 @@ public class Controller {
     
     
     public static void main(String[] args) throws IOException {
-        Controller myController = Controller.getInstance();
-
-        //set the control plane host and port: this will be the root of the DHT
-
-        String currentHost="localhost";
+        Properties prop = new Properties();
+	InputStream input = null;
+        String propertiesFile = null;
+        
+        // setting some default values
         int infoPlaneLocalPort = 6699;
         int restConsolePort = 6666;
         String probePackage = "eu.fivegex.demo.probes";
+        
+        if (args.length == 0)
+            propertiesFile = System.getProperty("user.home") + "/controller.properties";
+        else if (args.length == 1)
+            propertiesFile = args[0];
+        else {
+            System.out.println("Please use: java Controller [file.properties]");
+            System.exit(1);
+        }
+        
+	try {
+            input = new FileInputStream(propertiesFile);
 
+            // load a properties file
+            prop.load(input);
+
+            // get the property value and print it out
+            infoPlaneLocalPort = Integer.parseInt(prop.getProperty("info.localport"));
+            restConsolePort = Integer.parseInt(prop.getProperty("restconsole.localport"));
+            probePackage = prop.getProperty("probes.package");
+            
+	} catch (IOException ex) {
+		System.out.println("Error while opening the property file: " + ex.getMessage());
+                System.out.println("Falling back to default configuration values");
+	} catch (NumberFormatException ex) {
+                System.out.println("Error while parsing property file: " + propertiesFile + ", " + ex.getMessage());
+                System.out.println("Falling back to default configuration values");
+        } finally {        
+            if (input != null) {
+                try {
+                    input.close();
+                    } catch (IOException e) {        
+                    }
+            }
+        }
+        
+        Controller myController = Controller.getInstance();
+        String currentHost="localhost";
+        
          try {
             currentHost = InetAddress.getLocalHost().getHostName();   
             System.out.println(currentHost);
         } catch (Exception e) {
-        }        
-
-
-        myController.init(currentHost, infoPlaneLocalPort, restConsolePort, probePackage);
+        }
+         
+        myController.init(currentHost, infoPlaneLocalPort, restConsolePort, probePackage, prop);
         
     }
 }

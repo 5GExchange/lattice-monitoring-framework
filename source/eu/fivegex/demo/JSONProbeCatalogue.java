@@ -55,9 +55,11 @@ public final class JSONProbeCatalogue extends AbstractProbeCatalogue {
     
     
     public static void main (String[] args) throws ClassNotFoundException, IOException, JSONException {
-        JSONProbeCatalogue c = new JSONProbeCatalogue("eu.fivegex.demo.probes");
+        //JSONProbeCatalogue c = new JSONProbeCatalogue("eu.fivegex.demo.probes");
+        JSONProbeCatalogue c = new JSONProbeCatalogue("eu.fivegex.demo");
     
-        c.searchForProbes();
+        c.searchForProbesInJars();
+        c.searchForProbesInDirectory();
         c.generateProbesCatalogue();
         System.out.println(c.getProbeCatalogue().toString(5));
     }

@@ -161,9 +161,41 @@ public class RestClient {
         }
     }
     
+   
+    // curl -X GET http://localhost:6666/probe/catalogue/
+    public JSONObject getProbesCatalogue() throws JSONException {
+        try {
+            String uri = vimURI + "/probe/catalogue/";
+            
+            JSONObject jsobj = rest.json(uri).toObject();
+
+            return jsobj;
+        } catch (IOException ioe) {
+            throw new JSONException("getProbesCatalogue FAILED" + " IOException: " + ioe.getMessage());
+        }
+    }
+    
+    
+    //curl -X POST http://localhost:6666/datasource/?endpoint=<endpoint>\&username=<username>
+    public JSONObject deployDS(String endPoint, String userName) throws JSONException {
+        try {
+            String uri = vimURI + "/datasource/?endpoint=" + endPoint + "&username=" + userName;
+            
+            JSONObject jsobj = rest.json(uri, form("")).toObject();
+
+            return jsobj;
+        } catch (IOException ioe) {
+            throw new JSONException("deployDS FAILED" + " IOException: " + ioe.getMessage());
+        }
+    }
+    
+    
+    
     
     public static void main(String[] args) throws IOException, JSONException {
         RestClient client = new RestClient("localhost", 6666);
+        
+        /* just for testing */
         
         Scanner keyboard = new Scanner(System.in);
         System.out.println("Enter the DS name to load the probe on: ");
@@ -172,7 +204,7 @@ public class RestClient {
         //creating a random probe on DS dsName
         JSONObject out;
         System.out.println("Creating probe");
-        out = client.loadProbeOnDsByName(dsName, "eu.fivegex.demo.RandomProbe", "myProbe+myAttribute+15");
+        out = client.loadProbeOnDsByName(dsName, "eu.fivegex.demo.probes.RandomProbe", "myProbe+myAttribute+15");
         System.in.read();
         
         //getting created probe ID
@@ -197,6 +229,13 @@ public class RestClient {
         System.out.println("unloading probe: " + probeID);
         client.unloadProbe(probeID);
         System.in.read();
+        
+        System.out.println("getting probes catalogue: ");
+        System.out.println(client.getProbesCatalogue());
+        System.in.read();
+        
+        System.out.println("deploying DS");
+        System.out.println(client.deployDS("192.168.56.101", "osboxes"));
         }
 }
 
