@@ -5,6 +5,7 @@
  */
 package eu.reservoir.monitoring.control.controller;
 
+import eu.fivegex.demo.CatalogueException;
 import eu.fivegex.demo.JSONProbeCatalogue;
 import eu.fivegex.demo.SSHDeploymentManager;
 import eu.reservoir.monitoring.appl.BasicConsumer;
@@ -233,12 +234,10 @@ public class Controller {
         result.put("operation", "getProbesCatalogue");
         
         try {
-            this.probeCatalogue.searchForProbesInJars();
-            this.probeCatalogue.generateProbesCatalogue();
             JSONObject catalogue = this.probeCatalogue.getProbeCatalogue();
             result.put("probesCatalogue", catalogue);
             result.put("success", true);
-        } catch (JSONException | ClassNotFoundException | IOException ex) {
+        } catch (CatalogueException ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());
           }

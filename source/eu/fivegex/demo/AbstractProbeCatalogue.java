@@ -31,7 +31,7 @@ public abstract class AbstractProbeCatalogue {
         
     }
     
-    public void searchForProbesInDirectory() throws ClassNotFoundException, IOException {
+    private void searchForProbesInDirectory() throws ClassNotFoundException, IOException {
         System.out.println("Search for Probes in directories:");
         ClassLoader cld = Thread.currentThread().getContextClassLoader();
         Enumeration<URL> resources = cld.getResources(this.probesPackage);
@@ -56,20 +56,20 @@ public abstract class AbstractProbeCatalogue {
     }
     
     
-    public void searchForProbesInJars() throws ClassNotFoundException, IOException {
+    private void searchForProbesInJars() throws ClassNotFoundException, IOException {
         System.out.println("Search for Probes in jars");
         String jarPath; 
         URL[] jarURLArray = ((URLClassLoader) Thread.currentThread().getContextClassLoader()).getURLs();
         
-        for (URL u : jarURLArray)
-            System.out.println(u.getPath());
-        
         if (jarURLArray == null) {
             throw new ClassNotFoundException("Can't get class loader.");
+        } 
+        else if (jarURLArray.length > 1) 
+                return; //we look in the whole single jar only
+        else {
+            jarPath = jarURLArray[0].getPath(); // we consider the current single jar only from the array
+            System.out.println(jarPath);
         }
-        else 
-            jarPath = jarURLArray[0].getPath(); // we assume we have the current jar only in the array
-
         JarFile jarFile = null;
 
         jarFile = new JarFile(jarPath);
@@ -77,7 +77,7 @@ public abstract class AbstractProbeCatalogue {
         while (en.hasMoreElements()) {
             JarEntry entry = en.nextElement();
             String entryName = entry.getName();
-            // although directories are hierarchical java packages shouldn't be: looking inside p1.p2.p3 should not look into p1.p2.p3.p4
+            // although directories are hierarchical java packages shouldn't be: looking inside p1.p2.p3 should not include p1.p2.p3.p4
             if (entryName != null && entryName.matches(probesPackage + "/[^/|\\.]*\\.class")) {
                     //System.out.println("entryName: "  + entryName);
                     Class entryClass = Class.forName(entryName.substring(0, entryName.length() - 6).replace("/", "."));
@@ -87,6 +87,12 @@ public abstract class AbstractProbeCatalogue {
                     }
             }
         }    
+    }
+    
+    
+    public void SearchForProbes() throws ClassNotFoundException, IOException {
+        this.searchForProbesInDirectory();
+        this.searchForProbesInJars();
     }
     
 }

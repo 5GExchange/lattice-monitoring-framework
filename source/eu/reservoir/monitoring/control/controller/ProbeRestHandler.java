@@ -86,8 +86,11 @@ class ProbeRestHandler extends BasicRequestHandler {
                     if (name == null && segments.length == 2)
                         getProbesCatalogue(request, response);
                     else 
-                        badRequest(response, "Unknown method" + method);
+                        notFound(response, "GET bad request");  
             }
+            
+            else 
+                badRequest(response, "Unknown method" + method);
             
             return true;
             

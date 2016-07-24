@@ -25,7 +25,10 @@ public final class JSONProbeCatalogue extends AbstractProbeCatalogue {
     }
     
     
-    public void generateProbesCatalogue() throws JSONException {
+    public void generateProbesCatalogue() throws ClassNotFoundException, JSONException, IOException {
+        // searching for probes
+        super.SearchForProbes();
+        
         for (Class cl : probeClasses) {   
             JSONObject probeInfo = new JSONObject();
             //System.out.println(cl.getName());
@@ -49,19 +52,24 @@ public final class JSONProbeCatalogue extends AbstractProbeCatalogue {
     }
     
     
-    public JSONObject getProbeCatalogue() {
+    public JSONObject getProbeCatalogue() throws CatalogueException {
+        try {
+            this.generateProbesCatalogue();
+        } catch (ClassNotFoundException | JSONException | IOException ex) {
+            throw new CatalogueException(ex.getMessage());
+        }
         return probeCatalogue;
     }
     
     
-    public static void main (String[] args) throws ClassNotFoundException, IOException, JSONException {
-        //JSONProbeCatalogue c = new JSONProbeCatalogue("eu.fivegex.demo.probes");
-        JSONProbeCatalogue c = new JSONProbeCatalogue("eu.fivegex.demo");
-    
-        c.searchForProbesInJars();
-        c.searchForProbesInDirectory();
-        c.generateProbesCatalogue();
-        System.out.println(c.getProbeCatalogue().toString(5));
+    public static void main (String[] args) {
+        JSONProbeCatalogue c = new JSONProbeCatalogue("eu.fivegex.demo.probes");
+        //JSONProbeCatalogue c = new JSONProbeCatalogue("eu.fivegex.demo");
+        try {
+            System.out.println(c.getProbeCatalogue().toString(5));
+        } catch (CatalogueException | JSONException ex) {
+            System.out.println("Error while retrieving the Probes Catalogue: " + ex.getMessage());
+        }
     }
     
     
