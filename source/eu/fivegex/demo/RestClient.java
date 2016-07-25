@@ -13,10 +13,6 @@ import us.monoid.web.Resty;
 import static us.monoid.web.Resty.delete;
 import static us.monoid.web.Resty.put;
 import static us.monoid.web.Resty.content;
-import static us.monoid.web.Resty.data;
-import static us.monoid.web.Resty.form;
-import static us.monoid.web.Resty.content;
-import static us.monoid.web.Resty.data;
 import static us.monoid.web.Resty.form;
 
 /**
