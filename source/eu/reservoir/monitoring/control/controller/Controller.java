@@ -65,8 +65,8 @@ public class Controller {
         String dsClassName = pr.getProperty("deployment.dsClassName");
         
         if (this.usingDeploymentManager && localJarPath != null && jarFileName != null && remoteJarPath != null && dsClassName != null) {
-            System.out.println("Starting Deployment Manager");
             deploymentManager = new SSHDeploymentManager(localJarPath, jarFileName, remoteJarPath, dsClassName);
+            System.out.println("Deployment Manager was started");
         }
         else
             System.out.println("Deployment Manager was not started");
@@ -140,9 +140,13 @@ public class Controller {
         result.put("operation", "loadProbe");
         result.put("probeClassName",probeClassName);
         
-        Object [] probeArgsAsObjects = (Object[])probeArgs.split(" ");
+        Object [] probeArgsAsObjects = new Object[0];
         
-        System.out.println("Received arguments:");
+        if (probeArgs != null) {
+            probeArgsAsObjects = (Object[])probeArgs.split(" ");
+        }
+        
+        System.out.println("Received " + probeArgsAsObjects.length + " arguments:");
         for (Object o : probeArgsAsObjects)
             System.out.println((String)o);
         

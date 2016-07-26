@@ -36,9 +36,10 @@ public final class ProbeLoader implements Serializable {
     
     public void initProbe() throws Exception {
         try {
+            System.out.println("Loading Class: " + probeClassName);
             clazz = Class.forName(probeClassName);
             // check if the class implements the right interface
-            Class<? extends Probe> appClazz = clazz.asSubclass(Probe.class);
+            probeClazz = clazz.asSubclass(Probe.class);
             
             // we build an array with the Class types of the provided Parameters
             Class [] paramsTypes = new Class[constructorParameters.length];
@@ -46,13 +47,13 @@ public final class ProbeLoader implements Serializable {
             for (int i=0; i<constructorParameters.length; i++)
                 paramsTypes[i]=constructorParameters[i].getClass();
             
-            cons0 = appClazz.getConstructor(paramsTypes);
+            cons0 = probeClazz.getConstructor(paramsTypes);
             
             // create an instance of the Probe
             probe = cons0.newInstance(constructorParameters);
             
-            } catch (ClassCastException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | ClassNotFoundException ex) {
-                // it is not a Probe, so we can't run it
+            }  catch ( Exception ex /*ClassNotFoundException | InstantiationException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex*/) {
+                System.out.println("Exception in ProbeLoader" + ex.getMessage());
                 throw new Exception(ex);
             }   
     }
