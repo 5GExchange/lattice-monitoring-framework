@@ -102,7 +102,8 @@ class DataSourceRestHandler extends BasicRequestHandler {
         String dsID;
         String dsName;
         String className;
-        String rawArgs="";
+        //String rawArgs="";
+        String rawArgs=null;
         
         if (query.containsKey("className")) {
             className = query.get("className");

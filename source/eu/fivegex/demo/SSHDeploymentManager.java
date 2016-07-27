@@ -63,6 +63,8 @@ public class SSHDeploymentManager implements DeploymentDelegate {
             
             // we are starting the DS here without providing paramaters, this should be done either using a DS conf file
             // or passing the paramaters as an array
+
+            //we could think of appending additional entries to the classpath to allow loading external probes
             String command="java -cp " + this.remoteJarFilePath + "/" + this.jarFileName + " " + this.dsFileName + " <&- & echo PID: $! <&- &";
             
             channel=session.openChannel("exec");
