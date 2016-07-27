@@ -12,6 +12,7 @@ import com.jcraft.jsch.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Hashtable;
 
 /**
  *
@@ -22,7 +23,8 @@ public class SSHDeploymentManager implements DeploymentDelegate {
     private final String remoteJarFilePath;
     private final String jarFileName;
     private final String dsFileName;
-    private final JSch jsch; 
+    private final JSch jsch;
+    private Hashtable<String, SSHDeploymentInfo> hashDS;
     //private Session session;
     
     // we should also create a data structure to keep track of what is deployed where
@@ -35,6 +37,7 @@ public class SSHDeploymentManager implements DeploymentDelegate {
         this.jarFileName = jarFileName;
         this.dsFileName = dsFileName;
         this.jsch = new JSch();
+        this.hashDS=new Hashtable<String,SSHDeploymentInfo>();
     }
     
     // if we do not use pkey authentication, we may use the same credentials for all the endpoints
@@ -52,6 +55,7 @@ public class SSHDeploymentManager implements DeploymentDelegate {
     @Override
     public ID startDS(String endPoint, String userName, String confFile) throws DeploymentException {
         String dsID="";
+        Integer pidCommand = null;
         Session session=null;
         Channel channel=null;
         try {
@@ -59,9 +63,9 @@ public class SSHDeploymentManager implements DeploymentDelegate {
             
             // we are starting the DS here without providing paramaters, this should be done either using a DS conf file
             // or passing the paramaters as an array
-            
+
             //we could think of appending additional entries to the classpath to allow loading external probes
-            String command="java -cp " + this.remoteJarFilePath + "/" + this.jarFileName + " " + this.dsFileName + " <&- &";
+            String command="java -cp " + this.remoteJarFilePath + "/" + this.jarFileName + " " + this.dsFileName + " <&- & echo PID: $! <&- &";
             
             channel=session.openChannel("exec");
             ((ChannelExec)channel).setCommand(command);
@@ -74,7 +78,6 @@ public class SSHDeploymentManager implements DeploymentDelegate {
             channel.connect(5000);
             
             byte[] tmp=new byte[1024];
-            
             while (true) {
                     while (in.available() > 0) {
                         int i=in.read(tmp, 0, 1024);
@@ -83,11 +86,18 @@ public class SSHDeploymentManager implements DeploymentDelegate {
                         String [] output = (new String(tmp, 0, i)).split("\\r?\\n"); // split the output in different lines
                         
                         // looking for the DS id (UUID)
+
                         for (String line: output) {
-                            if (line.matches("DataSource ID: [0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"))
-                                dsID = line.substring("DataSource ID: ".length()); // getting the dsID as string removing "DataSource ID: "
+                            
+							if (line.matches("DataSource ID: [0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")){
+								dsID = line.substring("DataSource ID: ".length()); // getting the dsID as string removing "DataSource ID: "
+							}
+							
+							if (line.matches("PID: [0-9]+")){
+                            	pidCommand = Integer.parseInt(line.substring("PID: ".length())); // getting the dsID as string removing "DataSource ID: "
+                        	}
+
                         }
-                        //System.out.println(dsID);   
                     }
                     
                     if (channel.isClosed()) {
@@ -101,6 +111,7 @@ public class SSHDeploymentManager implements DeploymentDelegate {
                     try { Thread.sleep(1000);
                         } catch(Exception ee) {}
             }
+
         
         } catch (JSchException | IOException e)
             {
@@ -113,8 +124,14 @@ public class SSHDeploymentManager implements DeploymentDelegate {
             }
           }
         
-    if (dsID != null)
+    if (dsID != null){
+    	SSHDeploymentInfo DsInfo = new SSHDeploymentInfo();
+    	DsInfo.setDsId(ID.fromString(dsID));
+    	DsInfo.setEndPoint(endPoint);
+    	DsInfo.setDsPid(pidCommand);
+    	this.hashDS.put(endPoint, DsInfo);
         return ID.fromString(dsID);
+    }
     else
         throw new DeploymentException("Error: cannot get the DS ID, the endpoint" + endPoint + "may be unreachable");
     }
@@ -161,7 +178,22 @@ public class SSHDeploymentManager implements DeploymentDelegate {
     public boolean deployProbeClass(String endpoint, String userName, String classFile) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-   
+    
+    
+    @Override
+    public Hashtable<String, SSHDeploymentInfo> getHashDS() {
+    	return this.hashDS;
+    }
+    
+    @Override
+    public void setHashDS(Hashtable<String, SSHDeploymentInfo> hashDS) {
+    	this.hashDS = hashDS;
+    }
+    
+    @Override
+    public void putHashDS(String endPoint, SSHDeploymentInfo dsInfo) {
+    	this.hashDS.put(endPoint, dsInfo);
+    }
     
     public static void main (String [] args) { 
         try {
@@ -173,8 +205,8 @@ public class SSHDeploymentManager implements DeploymentDelegate {
             
             System.out.println(dm.deployDS("192.168.56.101", "osboxes"));
             System.in.read();
-            
-            System.out.println(dm.startDS("192.168.56.101", "osboxes", "not yet used"));
+            ID dataSourceID = dm.startDS("192.168.56.101", "osboxes", "not yet used");
+            System.out.println("DataSouroceID: "+dataSourceID);
         } catch (DeploymentException | IOException ex) {
             System.out.println(ex.getMessage());
           }
