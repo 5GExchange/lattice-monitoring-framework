@@ -16,6 +16,8 @@ import eu.reservoir.monitoring.core.plane.InfoPlane;
 import eu.reservoir.monitoring.im.dht.DHTInfoPlaneRoot;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.Scanner;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
@@ -25,7 +27,7 @@ import us.monoid.json.JSONObject;
  * @author uceeftu
  */
 public class Controller {
-
+	
     private static final Controller controller = new Controller();
     private PlaneInteracter planeInteracter;
     private InfoResolver resolver;
@@ -54,10 +56,11 @@ public class Controller {
         planeInteracter.connect();
         
         // paramaters should be read from a conf file
-        deploymentManager = new SSHDeploymentManager("/Users/uceeftu/Work/lattice-monitoring-framework/5Gex-Lattice/dist",
+        deploymentManager = new SSHDeploymentManager(".",
                                                      "5GEx-Lattice.jar",
-                                                     "/tmp",
+                                                     ".",
                                                      "eu.fivegex.demo.SimpleDataSourceDaemon");
+        
         
         probeCatalogue = new JSONProbeCatalogue(probesPackage);
         
@@ -189,24 +192,34 @@ public class Controller {
     JSONObject startDS(String endPoint, String userName) throws JSONException {
         JSONObject result = new JSONObject();
         
-        ID createdDsID;
+        ID createdDsID = null;
         
         result.put("operation", "startDS");
         result.put("endpoint",endPoint);
         
+        // we should check here if a DS is already deployed/running on that endpoint
         try {
-            // we should check here if a DS is already deployed/running on that endpoint
-            //if (
-                this.deploymentManager.deployDS(endPoint, userName); //{
-                createdDsID = this.deploymentManager.startDS(endPoint, userName, "");
-                result.put("createdDsID", createdDsID.toString());
-                result.put("success", true);
-            //}
-        } catch (DeploymentException ex) {
+        	if (this.deploymentManager.getHashDS().get(endPoint) == null){
+	            this.deploymentManager.deployDS(endPoint, userName);
+	            createdDsID = this.deploymentManager.startDS(endPoint, userName, "");
+	            result.put("createdDsID", createdDsID.toString());
+	            result.put("success", true);
+        	}else {
+	        	result.put("createdDsID", this.deploymentManager.getHashDS().get(endPoint).getDsId().toString());
+        		result.put("msg", "In "+endPoint+" there is a DataSource deployed: "+ this.deploymentManager.getHashDS().get(endPoint).getDsId().toString());;
+	        	result.put("success", false);
+	        }
+        }catch (DeploymentException ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());
-          }
-        
+        }
+        System.out.println("Showing hashDS deployed: "+ this.deploymentManager.getHashDS().get(endPoint).DsInfoToString());
+//        //Printing All DS deployed
+//        System.out.println("Showing All hashDS deployed.");
+//        Enumeration <String> index = this.deploymentManager.getHashDS().keys();
+//        while(index.hasMoreElements()){
+//            System.out.println("Showing hashDS: "+ this.deploymentManager.getHashDS().get(index.nextElement()).DsInfoToString());	
+//        }
         return result;
     }
     

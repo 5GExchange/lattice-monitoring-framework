@@ -5,6 +5,9 @@
  */
 package eu.reservoir.monitoring.control.controller;
 
+import java.util.Hashtable;
+
+import eu.fivegex.demo.SSHDeploymentInfo;
 import eu.reservoir.monitoring.core.ID;
 
 /**
@@ -19,5 +22,12 @@ public interface DeploymentDelegate {
     public boolean deployDS(String endPoint, String userName) throws DeploymentException;
     
     public boolean deployProbeClass(String endPoint, String userName, String classFile);
+
+	public Hashtable<String, SSHDeploymentInfo> getHashDS();
+
+	public void setHashDS(Hashtable<String, SSHDeploymentInfo> hashDS);
+
+	public void putHashDS(String endPoint, SSHDeploymentInfo dsInfo);
+    
     
 }
