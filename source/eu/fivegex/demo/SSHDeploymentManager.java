@@ -124,16 +124,16 @@ public class SSHDeploymentManager implements DeploymentDelegate {
             }
           }
         
-    if (dsID != null){
-    	SSHDeploymentInfo DsInfo = new SSHDeploymentInfo();
-    	DsInfo.setDsId(ID.fromString(dsID));
-    	DsInfo.setEndPoint(endPoint);
-    	DsInfo.setDsPid(pidCommand);
-    	this.hashDS.put(endPoint, DsInfo);
-        return ID.fromString(dsID);
-    }
-    else
-        throw new DeploymentException("Error: cannot get the DS ID, the endpoint" + endPoint + "may be unreachable");
+        if (dsID != null){
+            SSHDeploymentInfo DsInfo = new SSHDeploymentInfo();
+            DsInfo.setDsId(ID.fromString(dsID));
+            DsInfo.setEndPoint(endPoint);
+            DsInfo.setDsPid(pidCommand);
+            this.hashDS.put(endPoint, DsInfo);
+            return ID.fromString(dsID);
+        }
+        else
+            throw new DeploymentException("Error: cannot get the DS ID, the endpoint" + endPoint + "may be unreachable");
     }
     
     

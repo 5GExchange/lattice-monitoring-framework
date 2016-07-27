@@ -109,5 +109,9 @@ public class ID implements Serializable {
             return uuid.toString();
         }
     }
+    
+    public UUID getUUID() {
+        return this.uuid;
+    }
 
 }
