@@ -45,7 +45,7 @@ public class SSHDeploymentManager implements DeploymentDelegate {
         Session session = this.jsch.getSession(userName, endPoint, 22);
         
         //this is just for testing: using the same password here regardless of the actual userName 
-        session.setPassword("fge-pass");
+        session.setPassword("osboxes.org");
         session.setConfig("StrictHostKeyChecking", "no"); //ignore unknown hosts
         session.connect(5000);
         return session;
@@ -197,15 +197,15 @@ public class SSHDeploymentManager implements DeploymentDelegate {
     
     public static void main (String [] args) { 
         try {
-            SSHDeploymentManager dm = new SSHDeploymentManager(".",
+            SSHDeploymentManager dm = new SSHDeploymentManager("/Users/uceeftu/Work/lattice-monitoring-framework/5Gex-Lattice/dist",
                                                                "5GEx-Lattice.jar",
-                                                               ".",
+                                                               "/tmp",
                                                                "eu.fivegex.demo.SimpleDataSourceDaemon"
                                                               );
             
-            System.out.println(dm.deployDS("192.168.55.10", "fivegex"));
+            System.out.println(dm.deployDS("192.168.56.101", "osboxes"));
             System.in.read();
-            ID dataSourceID = dm.startDS("192.168.55.10", "fivegex", "not yet used");
+            ID dataSourceID = dm.startDS("192.168.56.101", "osboxes", "not yet used");
             System.out.println("DataSouroceID: "+dataSourceID);
         } catch (DeploymentException | IOException ex) {
             System.out.println(ex.getMessage());
