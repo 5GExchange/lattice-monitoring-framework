@@ -68,8 +68,10 @@ public class Controller {
             deploymentManager = new SSHDeploymentManager(localJarPath, jarFileName, remoteJarPath, dsClassName);
             System.out.println("Deployment Manager was started");
         }
-        else
+        else {
             System.out.println("Deployment Manager was not started");
+            this.usingDeploymentManager = false;
+        }
         
         probeCatalogue = new JSONProbeCatalogue(probesPackage);
         
