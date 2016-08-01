@@ -188,7 +188,7 @@ class ProbeRestHandler extends BasicRequestHandler {
             complain(response, "no args have been specified");
         }
 
-        if (jsobj.get("success").equals(false)) {
+        if (jsobj.get("success").equals("false")) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("ProbeRestHandler: failure detected: " + failMessage);
             success = false;
@@ -224,7 +224,7 @@ class ProbeRestHandler extends BasicRequestHandler {
 
             jsobj = controller_.unloadProbe(probeID);
 
-            if (jsobj.get("success").equals(false)) {
+            if (jsobj.get("success").equals("false")) {
                 failMessage = (String)jsobj.get("msg");
                 System.out.println("ProbeRestHandler: failure detected: " + failMessage);
                 success = false;   
@@ -265,7 +265,7 @@ class ProbeRestHandler extends BasicRequestHandler {
         
         jsobj = controller_.getProbesCatalogue();
 
-        if (jsobj.get("success").equals(false)) {
+        if (jsobj.get("success").equals("false")) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("getProbesCatalogue: failure detected: " + failMessage);
             success = false;   

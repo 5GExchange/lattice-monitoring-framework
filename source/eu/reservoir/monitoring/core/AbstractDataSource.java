@@ -115,11 +115,12 @@ public abstract class AbstractDataSource implements DataSource, PlaneInteracter,
     /**
      * Add a new probe from its ProbeLoader object
      */
+    /*
     public ID addProbe(ProbeLoader p) {  
         addProbe(p.getProbe());
         return p.getProbe().getID();
     }  
-    
+    */
     
     
     /**

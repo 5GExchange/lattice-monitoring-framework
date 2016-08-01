@@ -5,10 +5,8 @@
 
 package eu.reservoir.monitoring.core;
 
-import eu.reservoir.monitoring.appl.BasicDataSource;
 import eu.reservoir.monitoring.core.plane.*;
 import java.io.Serializable;
-import java.io.IOException;
 
 /**
  * A DataSourceDelegate is a delegate for a DataSource
@@ -519,11 +517,11 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
 	return true;
     }
 
-    
+    @Override
     public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception {  
         ProbeLoader p = new ProbeLoader(probeClassName, probeArgs);
-        if (dataSource instanceof BasicDataSource)
-           return ((BasicDataSource)dataSource).addProbe(p);
+        if (dataSource instanceof ControllableDataSource)
+           return ((ControllableDataSource)dataSource).addProbe(p);
         else
            throw new Exception("Probe cannot be loaded on that DS");
         }

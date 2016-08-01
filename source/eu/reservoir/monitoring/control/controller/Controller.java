@@ -19,9 +19,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Scanner;
 import java.util.Properties;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
@@ -210,40 +207,36 @@ public class Controller {
     JSONObject startDS(String endPoint, String userName) throws JSONException {
         JSONObject result = new JSONObject();
         
-        ID createdDsID = null;
+        ID startedDsID;
         
         result.put("operation", "startDS");
         result.put("endpoint",endPoint);
-        
-        // we should check here if a DS is already deployed/running on that endpoint
-		if (this.usingDeploymentManager) {
-			try {
-	        	if (this.deploymentManager.getHashDS().get(endPoint) == null){
-		            this.deploymentManager.deployDS(endPoint, userName);
-		            createdDsID = this.deploymentManager.startDS(endPoint, userName, "");
-		            result.put("createdDsID", createdDsID.toString());
-		            result.put("success", true);
-	        	}else {
-		        	result.put("createdDsID", this.deploymentManager.getHashDS().get(endPoint).getDsId().toString());
-	        		result.put("msg", "In "+endPoint+" there is a DataSource deployed: "+ this.deploymentManager.getHashDS().get(endPoint).getDsId().toString());;
-		        	result.put("success", false);
-		        }
-	        }catch (DeploymentException ex) {
-	            result.put("success", false);
-	            result.put("msg", ex.getMessage());
-	        }
-		}else {
-             result.put("success", false);
-             result.put("msg", "Deployment Manager is not running");
+
+        if (this.usingDeploymentManager) {
+            try {
+                this.deploymentManager.deployDS(endPoint, userName); //check return and verify if was already deployed or not
+                startedDsID = this.deploymentManager.startDS(endPoint, userName, "");
+
+                if (startedDsID == null) {
+                    result.put("msg", "a Data Source is already running on the endpoint");
+                    result.put("success", false);
+                }
+
+                else {
+                    result.put("startedDsID", startedDsID.toString());
+                    result.put("success", true);
+                }
+
+            } catch (DeploymentException ex) {
+                    result.put("success", false);
+                    result.put("msg", ex.getMessage());
+              }
         }
-        System.out.println("Showing hashDS deployed: "+ this.deploymentManager.getHashDS().get(endPoint).DsInfoToString());
-//        //Printing All DS deployed
-//        System.out.println("Showing All hashDS deployed.");
-//        Enumeration <String> index = this.deploymentManager.getHashDS().keys();
-//        while(index.hasMoreElements()){
-//            System.out.println("Showing hashDS: "+ this.deploymentManager.getHashDS().get(index.nextElement()).DsInfoToString());	
-//        }
-        return result;
+        else {
+            result.put("success", false);
+            result.put("msg", "Deployment Manager is not running");
+        }
+    return result;
     }
     
     

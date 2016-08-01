@@ -137,7 +137,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
             jsobj = controller_.loadProbe(dsID, className, rawArgs);  
         }
         
-        if (jsobj.get("success").equals(false)) {
+        if (jsobj.get("success").equals("false")) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("createProbe: failure detected: " + failMessage);
             success = false;   
@@ -186,8 +186,9 @@ class DataSourceRestHandler extends BasicRequestHandler {
         JSONObject jsobj = null;
         
         jsobj = controller_.startDS(endPoint, userName);
+        System.out.println("JSON: --->" + jsobj);
         
-        if (jsobj.get("success").equals(false)) {
+        if (jsobj.get("success").equals("false")) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("startDS: failure detected: " + failMessage);
             success = false;   

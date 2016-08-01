@@ -23,11 +23,16 @@ public interface DeploymentDelegate {
     
     public boolean deployProbeClass(String endPoint, String userName, String classFile);
 
+    boolean isDSdeployed(String endPoint);
+    
+    boolean isDSrunning(String endPoint);
+    
+    /*
 	public Hashtable<String, SSHDeploymentInfo> getHashDS();
 
 	public void setHashDS(Hashtable<String, SSHDeploymentInfo> hashDS);
 
 	public void putHashDS(String endPoint, SSHDeploymentInfo dsInfo);
-    
+    */
     
 }

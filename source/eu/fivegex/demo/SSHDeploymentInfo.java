@@ -3,33 +3,27 @@ package eu.fivegex.demo;
 import eu.reservoir.monitoring.core.ID;
 
 public class SSHDeploymentInfo {
-	private String endPoint;
-	private ID DsId;
-	private Integer DsPid;
-	
-	public String getEndPoint() {
-		return endPoint;
-	}
-	public void setEndPoint(String endPoint) {
-		this.endPoint = endPoint;
-	}
+	private ID dsId;
+	private Integer dsPid;
+
 	public ID getDsId() {
-		return DsId;
+		return dsId;
 	}
 	public void setDsId(ID dsId) {
-		DsId = dsId;
+		this.dsId = dsId;
 	}
 	public Integer getDsPid() {
-		return DsPid;
+		return dsPid;
 	}
 	public void setDsPid(Integer dsPid) {
-		DsPid = dsPid;
+		this.dsPid = dsPid;
 	}
-	public String DsInfoToString(){
-		String DsInfoString="";
-		DsInfoString += "\n endPoint: "+this.endPoint;
-		DsInfoString += "\n ID: "+this.DsId;
-		DsInfoString += "\n PID: "+this.DsPid;
-		return DsInfoString;
+        
+        @Override
+	public String toString(){
+		String dsInfoString="";
+		dsInfoString += "\n dsID: "+this.dsId;
+		dsInfoString += "\n PID: "+this.dsPid;
+		return dsInfoString;
 	}
 }

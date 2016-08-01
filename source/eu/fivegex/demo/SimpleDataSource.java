@@ -5,9 +5,8 @@
 
 package eu.fivegex.demo;
 
-import eu.reservoir.monitoring.appl.BasicDataSource;
 import eu.reservoir.monitoring.control.udp.UDPControlPlaneConsumer;
-import eu.reservoir.monitoring.core.AbstractDataSource;
+import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.DataSourceInteracter;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
@@ -21,9 +20,7 @@ import java.util.Scanner;
  * This DataSource in a basic control point for probes that uses a Control Plane and an Info Plane
  */
 public class SimpleDataSource {
-    // The DataSource, TODO: maybe we should modify the definition of the DataSource interface to include loadProbe
-    // or creating a ControllableDataSource interface
-    AbstractDataSource ds;
+    ControllableDataSource ds;
 
     /*
      * Construct a SimpleDataSource with no loaded probes.
@@ -39,8 +36,7 @@ public class SimpleDataSource {
         
         
 	// set up data source
-	ds = new BasicDataSource(myDsName);
-
+	ds = new ControllableBasicDataSource(myDsName);
         
         System.out.println("Sending data to: " + dataConsumerName + ":" + dataConsumerPort);
         
@@ -120,7 +116,7 @@ public class SimpleDataSource {
                 System.out.println(dsName);
                 
             } else {
-                System.err.println("use: SimpleDataSource myDsName dcAddress dcPort infoHost infoRemotePort infoLocalPort controlEndPoint controlLocalPort");
+                System.err.println("use: SimpleDataSource dcAddress dcPort infoHost infoRemotePort infoLocalPort controlLocalPort");
                 System.exit(1);
             }            
             

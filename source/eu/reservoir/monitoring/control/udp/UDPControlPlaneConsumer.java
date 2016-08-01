@@ -6,6 +6,7 @@
 package eu.reservoir.monitoring.control.udp;
 
 import eu.reservoir.monitoring.appl.BasicDataSource;
+import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Measurement;
 import eu.reservoir.monitoring.core.Probe;
@@ -183,8 +184,8 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
         try {
             System.out.println("******* UDPControlPlaneConsumer -> loadProbe");
             ProbeLoader p = new ProbeLoader(probeClassName, probeArgs);
-            if (dataSource instanceof BasicDataSource)
-                return ((BasicDataSource)dataSource).addProbe(p);
+            if (dataSource instanceof ControllableDataSource)
+                return ((ControllableDataSource)dataSource).addProbe(p);
             else
                 throw new Exception("Probe cannot be loaded on that DS");
         } catch (Exception ex) {
