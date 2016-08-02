@@ -172,7 +172,7 @@ public class RestClient {
     }
     
     
-    //curl -X POST http://localhost:6666/datasource/?endpoint=<endpoint>\&username=<username>
+    //curl -X POST http://localhost:6666/datasource/?endpoint=<endpoint>\&username=<username>\&args=arg1+arg2+argN
     public JSONObject deployDS(String endPoint, String userName, String args) throws JSONException {
         try {
             String uri = vimURI + "/datasource/?endpoint=" + endPoint + "&username=" + userName + "&args=" + args;
@@ -182,6 +182,19 @@ public class RestClient {
             return jsobj;
         } catch (IOException ioe) {
             throw new JSONException("deployDS FAILED" + " IOException: " + ioe.getMessage());
+        }
+    }
+    
+    
+    public JSONObject stopDS(String endPoint, String userName) throws JSONException {
+        try {
+            String uri = vimURI + "/datasource/?endpoint=" + endPoint + "&username=" + userName;
+            
+            JSONObject jsobj = rest.json(uri, delete()).toObject();
+
+            return jsobj;
+        } catch (IOException ioe) {
+            throw new JSONException("stopDS FAILED" + " IOException: " + ioe.getMessage());
         }
     }
     

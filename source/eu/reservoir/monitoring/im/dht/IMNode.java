@@ -182,7 +182,7 @@ public class IMNode {
      */
     public IMNode removeDataSource(DataSource ds) throws IOException {
 	remDHT("/datasource/" + ds.getID() + "/name");
-
+        remDHT("/datasource/" + ds.getID() + "/inetSocketAddress"); //we also need to remove the control end point
 	Collection<Probe> probes = ds.getProbes();
 
 	// skip through all probes

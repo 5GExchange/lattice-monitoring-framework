@@ -60,120 +60,14 @@ public class SSHDeploymentManager implements DeploymentDelegate {
     
     
     @Override
-    public ID startDS(String endPoint, String userName, String args) throws DeploymentException {
-        String dsID="";
-        Integer pID = null;
-        Session session=null;
-        Channel channel=null;
-        
-        syncRunning.putIfAbsent(endPoint, true);
-        synchronized (syncRunning.get(endPoint)) {
-                    System.out.println(Thread.currentThread().getName() + ": Starting DS - " + System.currentTimeMillis());
-                    try {
-
-                        if (this.isDSrunning(endPoint)) 
-                            return null;
-
-                        session = this.connect(endPoint, userName);
-                        System.out.println(Thread.currentThread().getName() + ": Starting DS Session created - " + System.currentTimeMillis());
-                        // we are starting the DS here without providing paramaters, this should be done either using a DS conf file
-                        // or passing the paramaters as an array
-
-                        String jvm = "java"; //we assume the executable is in the PATH
-                        
-                        //we could think of appending additional entries to the classpath to allow loading external probes
-                        String command = jvm + " -cp " + this.remoteJarFilePath + "/" + this.jarFileName + " " + this.dsFileName + " " + args + "&";
-                        System.out.println(command);
-                        channel=session.openChannel("exec");
-                        ((ChannelExec)channel).setCommand(command);
-
-                        channel.setInputStream(null);
-                        ((ChannelExec)channel).setErrStream(System.err);
-
-                        InputStream in=channel.getInputStream();
-
-                        channel.connect(3000);
-
-                        System.out.println(Thread.currentThread().getName() + ": Starting DS command executed - " + System.currentTimeMillis());
-                        byte[] tmp=new byte[1024];
-                        while (true) {
-                                while (in.available() > 0) {
-                                    int i=in.read(tmp, 0, 1024);
-
-                                    if (i<0) break;
-
-                                    String [] output = (new String(tmp, 0, i)).split("\\r?\\n"); // split the output in different lines
-                                    // looking for the DS id (UUID) and PID
-                                    for (String line: output) {
-                                        if (line.matches("DataSource ID: [0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")){
-                                            dsID = line.substring("DataSource ID: ".length()); // getting the dsID as string removing "DataSource ID: "
-                                        }
-
-                                        else if (line.matches("Process ID: [0-9]+")){
-                                                pID = Integer.parseInt(line.substring("Process ID: ".length())); // getting the PID"
-                                        }
-                                    }
-                                }
-
-                                if (channel.isClosed()) {
-                                    if (in.available() > 0) continue;
-                                    System.out.println("exit-status: " + channel.getExitStatus());
-                                    if (channel.getExitStatus() != 0) // it does not seem to be != 0 if the command is unsuccessful
-                                        throw new DeploymentException("Error while starting DS on " + endPoint + " exit-status: " + channel.getExitStatus());
-                                    break;
-                                }
-                                Thread.sleep(100);       
-                        }
-
-                    } catch (JSchException | IOException e)
-                        {
-                        throw new DeploymentException("Error while starting DS on " + endPoint + ", " + e.getMessage());    
-                        }
-                      catch(InterruptedException ie) {/* we just swallow the exception as the thread shouldn't be interrupted*/}
-
-                      finally {
-                        if (channel != null) {
-                            channel.disconnect();
-                            session.disconnect();
-                        }
-                      }
-
-                    System.out.println(Thread.currentThread().getName() + ": Starting DS parsed output - " + System.currentTimeMillis());
-
-                    if (dsID != null && pID!=null){
-                        SSHDeploymentInfo dsInfo = new SSHDeploymentInfo();
-                        dsInfo.setDsId(ID.fromString(dsID));
-                        dsInfo.setDsPid(pID);
-                        this.DSrunningOnEndPoints.putIfAbsent(endPoint, dsInfo);
-
-                        System.out.println(Thread.currentThread().getName() + ": Starting DS before returning - " + System.currentTimeMillis());
-                        syncRunning.remove(endPoint);
-                        return ID.fromString(dsID);
-                    }
-                    else
-                        throw new DeploymentException("Error: cannot get the DS ID, the endpoint " + endPoint + " may be unreachable");
-        }  
-    }
-    
-    
-
-    @Override
-    public boolean stopDS(String endpoint) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-    
-    
-    @Override
     public boolean deployDS(String endPoint, String userName) throws DeploymentException {
         syncDeployment.putIfAbsent(endPoint, true);
         
         synchronized (syncDeployment.get(endPoint)) {
-                    System.out.println(Thread.currentThread().getName() + ": Deploying DS - " + System.currentTimeMillis());
+                    System.out.println(Thread.currentThread().getName() + ": Deploying DS");
 
                     if (this.isDSdeployed(endPoint)) 
                         return false;
-
-                    System.out.println(Thread.currentThread().getName() + ": Starting Session - " + System.currentTimeMillis());
                     
                     Session session=null;
                     ChannelSftp c = null;
@@ -195,9 +89,6 @@ public class SSHDeploymentManager implements DeploymentDelegate {
                         //adding info to the map
                         DSdeployedOnEndPoints.putIfAbsent(endPoint, true);
 
-                        System.out.println(Thread.currentThread().getName() + ": After put - " + System.currentTimeMillis());
-
-
                     } catch (JSchException | SftpException e) {
                         throw new DeploymentException("Error while deploying DS on " + endPoint + ", " + e.getMessage());
                       }
@@ -207,11 +98,144 @@ public class SSHDeploymentManager implements DeploymentDelegate {
                             session.disconnect();
                         }
                       }
-                    System.out.println(Thread.currentThread().getName() + ": before end of synchronized block - " + System.currentTimeMillis());
-
         }
         syncDeployment.remove(endPoint);
         return true;  
+    }
+    
+    
+    @Override
+    public ID startDS(String endPoint, String userName, String args) throws DeploymentException {
+        String dsID="";
+        Integer pID = null;
+        Session session=null;
+        Channel channel=null;
+        
+        syncRunning.putIfAbsent(endPoint, true);
+        synchronized (syncRunning.get(endPoint)) {
+                    try {
+
+                        if (this.isDSrunning(endPoint)) 
+                            return null;
+
+                        session = this.connect(endPoint, userName);
+
+                        String jvm = "java"; //we assume the executable is in the PATH
+                        //args is a String object containing the args to be passed to the main of the DS being deployed
+                        //we could think of appending additional entries to the classpath to allow loading external probes
+                        String command = jvm + " -cp " + this.remoteJarFilePath + "/" + this.jarFileName + " " + this.dsFileName + " " + args + "&";
+                        
+                        channel=session.openChannel("exec");
+                        ((ChannelExec)channel).setCommand(command);
+
+                        InputStream in=channel.getInputStream();
+                        byte[] tmp=new byte[1024];
+                        
+                        channel.connect(3000);
+                        
+                        while (true) {
+                                while (in.available() > 0) {
+                                    int i=in.read(tmp, 0, 1024);
+
+                                    if (i<0) break;
+
+                                    String [] output = (new String(tmp, 0, i)).split("\\r?\\n"); // split the output in different lines
+                                    // looking for the DS id (UUID) and PID
+                                    for (String line: output) {
+                                        if (line.matches("DataSource ID: [0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")){
+                                            dsID = line.substring("DataSource ID: ".length()); // getting the dsID as string removing "DataSource ID: "
+                                        }
+
+                                        else if (line.matches("Process ID: [0-9]+")){
+                                                pID = Integer.parseInt(line.substring("Process ID: ".length())); // getting the PID"
+                                        }
+                                    }
+                                }
+
+                                if (channel.isClosed()) {
+                                    if (in.available() > 0) continue;
+                                    
+                                    //TODO: it does not seem to be != 0 if the command is unsuccessful as the command is in background
+                                    //we should consider starting the process in foreground and then using signal such as SIGSTOP and SIGCONT
+                                    if (channel.getExitStatus() != 0) 
+                                        throw new DeploymentException("Error while starting DS on " + endPoint + " exit-status: " + channel.getExitStatus());
+                                    
+                                    break;
+                                }
+                                
+                                Thread.sleep(500);       
+                        }
+                    } catch (JSchException | IOException e)
+                        {
+                        throw new DeploymentException("Error while starting DS on " + endPoint + ", " + e.getMessage());    
+                        }
+                      catch(InterruptedException ie) {/* we just swallow the exception as the thread shouldn't be interrupted*/}
+
+                      finally {
+                        if (channel != null) {
+                            channel.disconnect();
+                            session.disconnect();
+                        }
+                      }
+
+                    if (dsID != null && pID != null){
+                        SSHDeploymentInfo dsInfo = new SSHDeploymentInfo();
+                        dsInfo.setDsId(ID.fromString(dsID));
+                        dsInfo.setDsPid(pID);
+                        this.DSrunningOnEndPoints.putIfAbsent(endPoint, dsInfo);
+
+                        syncRunning.remove(endPoint);
+                        return ID.fromString(dsID);
+                    }
+                    else
+                        throw new DeploymentException("Error: cannot get the DS ID, the endpoint " + endPoint + " may be unreachable");
+        }  
+    }
+    
+
+    @Override
+    public boolean stopDS(String endPoint, String userName) throws DeploymentException {
+        Session session=null;
+        Channel channel=null;
+        
+        synchronized (this.DSrunningOnEndPoints.get(endPoint)) {
+                    SSHDeploymentInfo endPointInfo = this.DSrunningOnEndPoints.get(endPoint);
+
+                    if (endPointInfo == null)
+                        return false;
+
+                    try {
+                        session = this.connect(endPoint, userName);
+                        System.out.println(Thread.currentThread().getName() + ": Stopping DS");
+                        
+                        String command = "kill " + endPointInfo.getDsPid();
+
+                        channel=session.openChannel("exec");
+                        ((ChannelExec)channel).setCommand(command);
+
+                        channel.connect(3000);
+
+                        while (true) {
+                            if (channel.isClosed()) {
+                                if (channel.getExitStatus() == 0) {
+                                    this.DSrunningOnEndPoints.remove(endPoint);
+                                    return true;
+                                }
+                                else {
+                                    // the process is likely to be already stopped removing from the map
+                                    this.DSrunningOnEndPoints.remove(endPoint);
+                                    throw new DeploymentException("Something went wrong while stopping DS");
+                                }
+                            }
+                            Thread.sleep(500);
+                        }
+                    } catch (JSchException e) {
+                        throw new DeploymentException("Error while stopping DS on " + endPoint + ", " + e.getMessage()); 
+                      }
+                      catch (InterruptedException ie) {/* we just swallow the exception as the thread shouldn't be interrupted*/}
+
+                    return false;
+        }
     }
      
         

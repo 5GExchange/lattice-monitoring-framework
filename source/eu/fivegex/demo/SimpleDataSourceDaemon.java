@@ -1,8 +1,3 @@
-// ResponseTimeEmulatorUDP.java
-// Author: Stuart Clayman
-// Email: sclayman@ee.ucl.ac.uk
-// Date: Sept 2009
-
 package eu.fivegex.demo;
 
 import eu.reservoir.monitoring.control.udp.UDPControlPlaneConsumer;
@@ -22,7 +17,7 @@ import java.util.Scanner;
 /**
  * This DataSource in a basic control point for probes that uses a Control Plane and an Info Plane
  */
-public class SimpleDataSourceDaemon {
+public final class SimpleDataSourceDaemon extends Thread {
     ControllableDataSource ds;
 
     /*
@@ -37,6 +32,7 @@ public class SimpleDataSourceDaemon {
                            String localControlEndPoint,
                            int controlPlaneLocalPort) throws UnknownHostException, FileNotFoundException, IOException {
         
+        this.attachShutDownHook();
         
 	// set up data source
 	ds = new ControllableBasicDataSource(myDsName);
@@ -87,6 +83,17 @@ public class SimpleDataSourceDaemon {
     }
 
 
+    @Override
+    public void run() {
+        System.out.println("Removing information from InfoPlane before shutting down");
+        this.ds.getInfoPlane().removeDataSourceInfo(ds);
+    }
+    
+    public void attachShutDownHook() {
+        Runtime.getRuntime().addShutdownHook(this);
+    }
+    
+    
     public static void main(String [] args) throws InterruptedException {
         //System.out.println(args.length);
         try {

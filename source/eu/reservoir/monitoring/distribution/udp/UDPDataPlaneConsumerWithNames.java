@@ -40,8 +40,6 @@ public class UDPDataPlaneConsumerWithNames extends AbstractUDPDataPlaneConsumer 
      */
     public void received(ByteArrayInputStream bis, MetaData metaData) throws  IOException, TypeException {
 
-	System.out.println("FT: AbstractUDPDataPlaneCunsumerWithNames.received  - Received " + metaData);
-
 	try {
 	    DataInput dataIn = new XDRDataInputStream(bis);
 
@@ -87,8 +85,6 @@ public class UDPDataPlaneConsumerWithNames extends AbstractUDPDataPlaneConsumer 
 		// this is a new DataSource
 		seqNoMap.put(dataSourceID, seq);
 	    }
-
-	    System.out.println("FT: AbstractUDPDataPlaneCunsumerWithNames.received - Received " + type + ". mType " + mType + ". seq " + seq);
 
 	    // Message meta data
 	    MessageMetaData msgMetaData = new MessageMetaData(dataSourceID, seq, mType);

@@ -14,7 +14,7 @@ import eu.reservoir.monitoring.core.ID;
 public interface DeploymentDelegate {
     public ID startDS(String endPoint, String userName, String params) throws DeploymentException;
     
-    public boolean stopDS(String endPoint);
+    public boolean stopDS(String endPoint, String userName) throws DeploymentException;
     
     public boolean deployDS(String endPoint, String userName) throws DeploymentException;
     

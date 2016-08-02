@@ -52,6 +52,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         // Get the method
         String method = request.getMethod();
 
+        /*
         request.getQuery();
         
         System.out.println("method: " + request.getMethod());
@@ -62,11 +63,10 @@ class DataSourceRestHandler extends BasicRequestHandler {
         System.out.println("segments: " + java.util.Arrays.asList(request.getPath().getSegments()));
         System.out.println("query: " + request.getQuery());
         System.out.println("keys: " + request.getQuery().keySet());
-        
+        */
         
         try {
             if (method.equals("POST")) {
-                System.out.println("Received Post");
                 if (name == null && segments.length == 3)
                     createProbe(request, response);
                 else if (name == null && segments.length == 1) {
@@ -74,7 +74,11 @@ class DataSourceRestHandler extends BasicRequestHandler {
                 }
                 else
                     notFound(response, "POST bad request");
-            }
+            } else if (method.equals("DELETE")) {
+                    if (name == null && segments.length == 1) {
+                        stopDS(request,response);
+                    }
+              }
             
             return true;
             
@@ -192,7 +196,6 @@ class DataSourceRestHandler extends BasicRequestHandler {
         JSONObject jsobj = null;
         
         jsobj = controller_.startDS(endPoint, userName, rawArgs);
-        System.out.println("JSON: --->" + jsobj);
         
         if (jsobj.get("success").equals("false")) {
             failMessage = (String)jsobj.get("msg");
@@ -211,4 +214,55 @@ class DataSourceRestHandler extends BasicRequestHandler {
             out.println(jsobj.toString());
         }  
     }
+    
+    
+    private void stopDS(Request request, Response response) throws JSONException, IOException, DSNotFoundException {
+        Path path = request.getPath();
+        String[] segments = path.getSegments(); 
+        Query query = request.getQuery();
+        
+        String endPoint;
+        String userName;
+        
+        if (query.containsKey("endpoint"))
+            endPoint = query.get("endpoint");
+        else {
+            badRequest(response, "missing endpoint arg");
+            response.close();
+            return;
+        }
+        
+        if (query.containsKey("username"))
+            userName = query.get("username");
+        else {
+            badRequest(response, "missing username args");
+            response.close();
+            return;
+        }
+        
+        boolean success = true;
+        String failMessage = null;
+        JSONObject jsobj = null;
+        
+        jsobj = controller_.stopDS(endPoint, userName);
+        
+        if (jsobj.get("success").equals("false")) {
+            failMessage = (String)jsobj.get("msg");
+            System.out.println("stopDS: failure detected: " + failMessage);
+            success = false;   
+        }   
+    
+        if (success) {
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+        
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+        
+    }
+    
 }

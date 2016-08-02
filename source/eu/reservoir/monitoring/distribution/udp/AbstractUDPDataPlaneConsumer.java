@@ -157,7 +157,7 @@ public abstract class AbstractUDPDataPlaneConsumer implements DataPlane, Measure
     }
 
     /**
-     * Receiver of a measurment, with an extra object that has context info
+     * Receiver of a measurement, with an extra object that has context info
      */
     public Measurement report(Measurement m) {
 	System.out.println("FT: AbstractUDPDataPlaneConsumer.report - UDPDataPlaneConsumer: got " + m);

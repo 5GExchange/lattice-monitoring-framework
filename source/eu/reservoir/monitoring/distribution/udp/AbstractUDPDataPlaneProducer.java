@@ -48,7 +48,6 @@ public abstract class AbstractUDPDataPlaneProducer implements DataPlane, DataSou
      * Connect to a delivery mechansim.
      */
      public boolean connect() {
-         System.out.println("FT: AbstractUDPDataPLaneProducer.connect");
 	try {
 	    // only connect if we're not already connected
 	    if (udpTransmitter == null) {
@@ -134,7 +133,6 @@ public abstract class AbstractUDPDataPlaneProducer implements DataPlane, DataSou
      * Send a message.
      */
     public synchronized int sendData(DataPlaneMessage dpm) throws Exception {
-        System.out.println("FT: AbstractUDPDataPlaneProducer.sendData");
         if (udpTransmitter != null) {
             return transmit(dpm);
         } else {

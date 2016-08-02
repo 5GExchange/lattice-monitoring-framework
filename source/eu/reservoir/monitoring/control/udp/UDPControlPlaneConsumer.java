@@ -41,7 +41,6 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
 
     @Override
     public void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException {
-        //System.out.println("FT: ------- UDPControlPlaneConsumer.received  - Received ------- " + metaData);
 
         ControlOperation ctrlOperationName=null;
         ID sourceMessageID=null;

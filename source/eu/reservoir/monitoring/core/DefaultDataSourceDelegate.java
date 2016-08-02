@@ -127,7 +127,6 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
      */
     public int sendData(DataPlaneMessage dpm) throws Exception {
         
-        System.out.println("FT: DefaultDataSourceDelegate.sendData");
 	if (dataPlane != null) {
 	    return dataPlane.sendData(dpm);
 	} else {

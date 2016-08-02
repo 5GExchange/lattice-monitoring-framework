@@ -215,7 +215,6 @@ public class Controller {
         if (this.usingDeploymentManager) {
             try {
                 this.deploymentManager.deployDS(endPoint, userName);
-                System.out.println("args: " + args);
                 startedDsID = this.deploymentManager.startDS(endPoint, userName, args);
 
                 if (startedDsID == null) {
@@ -237,9 +236,31 @@ public class Controller {
             result.put("success", false);
             result.put("msg", "Deployment Manager is not running");
         }
-    return result;
+        return result;
     }
     
+    
+    JSONObject stopDS(String endPoint, String userName) throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        result.put("operation", "stopDS");
+        result.put("endpoint",endPoint);
+        
+        if (this.usingDeploymentManager) {
+            try {
+                Boolean returnValue = this.deploymentManager.stopDS(endPoint, userName);
+                result.put("success", returnValue);
+            } catch (DeploymentException ex) {
+                result.put("success", false);
+                result.put("msg", ex.getMessage());
+              }
+        }
+        else {
+            result.put("success", false);
+            result.put("msg", "Deployment Manager is not running");
+        }
+        return result;
+    }
     
     JSONObject getProbesCatalogue() throws JSONException {
         JSONObject result = new JSONObject();
