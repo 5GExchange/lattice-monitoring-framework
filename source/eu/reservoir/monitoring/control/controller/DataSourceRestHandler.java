@@ -115,7 +115,6 @@ class DataSourceRestHandler extends BasicRequestHandler {
         
         if (query.containsKey("args")) {
             rawArgs = query.get("args");
-
             rawArgs = rawArgs.trim();
             rawArgs = rawArgs.replaceAll("\\+", " ");
 
@@ -164,6 +163,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         
         String endPoint;
         String userName;
+        String rawArgs="";
         
         if (query.containsKey("endpoint"))
             endPoint = query.get("endpoint");
@@ -181,11 +181,17 @@ class DataSourceRestHandler extends BasicRequestHandler {
             return;
         }
         
+        if (query.containsKey("args")) {
+            rawArgs = query.get("args");
+            rawArgs = rawArgs.trim();
+            rawArgs = rawArgs.replaceAll("\\+", " ");
+        }
+        
         boolean success = true;
         String failMessage = null;
         JSONObject jsobj = null;
         
-        jsobj = controller_.startDS(endPoint, userName);
+        jsobj = controller_.startDS(endPoint, userName, rawArgs);
         System.out.println("JSON: --->" + jsobj);
         
         if (jsobj.get("success").equals("false")) {

@@ -204,7 +204,7 @@ public class Controller {
     }
 
     
-    JSONObject startDS(String endPoint, String userName) throws JSONException {
+    JSONObject startDS(String endPoint, String userName, String args) throws JSONException {
         JSONObject result = new JSONObject();
         
         ID startedDsID;
@@ -214,8 +214,9 @@ public class Controller {
 
         if (this.usingDeploymentManager) {
             try {
-                this.deploymentManager.deployDS(endPoint, userName); //check return and verify if was already deployed or not
-                startedDsID = this.deploymentManager.startDS(endPoint, userName, "");
+                this.deploymentManager.deployDS(endPoint, userName);
+                System.out.println("args: " + args);
+                startedDsID = this.deploymentManager.startDS(endPoint, userName, args);
 
                 if (startedDsID == null) {
                     result.put("msg", "a Data Source is already running on the endpoint");
@@ -223,7 +224,7 @@ public class Controller {
                 }
 
                 else {
-                    result.put("startedDsID", startedDsID.toString());
+                    result.put("ID", startedDsID.toString());
                     result.put("success", true);
                 }
 

@@ -12,6 +12,7 @@ import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
 import eu.reservoir.monitoring.im.dht.DHTInfoPlane;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -34,7 +35,7 @@ public class SimpleDataSourceDaemon {
                            int infoPlaneRootPort,
                            int infoPlaneLocalPort,
                            String localControlEndPoint,
-                           int controlPlaneLocalPort) throws UnknownHostException, FileNotFoundException {
+                           int controlPlaneLocalPort) throws UnknownHostException, FileNotFoundException, IOException {
         
         
 	// set up data source
@@ -53,12 +54,15 @@ public class SimpleDataSourceDaemon {
         // the below string gets the PID splitting PID@hostname
         System.out.println("Process ID: " + java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
         
-        // this will run in background, we log output in a log file
-	//PrintStream ps = new PrintStream("/tmp/ds.log");
-	//System.setOut(ps);
-        //System.setErr(ps);
+        // closing the std streams to detach the process from the terminal and allowing ssh remote instantiation
+        System.out.close(); 
+        System.err.close();
+        System.in.close();
         
-        System.out.close(); System.err.close(); // TODO Check
+        // this will run in background, we log output in a log file
+	PrintStream ps = new PrintStream("/tmp/ds.log");
+	System.setOut(ps);
+        System.setErr(ps);
         
 	// set up an IPaddress for data
 	InetSocketAddress DataAddress = new InetSocketAddress(InetAddress.getByName(dataConsumerName), dataConsumerPort);

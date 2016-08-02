@@ -173,9 +173,9 @@ public class RestClient {
     
     
     //curl -X POST http://localhost:6666/datasource/?endpoint=<endpoint>\&username=<username>
-    public JSONObject deployDS(String endPoint, String userName) throws JSONException {
+    public JSONObject deployDS(String endPoint, String userName, String args) throws JSONException {
         try {
-            String uri = vimURI + "/datasource/?endpoint=" + endPoint + "&username=" + userName;
+            String uri = vimURI + "/datasource/?endpoint=" + endPoint + "&username=" + userName + "&args=" + args;
             
             JSONObject jsobj = rest.json(uri, form("")).toObject();
 
@@ -231,7 +231,7 @@ public class RestClient {
         System.in.read();
         
         System.out.println("deploying DS");
-        System.out.println(client.deployDS("192.168.56.101", "osboxes"));
+        System.out.println(client.deployDS("192.168.56.101", "osboxes", ""));
         }
 }
 

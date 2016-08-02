@@ -5,9 +5,6 @@
  */
 package eu.reservoir.monitoring.control.controller;
 
-import java.util.Hashtable;
-
-import eu.fivegex.demo.SSHDeploymentInfo;
 import eu.reservoir.monitoring.core.ID;
 
 /**
@@ -15,7 +12,7 @@ import eu.reservoir.monitoring.core.ID;
  * @author uceeftu
  */
 public interface DeploymentDelegate {
-    public ID startDS(String endPoint, String userName, String confFile) throws DeploymentException;
+    public ID startDS(String endPoint, String userName, String params) throws DeploymentException;
     
     public boolean stopDS(String endPoint);
     
@@ -25,14 +22,5 @@ public interface DeploymentDelegate {
 
     boolean isDSdeployed(String endPoint);
     
-    boolean isDSrunning(String endPoint);
-    
-    /*
-	public Hashtable<String, SSHDeploymentInfo> getHashDS();
-
-	public void setHashDS(Hashtable<String, SSHDeploymentInfo> hashDS);
-
-	public void putHashDS(String endPoint, SSHDeploymentInfo dsInfo);
-    */
-    
+    boolean isDSrunning(String endPoint);    
 }
