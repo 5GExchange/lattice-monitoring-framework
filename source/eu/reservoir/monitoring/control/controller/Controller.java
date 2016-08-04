@@ -149,9 +149,11 @@ public class Controller {
             probeArgsAsObjects = (Object[])probeArgs.split(" ");
         }
         
+        /*
         System.out.println("Received " + probeArgsAsObjects.length + " arguments:");
         for (Object o : probeArgsAsObjects)
             System.out.println((String)o);
+        */
         
         try {
             createdProbeID = this.getControlHandle().loadProbe(ID.fromString(id), probeClassName, probeArgsAsObjects);
@@ -218,7 +220,7 @@ public class Controller {
                 startedDsID = this.deploymentManager.startDS(endPoint, userName, args);
 
                 if (startedDsID == null) {
-                    result.put("msg", "a Data Source is already running on the endpoint");
+                    result.put("msg", "en error occured while starting the DS on the specified endpoint");
                     result.put("success", false);
                 }
 

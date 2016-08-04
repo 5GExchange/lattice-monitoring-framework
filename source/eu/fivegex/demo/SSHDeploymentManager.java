@@ -12,6 +12,8 @@ import com.jcraft.jsch.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -26,8 +28,8 @@ public class SSHDeploymentManager implements DeploymentDelegate {
     private final String dsFileName;
     private final JSch jsch;
     
-    private final Map<String, Boolean> syncDeployment;
-    private final Map<String, Boolean> syncRunning;
+    private final Map<String, Boolean> deploymentMonitor;
+    private final Map<String, Boolean> runMonitor;
     
     private final Map<String, Boolean> DSdeployedOnEndPoints;
     private final Map<String, SSHDeploymentInfo> DSrunningOnEndPoints;
@@ -40,8 +42,8 @@ public class SSHDeploymentManager implements DeploymentDelegate {
         this.dsFileName = dsFileName;
         this.jsch = new JSch();
 
-        this.syncDeployment = new ConcurrentHashMap<>();
-        this.syncRunning = new ConcurrentHashMap<>();
+        this.deploymentMonitor = new ConcurrentHashMap<>();
+        this.runMonitor = new ConcurrentHashMap<>();
         
         this.DSdeployedOnEndPoints = new ConcurrentHashMap<>();
         this.DSrunningOnEndPoints = new ConcurrentHashMap<>();   
@@ -59,20 +61,41 @@ public class SSHDeploymentManager implements DeploymentDelegate {
     }
     
     
+    private Session connectWithKey(String endPoint, String userName) throws JSchException {
+        String privateKeyFile = System.getProperty("user.home") + "/.ssh/id_rsa";
+        System.out.println(privateKeyFile);        
+        this.jsch.addIdentity(privateKeyFile);
+        
+        Session session = this.jsch.getSession(userName, endPoint, 22);
+        session.setConfig("PreferredAuthentications", "publickey");
+        session.setConfig("StrictHostKeyChecking", "no"); //ignore unknown hosts
+        session.connect(3000);
+        return session;
+    }
+    
+    
+    
     @Override
     public boolean deployDS(String endPoint, String userName) throws DeploymentException {
-        syncDeployment.putIfAbsent(endPoint, true);
+        String endPointAddress;
+        try {
+            endPointAddress = InetAddress.getByName(endPoint).getHostAddress();
+        } catch (UnknownHostException e) {
+                throw new DeploymentException("Error while resolving endPoint address " + e.getMessage());
+          }
         
-        synchronized (syncDeployment.get(endPoint)) {
+        deploymentMonitor.putIfAbsent(endPointAddress, true);
+        
+        synchronized (deploymentMonitor.get(endPointAddress)) {
                     System.out.println(Thread.currentThread().getName() + ": Deploying DS");
 
-                    if (this.isDSdeployed(endPoint)) 
+                    if (this.isDSdeployed(endPointAddress)) 
                         return false;
                     
                     Session session=null;
                     ChannelSftp c = null;
                     try {
-                        session = this.connect(endPoint, userName);
+                        session = this.connectWithKey(endPointAddress, userName);
                         Channel channel = session.openChannel("sftp");
                         channel.connect(3000);
                         c = (ChannelSftp) channel;
@@ -80,17 +103,17 @@ public class SSHDeploymentManager implements DeploymentDelegate {
                         File jarFile = new File(this.localJarFilePath + "/" + this.jarFileName);
                         if (!jarFile.exists())
                             throw new DeploymentException("Error: file " + this.localJarFilePath + "/" + this.jarFileName + " does not exist");
+                        
+                        c.put(this.localJarFilePath + "/" + this.jarFileName, this.remoteJarFilePath + "/" + this.jarFileName, ChannelSftp.OVERWRITE);
 
                         System.out.println("Copying: " + this.localJarFilePath + "/" + this.jarFileName);
                         System.out.println("to: " + this.remoteJarFilePath + "/" + this.jarFileName);
-
-                        c.put(this.localJarFilePath + "/" + this.jarFileName, this.remoteJarFilePath + "/" + this.jarFileName);
-
+                        
                         //adding info to the map
-                        DSdeployedOnEndPoints.putIfAbsent(endPoint, true);
+                        DSdeployedOnEndPoints.putIfAbsent(endPointAddress, true);
 
                     } catch (JSchException | SftpException e) {
-                        throw new DeploymentException("Error while deploying DS on " + endPoint + ", " + e.getMessage());
+                        throw new DeploymentException("Error while deploying DS on " + endPointAddress + ", " + e.getMessage());
                       }
                       finally {
                         if (c != null) {
@@ -99,29 +122,39 @@ public class SSHDeploymentManager implements DeploymentDelegate {
                         }
                       }
         }
-        syncDeployment.remove(endPoint);
+        deploymentMonitor.remove(endPointAddress);
         return true;  
     }
     
     
     @Override
     public ID startDS(String endPoint, String userName, String args) throws DeploymentException {
-        String dsID="";
+        String dsID = null;
         Integer pID = null;
         Session session=null;
         Channel channel=null;
         
-        syncRunning.putIfAbsent(endPoint, true);
-        synchronized (syncRunning.get(endPoint)) {
+        String endPointAddress;
+        try {
+            endPointAddress = InetAddress.getByName(endPoint).getHostAddress();
+        } catch (UnknownHostException e) {
+                throw new DeploymentException("Error while resolving endPoint address " + e.getMessage());
+          }
+        
+        runMonitor.putIfAbsent(endPointAddress, true);
+        synchronized (runMonitor.get(endPointAddress)) {
                     try {
 
-                        if (this.isDSrunning(endPoint)) 
-                            return null;
+                        if (this.isDSrunning(endPointAddress)) 
+                            // if a DS is already running on the endpoint we just return its ID
+                            return this.DSrunningOnEndPoints.get(endPointAddress).getDsId();
 
-                        session = this.connect(endPoint, userName);
+                        session = this.connectWithKey(endPointAddress, userName);
 
                         String jvm = "java"; //we assume the executable is in the PATH
+                        
                         //args is a String object containing the args to be passed to the main of the DS being deployed
+                        
                         //we could think of appending additional entries to the classpath to allow loading external probes
                         String command = jvm + " -cp " + this.remoteJarFilePath + "/" + this.jarFileName + " " + this.dsFileName + " " + args + "&";
                         
@@ -158,7 +191,7 @@ public class SSHDeploymentManager implements DeploymentDelegate {
                                     //TODO: it does not seem to be != 0 if the command is unsuccessful as the command is in background
                                     //we should consider starting the process in foreground and then using signal such as SIGSTOP and SIGCONT
                                     if (channel.getExitStatus() != 0) 
-                                        throw new DeploymentException("Error while starting DS on " + endPoint + " exit-status: " + channel.getExitStatus());
+                                        throw new DeploymentException("Error while starting DS on " + endPointAddress + " exit-status: " + channel.getExitStatus());
                                     
                                     break;
                                 }
@@ -167,9 +200,9 @@ public class SSHDeploymentManager implements DeploymentDelegate {
                         }
                     } catch (JSchException | IOException e)
                         {
-                        throw new DeploymentException("Error while starting DS on " + endPoint + ", " + e.getMessage());    
+                        throw new DeploymentException("Error while starting DS on " + endPointAddress + ", " + e.getMessage());    
                         }
-                      catch(InterruptedException ie) {/* we just swallow the exception as the thread shouldn't be interrupted*/}
+                      catch(InterruptedException ie) {/* we just swallow the exception as the thread shouldn't be interrupted */}
 
                       finally {
                         if (channel != null) {
@@ -182,13 +215,13 @@ public class SSHDeploymentManager implements DeploymentDelegate {
                         SSHDeploymentInfo dsInfo = new SSHDeploymentInfo();
                         dsInfo.setDsId(ID.fromString(dsID));
                         dsInfo.setDsPid(pID);
-                        this.DSrunningOnEndPoints.putIfAbsent(endPoint, dsInfo);
+                        this.DSrunningOnEndPoints.putIfAbsent(endPointAddress, dsInfo);
 
-                        syncRunning.remove(endPoint);
+                        runMonitor.remove(endPointAddress);
                         return ID.fromString(dsID);
                     }
                     else
-                        throw new DeploymentException("Error: cannot get the DS ID, the endpoint " + endPoint + " may be unreachable");
+                        throw new DeploymentException("Error: cannot get the DS ID, the endpoint " + endPointAddress + " may be unreachable");
         }  
     }
     
@@ -198,14 +231,21 @@ public class SSHDeploymentManager implements DeploymentDelegate {
         Session session=null;
         Channel channel=null;
         
-        synchronized (this.DSrunningOnEndPoints.get(endPoint)) {
-                    SSHDeploymentInfo endPointInfo = this.DSrunningOnEndPoints.get(endPoint);
+        String endPointAddress;
+        try {
+            endPointAddress = InetAddress.getByName(endPoint).getHostAddress();
+        } catch (UnknownHostException e) {
+                throw new DeploymentException("Error while resolving endPoint address " + e.getMessage());
+          }
+        
+        synchronized (this.DSrunningOnEndPoints.get(endPointAddress)) {
+                    SSHDeploymentInfo endPointInfo = this.DSrunningOnEndPoints.get(endPointAddress);
 
                     if (endPointInfo == null)
                         return false;
 
                     try {
-                        session = this.connect(endPoint, userName);
+                        session = this.connectWithKey(endPointAddress, userName);
                         System.out.println(Thread.currentThread().getName() + ": Stopping DS");
                         
                         String command = "kill " + endPointInfo.getDsPid();
@@ -218,19 +258,19 @@ public class SSHDeploymentManager implements DeploymentDelegate {
                         while (true) {
                             if (channel.isClosed()) {
                                 if (channel.getExitStatus() == 0) {
-                                    this.DSrunningOnEndPoints.remove(endPoint);
+                                    this.DSrunningOnEndPoints.remove(endPointAddress);
                                     return true;
                                 }
                                 else {
                                     // the process is likely to be already stopped removing from the map
-                                    this.DSrunningOnEndPoints.remove(endPoint);
+                                    this.DSrunningOnEndPoints.remove(endPointAddress);
                                     throw new DeploymentException("Something went wrong while stopping DS");
                                 }
                             }
                             Thread.sleep(500);
                         }
                     } catch (JSchException e) {
-                        throw new DeploymentException("Error while stopping DS on " + endPoint + ", " + e.getMessage()); 
+                        throw new DeploymentException("Error while stopping DS on " + endPointAddress + ", " + e.getMessage()); 
                       }
                       catch (InterruptedException ie) {/* we just swallow the exception as the thread shouldn't be interrupted*/}
 
@@ -265,11 +305,11 @@ public class SSHDeploymentManager implements DeploymentDelegate {
                                                                "eu.fivegex.demo.SimpleDataSourceDaemon"
                                                               );
             
-            System.out.println(dm.deployDS("192.168.56.101", "osboxes"));
-            System.in.read();
-            ID dataSourceID = dm.startDS("192.168.56.101", "osboxes", "not yet used");
+            System.out.println(dm.deployDS("192.168.56.101", "lattice"));
+            //System.in.read();
+            ID dataSourceID = dm.startDS("192.168.56.101", "lattice", "not yet used");
             System.out.println("DataSouroceID: "+dataSourceID);
-        } catch (DeploymentException | IOException ex) {
+        } catch (DeploymentException  ex) {
             System.out.println(ex.getMessage());
           }
     }

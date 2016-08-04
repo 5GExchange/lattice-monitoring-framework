@@ -6,6 +6,7 @@ import eu.reservoir.monitoring.core.DataSourceInteracter;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
 import eu.reservoir.monitoring.im.dht.DHTInfoPlane;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -15,7 +16,7 @@ import java.net.UnknownHostException;
 import java.util.Scanner;
 
 /**
- * This DataSource in a basic control point for probes that uses a Control Plane and an Info Plane
+ * This DataSource in a basic control point for probes that uses a Control Plane and an Info Plane and can be daemonized 
  */
 public final class SimpleDataSourceDaemon extends Thread {
     ControllableDataSource ds;
@@ -56,7 +57,12 @@ public final class SimpleDataSourceDaemon extends Thread {
         System.in.close();
         
         // this will run in background, we log output in a log file
-	PrintStream ps = new PrintStream("/tmp/ds.log");
+        File logFile = new File("/tmp/ds.log");
+        if (!logFile.canWrite())
+            //we should be able to write in the user home dir
+            logFile = new File(System.getProperty("user.home" + "/ds.log")); 
+        
+	PrintStream ps = new PrintStream(logFile);
 	System.setOut(ps);
         System.setErr(ps);
         

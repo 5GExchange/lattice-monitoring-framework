@@ -6,7 +6,6 @@
 package eu.reservoir.monitoring.control.controller;
 
 import cc.clayman.console.BasicRequestHandler;
-import eu.reservoir.monitoring.core.ID;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Scanner;
