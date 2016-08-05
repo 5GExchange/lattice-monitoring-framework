@@ -9,6 +9,7 @@ import eu.fivegex.demo.CatalogueException;
 import eu.fivegex.demo.JSONProbeCatalogue;
 import eu.fivegex.demo.SSHDeploymentManager;
 import eu.reservoir.monitoring.appl.BasicConsumer;
+import eu.reservoir.monitoring.appl.datarate.EveryNSeconds;
 import eu.reservoir.monitoring.control.udp.UDPControlPlaneProducer;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.PlaneInteracter;
@@ -279,6 +280,29 @@ public class Controller {
           }
         
         return result;   
+    }
+    
+    
+    JSONObject setProbeDataRate(String probeID, String dataRate) throws JSONException {
+        JSONObject result = new JSONObject();
+        Boolean invocationResult;
+        
+        result.put("operation", "setProbeDataRate");
+        
+        result.put("probeID",probeID);
+        result.put("rate",dataRate);
+        
+        try {
+            System.out.println("Invoking SetDataRate: " + probeID + " " + dataRate);
+            invocationResult = this.getControlHandle().setProbeDataRate(ID.fromString(probeID), new EveryNSeconds(Integer.valueOf(dataRate)));
+            result.put("success", invocationResult);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+        }
+        
+        return result;
     }
     
     

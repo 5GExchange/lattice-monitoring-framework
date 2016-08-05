@@ -254,8 +254,26 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
     }
 
     @Override
-    public boolean setProbeDataRate(ID probeID, Rational dataRate) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public boolean setProbeDataRate(ID probeID, Rational dataRate) throws Exception {
+        List<Object> args = new ArrayList();
+        args.add(probeID);
+        args.add(dataRate);
+        Boolean result = false;
+
+        ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.SET_PROBE_DATA_RATE, args);
+        
+        try {
+            InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
+            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            System.out.println("ThreadName: --------> " + Thread.currentThread().getName());
+            result = (Boolean) transmit(m, mData);
+        } 
+          catch (Exception ex) {
+            System.out.println("Error while sending turn on probe command " + ex.getMessage());
+            throw ex;
+          }
+        
+        return result;
     }
 
     @Override

@@ -5,6 +5,7 @@
 
 package eu.reservoir.monitoring.core;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 /************************************************************************
@@ -24,7 +25,7 @@ import java.math.BigDecimal;
  *
  *************************************************************************/
 
-public class Rational implements Comparable<Rational> {
+public class Rational implements Comparable<Rational>, Serializable {
     private static Rational zero = new Rational(0, 1);
 
     private int num;   // the numerator

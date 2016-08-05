@@ -24,7 +24,7 @@ public class BasicConsumer extends AbstractDataConsumer implements MeasurementRe
     public BasicConsumer() {
 	// The default way to report a measurement is to print it
 	Reporter reporter =  new PrintReporter();
-
+        
 	addReporter(reporter);
     }
 

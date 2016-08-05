@@ -51,16 +51,29 @@ public final class SimpleDataSourceDaemon extends Thread {
         // the below string gets the PID splitting PID@hostname
         System.out.println("Process ID: " + java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
         
+        // this will run in background, we log output in a log file
+        File logFile = new File("/tmp/ds.log");
+        
+        if (!logFile.exists()) {
+            System.out.println("Creating File");
+	    logFile.createNewFile();
+	  }
+        
+        if (!logFile.canWrite()) {
+            //we should be able to write in our user home dir
+            logFile = new File(System.getProperty("user.home" + "/ds.log"));
+            if (!logFile.exists())
+               logFile.createNewFile(); 
+        }
+        
+        System.out.println("Redirecting output to " + logFile.getName());
+        
         // closing the std streams to detach the process from the terminal and allowing ssh remote instantiation
         System.out.close(); 
         System.err.close();
         System.in.close();
         
-        // this will run in background, we log output in a log file
-        File logFile = new File("/tmp/ds.log");
-        if (!logFile.canWrite())
-            //we should be able to write in the user home dir
-            logFile = new File(System.getProperty("user.home" + "/ds.log")); 
+        
         
 	PrintStream ps = new PrintStream(logFile);
 	System.setOut(ps);
@@ -92,7 +105,11 @@ public final class SimpleDataSourceDaemon extends Thread {
     @Override
     public void run() {
         System.out.println("Removing information from InfoPlane before shutting down");
-        this.ds.getInfoPlane().removeDataSourceInfo(ds);
+        try {
+            this.ds.getInfoPlane().removeDataSourceInfo(ds);
+        } catch (NullPointerException e) {
+            System.out.println("It looks like we are not connected to the infoPlane - there is nothing to remove");
+          }
     }
     
     public void attachShutDownHook() {

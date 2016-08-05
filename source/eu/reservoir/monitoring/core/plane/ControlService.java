@@ -85,7 +85,7 @@ public interface ControlService {
      * The data rate is a Rational.
      * Specified in measurements per hour
      */
-    public boolean setProbeDataRate(ID probeID, Rational dataRate);
+    public boolean setProbeDataRate(ID probeID, Rational dataRate) throws Exception;
 
     /**
      * Get the last measurement that was collected.

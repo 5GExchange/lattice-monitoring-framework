@@ -183,6 +183,25 @@ class ProbeRestHandler extends BasicRequestHandler {
             }
         }
         
+        else if (query.containsKey("datarate")) {
+            System.out.println("datarate");
+            scanner = new Scanner(query.get("datarate"));
+            
+            String dataRate;
+            
+            if (scanner.hasNext()) {
+                dataRate = scanner.next();
+                scanner.close();
+            } else {
+            	scanner.close();
+                complain(response, "datarate arg is empty");
+                return;
+            }
+            
+            jsobj = controller_.setProbeDataRate(probeID, dataRate);
+        }
+        
+        
         else {
             complain(response, "no args have been specified");
         }

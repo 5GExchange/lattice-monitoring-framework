@@ -5,7 +5,6 @@
  */
 package eu.reservoir.monitoring.control.udp;
 
-import eu.reservoir.monitoring.appl.BasicDataSource;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Measurement;
@@ -240,7 +239,9 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
 
     @Override
     public boolean setProbeDataRate(ID probeID, Rational dataRate) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        System.out.println("******* UDPControlPlaneConsumer -> setProbeDataRate");
+        dataSource.setProbeDataRate(probeID, dataRate);
+        return true;
     }
 
     @Override
