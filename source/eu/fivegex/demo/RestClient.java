@@ -184,7 +184,7 @@ public class RestClient {
         }
     }
     
-    
+    //curl -X DELETE http://localhost:6666/datasource/?endpoint=<endpoint>\&username=<username>
     public JSONObject stopDS(String endPoint, String userName) throws JSONException {
         try {
             String uri = vimURI + "/datasource/?endpoint=" + endPoint + "&username=" + userName;
@@ -217,7 +217,7 @@ public class RestClient {
             System.out.println("Deploying DS on endpoint: " + endPoint);
             out = client.deployDS(endPoint, userName, "192.168.56.1+22997+192.168.56.1+6699+9999+1111");
             System.out.println(out);
-            System.in.read();
+            //System.in.read();
 
             String dsID = out.getString("ID");
             System.out.println("Creating probe on endpoint: " + endPoint + " - DS id: " + dsID);
