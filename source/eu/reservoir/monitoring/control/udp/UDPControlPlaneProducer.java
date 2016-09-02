@@ -162,7 +162,6 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         try {
             InetSocketAddress dstAddr = resolver.getDSAddressFromID(dataSourceID);
             MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
-            System.out.println("ThreadName: --------> " + Thread.currentThread().getName());
             //we return the ID of the new created probe as result
             probeID = (ID) transmit(m, mData);
         } //catch (DSNotFoundException idEx) {
@@ -185,7 +184,6 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         try {
             InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
             MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
-            System.out.println("ThreadName: --------> " + Thread.currentThread().getName());
             result = (Boolean) transmit(m, mData);
         } //catch (ProbeIDNotFoundException idEx) {
           //  throw idEx; 
@@ -224,7 +222,6 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         try {
             InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
             MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
-            System.out.println("ThreadName: --------> " + Thread.currentThread().getName());
             result = (Boolean) transmit(m, mData);
         } //catch (ProbeIDNotFoundException idEx) {
           //  throw idEx; 
@@ -265,7 +262,6 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         try {
             InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
             MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
-            System.out.println("ThreadName: --------> " + Thread.currentThread().getName());
             result = (Boolean) transmit(m, mData);
         } 
           catch (Exception ex) {
@@ -296,7 +292,6 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         try {
             InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
             MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
-            System.out.println("ThreadName: --------> " + Thread.currentThread().getName());
             result = (Boolean) transmit(m, mData);
         } //catch (ProbeIDNotFoundException idEx) {
           //  throw idEx; 
@@ -319,7 +314,6 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         try {
             InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
             MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
-            System.out.println("ThreadName: --------> " + Thread.currentThread().getName());
             result = (Boolean) transmit(m, mData);
         } //catch (ProbeIDNotFoundException idEx) {
            // throw idEx;

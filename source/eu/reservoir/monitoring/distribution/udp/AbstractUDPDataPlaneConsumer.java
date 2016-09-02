@@ -54,7 +54,7 @@ public abstract class AbstractUDPDataPlaneConsumer implements DataPlane, Measure
 	    // only connect if we're not already connected
 	    if (udpReceiver == null) {
                 
-                System.out.println("FT: AbstractUDPDataPlaneCunsumer.connect - Connecting to the Data Plane");
+                //System.out.println("FT: AbstractUDPDataPlaneCunsumer.connect - Connecting to the Data Plane");
                 
 		UDPReceiver rr = new UDPReceiver(this, address);
 
@@ -160,13 +160,13 @@ public abstract class AbstractUDPDataPlaneConsumer implements DataPlane, Measure
      * Receiver of a measurement, with an extra object that has context info
      */
     public Measurement report(Measurement m) {
-	System.out.println("FT: AbstractUDPDataPlaneConsumer.report - UDPDataPlaneConsumer: got " + m);
+	//System.out.println("FT: AbstractUDPDataPlaneConsumer.report - UDPDataPlaneConsumer: got " + m);
 	measurementReceiver.report(m);
 	return m;
     }
 
     /**
-     * Set the object that will recieve the measurements.
+     * Set the object that will receive the measurements.
      */
     public Object setMeasurementReceiver(MeasurementReceiver mr) {
 	Object old = measurementReceiver;

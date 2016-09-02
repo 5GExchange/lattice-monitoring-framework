@@ -6,6 +6,7 @@
 package eu.fivegex.demo;
 
 import eu.fivegex.demo.probes.docker.DockerProbe;
+import eu.fivegex.demo.probes.openstack.OpenstackProbe;
 import eu.reservoir.demo.RandomProbe;
 import eu.reservoir.monitoring.control.udp.UDPControlPlaneConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
@@ -151,8 +152,19 @@ public class SimpleDataSourceTest {
                                                             controlLocalPort);
             
             
-            Probe docker = new DockerProbe("osboxes1", "4243", "dockerTestProbe", "fb8366a76b7a", "name");
-            hostMon.turnOnProbe(docker);
+            Probe openStack = new OpenstackProbe("localhost", 
+                                                 "8777", 
+                                                 "localhost",
+                                                 "35357" /*"4444"*/, 
+                                                 "username",
+                                                 "password",
+                                                 "OpenstackTestProbe", 
+                                                 "cbf84af5-3ac1-417d-b027-abcdeddfd000", 
+                                                 "test-VNF");
+            hostMon.turnOnProbe(openStack);
+            
+            //Probe docker = new DockerProbe("osboxes1", "4243", "dockerTestProbe", "fb8366a76b7a", "name");
+            //hostMon.turnOnProbe(docker);
             
             //Probe random = new RandomProbe(".elapsedTime" + ".", "elapsedTime", 15, "de25f5b5-c73e-4fb8-80dd-ca6d97675943");
             //hostMon.turnOnProbe(random);

@@ -149,10 +149,10 @@ public class UDPReceiver implements Runnable {
 	    socket.receive(packet);
 
             
-	     System.out.println("FT: UDPReceiver Received " + packet.getLength() +
+	     /*System.out.println("FT: UDPReceiver Received " + packet.getLength() +
 			   " bytes from "+ packet.getAddress() + 
 			   ":" + packet.getPort()); 
-            
+            */
 
 	    // get an input stream over the data bytes of the packet
 	    ByteArrayInputStream theBytes = new ExposedByteArrayInputStream(packet.getData(), 0, packet.getLength());
@@ -202,7 +202,7 @@ public class UDPReceiver implements Runnable {
             System.out.println("IO error occurred" + ex.getMessage());
             return -1;
         }
-        System.out.println("FT: UDPReceiver.SendReply - sent REPLY through the socket to :" + srcAddr + " port: " + srcPort + " - " + byteStream.size() + " bytes");
+        //System.out.println("FT: UDPReceiver.SendReply - sent REPLY through the socket to :" + srcAddr + " port: " + srcPort + " - " + byteStream.size() + " bytes");
 	return byteStream.size();
         
     }

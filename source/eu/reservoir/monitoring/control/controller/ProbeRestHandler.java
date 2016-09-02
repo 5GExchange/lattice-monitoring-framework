@@ -66,7 +66,6 @@ class ProbeRestHandler extends BasicRequestHandler {
         
         try {
             if (method.equals("PUT")) {
-                System.out.println("Received PUT");
                 if (name == null && segments.length == 2)
                     probeOperation(request, response);   
                 else
@@ -121,8 +120,6 @@ class ProbeRestHandler extends BasicRequestHandler {
         
         String probeID;
         
-        System.out.println("checking segment: " + segments[1]);
-        
         scanner = new Scanner (segments[1]);
         if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
             probeID = scanner.next();
@@ -137,7 +134,6 @@ class ProbeRestHandler extends BasicRequestHandler {
         }
 
         if (query.containsKey("serviceid")) {
-            System.out.println("Setting service ID");
             
             scanner = new Scanner(query.get("serviceid"));
             String serviceID;
@@ -155,7 +151,6 @@ class ProbeRestHandler extends BasicRequestHandler {
         }
         
         else if (query.containsKey("status")) {
-            System.out.println("status");
             scanner = new Scanner(query.get("status"));
             
             String status;
@@ -184,7 +179,6 @@ class ProbeRestHandler extends BasicRequestHandler {
         }
         
         else if (query.containsKey("datarate")) {
-            System.out.println("datarate");
             scanner = new Scanner(query.get("datarate"));
             
             String dataRate;
@@ -228,7 +222,6 @@ class ProbeRestHandler extends BasicRequestHandler {
     
     
     private void deleteProbe(Request request, Response response) throws JSONException, IOException, ProbeIDNotFoundException {
-        System.out.println("Delete Probe");
         boolean success = true;
         String failMessage = null;
         JSONObject jsobj = null;

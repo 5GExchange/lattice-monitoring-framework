@@ -93,14 +93,15 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
      */
     public boolean connect() {
         
-        System.out.println("FT: AbstractPlaneInteracter.connect");
+        /*System.out.println("FT: AbstractPlaneInteracter.connect");
         
         if (this.controlPlane == null) 
             System.out.println("FT: Control Plane is null");
         
         if (this.infoPlane == null)
             System.out.println("FT: Infoplane is null");
-       
+        */
+        
 	boolean failed = false;
 	boolean conn = false;
 

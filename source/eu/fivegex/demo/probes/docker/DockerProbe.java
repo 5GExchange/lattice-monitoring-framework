@@ -19,7 +19,7 @@ public class DockerProbe extends AbstractProbe implements Probe{
     // the container ID
     String containerId;
 
-    // the container name == FQN
+    // the container name
     String containerName;
     
     long previousContainerCPUTime;
@@ -38,10 +38,9 @@ public class DockerProbe extends AbstractProbe implements Probe{
         
         ddc = new DockerDataCollector(dockerURI, Integer.valueOf(dockerPort), this.containerId);
         
-        addProbeAttribute(new DefaultProbeAttribute(0, "FQN", ProbeAttributeType.STRING, "name"));
+        addProbeAttribute(new DefaultProbeAttribute(0, "FQN", ProbeAttributeType.STRING, "name")); // we need to double check what info is needed here
         addProbeAttribute(new DefaultProbeAttribute(1, "cpu.percent", ProbeAttributeType.FLOAT, "percent"));
-        //addProbeAttribute(new DefaultProbeAttribute(1, "cpu.percent", ProbeAttributeType.LONG, "percent")); //for test
-        addProbeAttribute(new DefaultProbeAttribute(2, "mem.used", ProbeAttributeType.LONG, "kilobytes"));
+        addProbeAttribute(new DefaultProbeAttribute(2, "mem.used", ProbeAttributeType.LONG, "bytes"));
         addProbeAttribute(new DefaultProbeAttribute(3, "mem.percent", ProbeAttributeType.FLOAT, "percent"));
         
     }
@@ -77,7 +76,8 @@ public class DockerProbe extends AbstractProbe implements Probe{
             
             float cpuPercent = 0;
             if (systemCpuTimeDelta > 0)
-                cpuPercent = ((float)containerCpuTimeDelta / systemCpuTimeDelta) * ddc.getCoresNumber() * 100;
+                //this is according to 'docker stats' source code: TODO test formula on multiple cores
+                cpuPercent = ((float)containerCpuTimeDelta / systemCpuTimeDelta) * ddc.getCoresNumber() * 100; 
             
             float memPercent = 0;
             float memMaxBytes = ddc.getMaxMemBytes();
@@ -102,10 +102,8 @@ public class DockerProbe extends AbstractProbe implements Probe{
         }
         catch (TypeException e)
             {
-                System.out.println("Error in DockerProbe");
+                System.out.println("Error in DockerProbe" + e.getMessage());
             }
     return null;
-    }
-    
-    
+    }   
 }

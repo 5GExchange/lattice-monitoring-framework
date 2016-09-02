@@ -63,16 +63,16 @@ public class DockerDataCollector {
             this.usedMemBytes=jsobj.getJSONObject("memory_stats").getLong("usage");
             //System.out.println(this.usedMemBytes);
             
-            this.maxMemBytes=jsobj.getJSONObject("memory_stats").getLong("max_usage");
+            this.maxMemBytes=jsobj.getJSONObject("memory_stats").getLong("limit");
             //System.out.println(this.maxMemBytes);
             
             this.coresNumber=jsobj.getJSONObject("cpu_stats").getJSONObject("cpu_usage").getJSONArray("percpu_usage").length();
             //System.out.println(this.coresNumber);
             
             
-        } catch (JSONException | IOException ioe) {
-            ioe.printStackTrace();
-            System.out.println("error");
+        } catch (JSONException | IOException ex) {
+            //ioe.printStackTrace();
+            System.out.println("error" + ex.getMessage());
         }
     }
     

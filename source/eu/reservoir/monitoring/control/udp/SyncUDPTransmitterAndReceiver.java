@@ -66,7 +66,7 @@ public class SyncUDPTransmitterAndReceiver {
     public Object transmitAndWaitReply(ByteArrayOutputStream byteStream, InetSocketAddress dstAddr, int id) throws IOException, TypeException, SocketTimeoutException {
         
         
-        System.out.println("transmitAndWaitReply ***** ThreadName: --------> " + Thread.currentThread().getName());
+        //System.out.println("transmitAndWaitReply ***** ThreadName: --------> " + Thread.currentThread().getName());
         
         DatagramPacket packetToSend = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
         
@@ -92,7 +92,6 @@ public class SyncUDPTransmitterAndReceiver {
             socket.setSoTimeout(5000);
             socket.receive(replyPacket);
             System.out.println("Received reply from Src address: " + replyPacket.getAddress() + " Src port: " + replyPacket.getPort());
-            System.out.println("transmitAndWaitReply ***** ThreadName: --------> " + Thread.currentThread().getName() + " @ " + System.currentTimeMillis());
             
             if (transmittingAndReceiving instanceof TransmittingControl) {
                 ByteArrayInputStream theBytes = new ExposedByteArrayInputStream(replyPacket.getData(), 0, replyPacket.getLength());
