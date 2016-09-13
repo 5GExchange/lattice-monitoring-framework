@@ -22,7 +22,7 @@ public class MongodbReporter implements Reporter {
 	@Override
 	public void report(Measurement m) {
 		System.err.println("connect to mongoDB..................");
-		mongoClient = new MongoClient( "10.100.0.10" , 27017 );
+		mongoClient = new MongoClient( "172.16.1.5" , 27017 );
 		this.mongoClient = mongoClient;
 		System.out.println("connected");
 		db = mongoClient.getDatabase("test");
