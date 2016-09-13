@@ -6,7 +6,7 @@
 package eu.reservoir.demo;
 
 import eu.reservoir.monitoring.appl.BasicDataSource;
-import eu.reservoir.monitoring.control.udp.UDPControlPlaneConsumer;
+import eu.fivegex.monitoring.control.udp.UDPControlPlaneConsumer;
 import eu.reservoir.monitoring.core.AbstractDataSource;
 import eu.reservoir.monitoring.core.DataSourceInteracter;
 import eu.reservoir.monitoring.core.Probe;

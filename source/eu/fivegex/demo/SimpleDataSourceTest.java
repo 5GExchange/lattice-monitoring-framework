@@ -8,7 +8,7 @@ package eu.fivegex.demo;
 import eu.fivegex.demo.probes.docker.DockerProbe;
 import eu.fivegex.demo.probes.openstack.OpenstackProbe;
 import eu.reservoir.demo.RandomProbe;
-import eu.reservoir.monitoring.control.udp.UDPControlPlaneConsumer;
+import eu.fivegex.monitoring.control.udp.UDPControlPlaneConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.DataSourceInteracter;
 import eu.reservoir.monitoring.core.Probe;

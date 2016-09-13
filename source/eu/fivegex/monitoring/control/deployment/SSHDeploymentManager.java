@@ -3,10 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.demo;
+package eu.fivegex.monitoring.control.deployment;
 
-import eu.reservoir.monitoring.control.controller.DeploymentException;
-import eu.reservoir.monitoring.control.controller.DeploymentDelegate;
+import eu.fivegex.monitoring.control.controller.DeploymentException;
+import eu.fivegex.monitoring.control.controller.DeploymentDelegate;
 import eu.reservoir.monitoring.core.ID;
 import com.jcraft.jsch.*;
 import java.io.File;

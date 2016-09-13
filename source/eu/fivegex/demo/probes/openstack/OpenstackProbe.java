@@ -46,7 +46,7 @@ public class OpenstackProbe extends AbstractProbe implements Probe{
         
         addProbeAttribute(new DefaultProbeAttribute(0, "FQN", ProbeAttributeType.STRING, "name")); // we need to double check what info is needed here
         addProbeAttribute(new DefaultProbeAttribute(1, "cpu.percent", ProbeAttributeType.FLOAT, "percent"));
-        addProbeAttribute(new DefaultProbeAttribute(2, "mem.used", ProbeAttributeType.FLOAT, "MegaBytes"));
+        addProbeAttribute(new DefaultProbeAttribute(2, "mem.used", ProbeAttributeType.FLOAT, "megabytes"));
         addProbeAttribute(new DefaultProbeAttribute(3, "mem.percent", ProbeAttributeType.FLOAT, "percent"));  
     }
     

@@ -11,7 +11,7 @@ import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.distribution.multicast.MulticastDataPlaneProducerWithNames;
 import eu.reservoir.monitoring.distribution.multicast.MulticastAddress;
-import eu.reservoir.monitoring.control.udp.AbstractUDPControlPlaneConsumer;
+import eu.fivegex.monitoring.control.udp.AbstractUDPControlPlaneConsumer;
 import java.net.InetAddress;
 import java.util.Scanner;
 

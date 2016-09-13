@@ -1,4 +1,4 @@
-package eu.fivegex.demo;
+package eu.fivegex.monitoring.control.deployment;
 
 import eu.reservoir.monitoring.core.ID;
 

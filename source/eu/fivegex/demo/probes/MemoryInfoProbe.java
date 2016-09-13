@@ -1,4 +1,4 @@
-// MemoryInfo.java
+// MemoryInfoProbe.java
 // Author: Stuart Clayman
 // Email: sclayman@ee.ucl.ac.uk
 // Date: Sep 2009
@@ -13,14 +13,14 @@ import java.util.ArrayList;
  * A probe to get memory info on a Linux system.
  * It uses /proc/meminfo to read the underyling data.
  */
-public class MemoryInfo extends AbstractProbe implements Probe  {
+public class MemoryInfoProbe extends AbstractProbe implements Probe  {
     // A MemoryDev object that reads info about memory 
     MemoryDev memDev;
 
     /*
-     * Construct a MemoryInfo probe
+     * Construct a MemoryInfoProbe probe
      */
-    public MemoryInfo(String name) {
+    public MemoryInfoProbe(String name) {
 	setName(name);
         setDataRate(new Rational(360, 1));
 

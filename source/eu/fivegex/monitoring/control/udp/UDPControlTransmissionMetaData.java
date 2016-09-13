@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.reservoir.monitoring.control.udp;
+package eu.fivegex.monitoring.control.udp;
 
 import eu.reservoir.monitoring.distribution.MetaData;
 import java.io.Serializable;

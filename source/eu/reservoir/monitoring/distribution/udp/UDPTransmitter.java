@@ -5,7 +5,7 @@
 
 package eu.reservoir.monitoring.distribution.udp;
 
-import eu.reservoir.monitoring.control.udp.TransmittingControl;
+import eu.fivegex.monitoring.control.udp.TransmittingControl;
 import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.distribution.*;
 import java.net.*;

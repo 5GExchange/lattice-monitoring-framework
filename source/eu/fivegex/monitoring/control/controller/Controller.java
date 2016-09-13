@@ -3,14 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.reservoir.monitoring.control.controller;
+package eu.fivegex.monitoring.control.controller;
 
-import eu.fivegex.demo.CatalogueException;
-import eu.fivegex.demo.JSONProbeCatalogue;
-import eu.fivegex.demo.SSHDeploymentManager;
+import eu.fivegex.monitoring.control.probescatalogue.CatalogueException;
+import eu.fivegex.monitoring.control.probescatalogue.JSONProbeCatalogue;
+import eu.fivegex.monitoring.control.deployment.SSHDeploymentManager;
 import eu.reservoir.monitoring.appl.BasicConsumer;
 import eu.reservoir.monitoring.appl.datarate.EveryNSeconds;
-import eu.reservoir.monitoring.control.udp.UDPControlPlaneProducer;
+import eu.fivegex.monitoring.control.udp.UDPControlPlaneProducer;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.PlaneInteracter;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
@@ -41,7 +41,7 @@ public class Controller {
     
     private Controller() {}
     
-    private void init(String infoPlaneAddr, int infoPlanePort, int managementPort, String probesPackage, Properties pr) {
+    private void init(String infoPlaneAddr, int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {
         
         // we create an object to interact to the Lattice planes  
         planeInteracter = new BasicConsumer();
@@ -74,8 +74,7 @@ public class Controller {
             this.usingDeploymentManager = false;
         }
         
-        
-        probeCatalogue = new JSONProbeCatalogue(probesPackage);
+        probeCatalogue = new JSONProbeCatalogue(probesPackage, probesSuffix);
         
         console=new ControllerManagementConsole(this, managementPort);
         console.start();   
@@ -317,6 +316,7 @@ public class Controller {
         int infoPlaneLocalPort = 6699;
         int restConsolePort = 6666;
         String probePackage = "eu.fivegex.demo.probes";
+        String probeSuffix = "Probe";
         
         if (args.length == 0)
             propertiesFile = System.getProperty("user.home") + "/controller.properties";
@@ -337,6 +337,7 @@ public class Controller {
             infoPlaneLocalPort = Integer.parseInt(prop.getProperty("info.localport"));
             restConsolePort = Integer.parseInt(prop.getProperty("restconsole.localport"));
             probePackage = prop.getProperty("probes.package");
+            probeSuffix = prop.getProperty("probes.suffix");
             
 	} catch (IOException ex) {
 		System.out.println("Error while opening the property file: " + ex.getMessage());
@@ -362,7 +363,7 @@ public class Controller {
         } catch (Exception e) {
         }
          
-        myController.init(currentHost, infoPlaneLocalPort, restConsolePort, probePackage, prop);
+        myController.init(currentHost, infoPlaneLocalPort, restConsolePort, probePackage, probeSuffix, prop);
         
     }
 }

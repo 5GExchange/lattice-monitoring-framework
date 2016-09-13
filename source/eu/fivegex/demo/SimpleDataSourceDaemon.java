@@ -1,6 +1,6 @@
 package eu.fivegex.demo;
 
-import eu.reservoir.monitoring.control.udp.UDPControlPlaneConsumer;
+import eu.fivegex.monitoring.control.udp.UDPControlPlaneConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.DataSourceInteracter;
 import eu.reservoir.monitoring.core.plane.ControlPlane;

@@ -3,9 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.reservoir.monitoring.control.udp;
+package eu.fivegex.monitoring.control.udp;
 
-import eu.reservoir.monitoring.control.controller.InfoResolver;
+import eu.fivegex.monitoring.control.controller.InfoResolver;
 import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneMessage;

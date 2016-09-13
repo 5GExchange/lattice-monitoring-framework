@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.demo;
+package eu.fivegex.monitoring.control.probescatalogue;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -18,8 +18,8 @@ import us.monoid.json.JSONObject;
 public final class JSONProbeCatalogue extends AbstractProbeCatalogue {
     JSONObject probeCatalogue;
     
-    public JSONProbeCatalogue(String probesPackage) {
-        super(probesPackage);
+    public JSONProbeCatalogue(String probesPackage, String probesSuffix) {
+        super(probesPackage, probesSuffix);
         this.probeCatalogue = new JSONObject();
         
     }
@@ -31,7 +31,6 @@ public final class JSONProbeCatalogue extends AbstractProbeCatalogue {
         
         for (Class cl : probeClasses) {   
             JSONObject probeInfo = new JSONObject();
-            //System.out.println(cl.getName());
             Constructor [] cons = cl.getConstructors();
             int i=1;
             for (Constructor constructor : cons) {
@@ -63,7 +62,7 @@ public final class JSONProbeCatalogue extends AbstractProbeCatalogue {
     
     
     public static void main (String[] args) {
-        JSONProbeCatalogue c = new JSONProbeCatalogue("eu.fivegex.demo.probes");
+        JSONProbeCatalogue c = new JSONProbeCatalogue("eu.fivegex.demo.probes", "Probe");
         //JSONProbeCatalogue c = new JSONProbeCatalogue("eu.fivegex.demo");
         try {
             System.out.println(c.getProbeCatalogue().toString(5));

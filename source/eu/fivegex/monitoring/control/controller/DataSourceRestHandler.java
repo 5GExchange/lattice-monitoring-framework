@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.reservoir.monitoring.control.controller;
+package eu.fivegex.monitoring.control.controller;
 
 import cc.clayman.console.BasicRequestHandler;
 import cc.clayman.console.RequestHandler;
