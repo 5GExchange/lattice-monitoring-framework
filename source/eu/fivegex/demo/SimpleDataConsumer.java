@@ -16,16 +16,20 @@ import java.util.Scanner;
  */
 public class SimpleDataConsumer {
     // The Basic consumer
-    BasicConsumer consumer;
+    MongodbConsumer consumer;
 
     /*
      * Construct a SimpleConsumerUDP
      */
     public SimpleDataConsumer(String addr, int dataPort) {
 	// set up a BasicConsumer
-	consumer = new BasicConsumer();
+	//consumer = new BasicConsumer();
 
-	// set up an IP address for data
+    // set up a BasicConsumer for MongoDB
+    //consumer = new BasicConsumer(addr,dataPort);
+    consumer = new MongodbConsumer(addr,dataPort);
+	
+    // set up an IP address for data
 	InetSocketAddress address = new InetSocketAddress(addr, dataPort);
 
 	// set up data plane
