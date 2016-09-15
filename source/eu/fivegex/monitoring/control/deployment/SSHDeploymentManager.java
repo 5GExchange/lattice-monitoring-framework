@@ -196,7 +196,7 @@ public class SSHDeploymentManager implements DeploymentDelegate {
                                     break;
                                 }
                                 
-                                Thread.sleep(500);       
+                                Thread.sleep(1000);       
                         }
                     } catch (JSchException | IOException e)
                         {

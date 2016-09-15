@@ -1,10 +1,14 @@
 package eu.fivegex.demo;
 
 import eu.reservoir.monitoring.core.ID;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Scanner;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
@@ -23,13 +27,55 @@ public class LatticeTest {
     String vimURI;
     Resty rest;
     int port;
+    
+    //general attributes
+    String endPointAddress;
+    String endPointName;
+    String endPointUserName;
 
+    String dataConsumerAddress;
+    String dataConsumerPort;
+    
+    String controllerAddress;
+    String remoteInfoPort;
+    String localInfoPort;
+    String localControlPort;
+    
+    //docker related attributes
+    String dockerHost;
+    String dockerPort;
+    String dockerContainerID;
+    String dockerContainerName;
+    
+    
+    
+    
     /**
-     * Construct a VimClient
+     * Construct a LatticeTest
      * using defaults of localhost and port 6666
      */
-    public LatticeTest() throws UnknownHostException, IOException {
-        this("localhost", 6666);
+    public LatticeTest(Map configuration) throws UnknownHostException, IOException {
+        this((String)configuration.get("RESTAddress"), Integer.valueOf((String)configuration.get("RESTPort")));
+        
+        endPointAddress = (String)configuration.get("endPointAddress");
+        endPointName = (String)configuration.get("endPointName");
+        endPointUserName = (String)configuration.get("endPointUserName");
+
+        dataConsumerAddress = (String)configuration.get("dataConsumerAddress");
+        dataConsumerPort = (String)configuration.get("dataConsumerPort");
+        
+        controllerAddress = (String)configuration.get("controllerAddress");
+        dataConsumerPort = (String)configuration.get("dataConsumerPort");
+        
+        controllerAddress = (String)configuration.get("controllerAddress");
+        remoteInfoPort = (String)configuration.get("remoteInfoPort");
+        localInfoPort = (String)configuration.get("localInfoPort");
+        localControlPort = (String)configuration.get("localControlPort");
+        
+        dockerHost = (String)configuration.get("dockerHost");
+        dockerPort = (String)configuration.get("dockerPort");
+        dockerContainerID = (String)configuration.get("dockerContainerID");
+        dockerContainerName = (String)configuration.get("dockerContainerName");        
     }
 
     /**
@@ -58,9 +104,6 @@ public class LatticeTest {
     private synchronized void initialize(InetAddress addr, int port) {
         this.port = port;
         vimURI = "http://" + addr.getHostName() + ":" + Integer.toString(port);
-
-        //Logger.getLogger("log").logln(USR.STDOUT, "globalControllerURI: " + vimURI);
-
         rest = new Resty();
     }
 
@@ -76,7 +119,7 @@ public class LatticeTest {
     public JSONObject loadProbeOnDsByID(String ID, String name, String args) throws JSONException {
         try {
             String uri = vimURI + "/datasource/" + ID + "/probe/?className=" + name + "&args=" + java.net.URLEncoder.encode(args, "UTF-8");
-            System.out.println(uri);
+            //System.out.println(uri);
             JSONObject jsobj = rest.json(uri, form("")).toObject();
 
             return jsobj;
@@ -106,7 +149,7 @@ public class LatticeTest {
     public JSONObject turnProbeOn(String probeID) throws JSONException {
         try {
             String uri = vimURI + "/probe/" + probeID + "/?status=on";
-            System.out.println(uri);
+            //System.out.println(uri);
             JSONObject jsobj = rest.json(uri, put(content(""))).toObject();
 
             return jsobj;
@@ -120,7 +163,7 @@ public class LatticeTest {
     public JSONObject turnProbeOff(String probeID) throws JSONException {
         try {
             String uri = vimURI + "/probe/" + probeID + "/?status=off";
-            System.out.println(uri);
+            //System.out.println(uri);
             JSONObject jsobj = rest.json(uri, put(content(""))).toObject();
 
             return jsobj;
@@ -175,7 +218,7 @@ public class LatticeTest {
     public JSONObject deployDS(String endPoint, String userName, String args) throws JSONException {
         try {
             String uri = vimURI + "/datasource/?endpoint=" + endPoint + "&username=" + userName + "&args=" + args;
-            System.out.println(uri);
+            //System.out.println(uri);
             JSONObject jsobj = rest.json(uri, form("")).toObject();
 
             return jsobj;
@@ -197,98 +240,160 @@ public class LatticeTest {
         }
     }
     
+    private void testMemoryInfoProbe(String probeName) {
+        String probeClassName = "eu.fivegex.demo.probes.MemoryInfoProbe";
+        JSONObject out;
+        
+        System.out.println("Deploying DS on endpoint: " + endPointName);
+        
+        try {
+            out = deployDS(endPointName, endPointUserName, dataConsumerAddress + "+" + 
+                          dataConsumerPort + "+" +
+                          controllerAddress + "+" +
+                          remoteInfoPort + "+" +
+                          localInfoPort + "+" +
+                          localControlPort
+                          );
+            
+            String dsID = out.getString("ID");
+            System.out.println("Creating probe on endpoint: " + endPointName + " - DS id: " + dsID);
+            System.out.println("Dinamically loading probe class: " + probeClassName);
+            
+            //Thread.sleep(500);
+            
+            out = loadProbeOnDsByID(dsID, probeClassName, probeName);
+            
+            String probeID = out.getString("createdProbeID");
+            
+            String serviceID = ID.generate().toString();
+            System.out.println("Setting serviceID " + serviceID + " on probe " + probeID + " on endpoint " + endPointName  + " - DS id: " + dsID);
+            setProbeServiceID(probeID, serviceID);
+            
+            System.out.println("Turning on probe " + probeID + " on endpoint " + endPointName  + " - DS id: " + dsID);
+            turnProbeOn(probeID);
+            
+            Thread.sleep(5000);
+            
+            System.out.println("Turning off probe " + probeID + " on endpoint " + endPointName + " - DS id: " + dsID);
+            turnProbeOff(probeID);
+            
+            System.out.println("Stopping DS on endpoint: "  + endPointAddress + " - DS id: " + dsID);
+            out = stopDS(endPointAddress, endPointUserName);  
+        }
+        catch (JSONException ex) {
+            //test failed
+            System.out.println("Test MemoryInfoProbe Failed!");
+            System.exit(1);
+        }
+        
+        catch (InterruptedException ex) {
+            return;
+        }
+        
+    }
     
+    private void testDockerProbe(String probeName) { 
+        String probeClassName = "eu.fivegex.demo.probes.docker.DockerProbe";
+        JSONObject out;
+        
+        System.out.println("Deploying DS on endpoint: " + endPointName);
+        
+        try {
+            out = deployDS(endPointName, endPointUserName, dataConsumerAddress + "+" + 
+                          dataConsumerPort + "+" +
+                          controllerAddress + "+" +
+                          remoteInfoPort + "+" +
+                          localInfoPort + "+" +
+                          localControlPort
+                          );
+            
+            String dsID = out.getString("ID");
+            System.out.println("Creating probe on endpoint: " + endPointName + " - DS id: " + dsID);
+            System.out.println("Dinamically loading probe class: " + probeClassName);
+            
+            //Thread.sleep(500);
+            
+            out = loadProbeOnDsByID(dsID, probeClassName, dockerHost + "+" +
+                                     dockerPort + "+" +
+                                     probeName + "+" +
+                                     dockerContainerID + "+" +
+                                     dockerContainerName
+                                    );
+            
+            String probeID = out.getString("createdProbeID");
+            
+            String serviceID = ID.generate().toString();
+            System.out.println("Setting serviceID " + serviceID + " on probe " + probeID + " on endpoint " + endPointName  + " - DS id: " + dsID);
+            setProbeServiceID(probeID, serviceID);
+            
+            System.out.println("Turning on probe " + probeID + " on endpoint " + endPointName  + " - DS id: " + dsID);
+            turnProbeOn(probeID);
+            
+            Thread.sleep(5000);
+            
+            System.out.println("Turning off probe " + probeID + " on endpoint " + endPointName + " - DS id: " + dsID);
+            turnProbeOff(probeID);
+            
+            System.out.println("Stopping DS on endpoint: "  + endPointAddress + " - DS id: " + dsID);
+            out = stopDS(endPointAddress, endPointUserName);   
+        }
+        catch (JSONException ex) {
+            //test failed
+            System.out.println("Test DockerProbe Failed!");
+            System.exit(1);
+        }
+        
+        catch (InterruptedException ex) {
+            return;
+        }
+    }
     
     
     public static void main(String[] args) {
         try {
-            LatticeTest client = new LatticeTest("localhost", 6666);
-
-            /* just for testing */
-
-            JSONObject out;
-
-            String endPointAddress = "172.16.1.11";
-            String endPoint = "test-vnf.novalocal";
-
-            String dataConsumerAddress = "172.16.1.7";
-            String dataConsumerPort = "22997";
-            String controllerAddress = "172.16.1.7";
-            String remoteInfoPort = "6699";
-            String localInfoPort = "9999";
-            String localControlPort = "1111";
+            Map <String, String> settings = new HashMap<>();
+            Properties prop = new Properties();
+            InputStream input = null;
+            String propertiesFile = null;
             
-            String userName = "lattice"; //"osboxes";
+            if (args.length == 0)
+                propertiesFile = System.getProperty("user.home") + "/latticeTest.properties";
+            else if (args.length == 1)
+                propertiesFile = args[0];
+            else {
+                System.out.println("Please use: java LatticeTest [file.properties]");
+                System.exit(1);
+            }
             
-            //String probeClassName = "eu.fivegex.demo.probes.RandomProbe";
+            input = new FileInputStream(propertiesFile);
+            prop.load(input);
             
-            String probeClassName = "eu.fivegex.demo.probes.docker.DockerProbe";
-            String dockerHost = "172.16.1.15";
-            String dockerPort = "4243";
-            String probeName = "dockerTestProbe";
-            String dockerContainerID = "40a0d720d23c";
-            String dockerContainerName = "testContainer@"+ dockerHost;
+            settings.put("RESTAddress", prop.getProperty("rest.address"));
+            settings.put("RESTPort", prop.getProperty("rest.port"));
+            
+            settings.put("endPointAddress", prop.getProperty("endpoint.address"));
+            settings.put("endPointName", prop.getProperty("endpoint.name"));
+            settings.put("endPointUserName", prop.getProperty("endpoint.user"));
+            
+            settings.put("dataConsumerAddress", prop.getProperty("dc.address"));
+            settings.put("dataConsumerPort", prop.getProperty("dc.port"));
 
-            System.out.println("Deploying DS on endpoint: " + endPoint);
+            settings.put("controllerAddress", prop.getProperty("controller.address"));
+            settings.put("remoteInfoPort", prop.getProperty("controller.remoteinfoport"));
+            settings.put("localInfoPort", prop.getProperty("controller.localinfoport"));
+            settings.put("localControlPort", prop.getProperty("controller.localcontrolport"));
             
-            out = client.deployDS(endPoint, userName, dataConsumerAddress + "+" + 
-                                                      dataConsumerPort + "+" +
-                                                      controllerAddress + "+" +
-                                                      remoteInfoPort + "+" +
-                                                      localInfoPort + "+" +
-                                                      localControlPort
-                                 );
+            settings.put("dockerHost", prop.getProperty("docker.host"));
+            settings.put("dockerPort", prop.getProperty("docker.port"));
+            settings.put("dockerContainerID", prop.getProperty("docker.containerid"));
+            settings.put("dockerContainerName", "testContainer@" + prop.getProperty("docker.host"));
             
-            System.out.println(out);
-            System.in.read();
+            LatticeTest client = new LatticeTest(settings);
 
-            String dsID = out.getString("ID");
-            System.out.println("Creating probe on endpoint: " + endPoint + " - DS id: " + dsID);
-            System.out.println("Dinamically loading probe class: " + probeClassName);
+            // TODO: change test to use a single DS and the same Service ID
+            client.testDockerProbe("testDockerProbe");
+            client.testMemoryInfoProbe("testMemoryProbe");
             
-            //out = client.loadProbeOnDsByID(dsID, probeClassName, "myProbe+myAttribute+15");
-            out = client.loadProbeOnDsByID(dsID, probeClassName, dockerHost + "+" +
-                                                                 dockerPort + "+" +
-                                                                 probeName + "+" +
-                                                                 dockerContainerID + "+" +
-                                                                 dockerContainerName
-                                          );
-            
-            System.out.println(out);
-            System.in.read();
-
-            String probeID = out.getString("createdProbeID");
-            System.out.println("Turning on probe " + probeID + " on endpoint " + endPoint  + " - DS id: " + dsID);
-            client.turnProbeOn(probeID);
-            System.in.read();
-
-            System.out.println("Turning off probe " + probeID + " on endpoint " + endPoint + " - DS id: " + dsID);
-            client.turnProbeOff(probeID);
-            System.in.read();
-
-            System.out.println("Unloading probe: " + probeID + " on endpoint " + endPoint + " - DS id: " + dsID);
-            client.unloadProbe(probeID);
-            System.in.read();
-
-            System.out.println("Stopping DS on endpoint: "  + endPointAddress + " - DS id: " + dsID);
-            out = client.stopDS(endPointAddress, userName);
-            System.out.println(out);
-            System.in.read();
-
-            /* this should fail */
-            System.out.println("Creating probe on endpoint: " + endPoint + " - DS id: " + dsID);
-            System.out.println("Dinamically loading probe class: " + probeClassName);
-            
-            //out = client.loadProbeOnDsByID(dsID, probeClassName, "myProbe+myAttribute+15");
-            out = client.loadProbeOnDsByID(dsID, probeClassName, dockerHost + "+" +
-                                                                 dockerPort + "+" +
-                                                                 probeName + "+" +
-                                                                 dockerContainerID + "+" +
-                                                                 dockerContainerName
-                                          );
-            
-            System.out.println(out);
-            System.in.read();
         }
         catch (Exception e) {
             System.out.println("Error! " + e.getMessage());

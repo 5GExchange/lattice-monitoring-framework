@@ -48,7 +48,7 @@ public class DockerProbe extends AbstractProbe implements Probe{
 
     @Override
     public void beginThreadBody() {
-	System.err.println("DockerProbe: beginThread " + this.containerName + " with ID " + this.containerId);
+	System.out.println("DockerProbe: beginThread " + this.containerName + " with ID " + this.containerId);
         ddc.collectValues();
         previousContainerCPUTime = ddc.getContainerCpuTime();
         previousSystemCPUTime = ddc.getSystemCpuTime();
@@ -71,8 +71,8 @@ public class DockerProbe extends AbstractProbe implements Probe{
             long containerCpuTimeDelta = ddc.getContainerCpuTime() - previousContainerCPUTime;
             long systemCpuTimeDelta = ddc.getSystemCpuTime() - previousSystemCPUTime;
             
-            System.out.println("CPUTime delta: " + containerCpuTimeDelta);
-            System.out.println("SystemTime delta: " + systemCpuTimeDelta);
+            //System.out.println("CPUTime delta: " + containerCpuTimeDelta);
+            //System.out.println("SystemTime delta: " + systemCpuTimeDelta);
             
             float cpuPercent = 0;
             if (systemCpuTimeDelta > 0)
@@ -100,7 +100,7 @@ public class DockerProbe extends AbstractProbe implements Probe{
             
             return m;
         }
-        catch (TypeException e)
+        catch (Exception e)
             {
                 System.out.println("Error in DockerProbe" + e.getMessage());
             }

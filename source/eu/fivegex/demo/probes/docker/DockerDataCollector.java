@@ -5,10 +5,8 @@
  */
 package eu.fivegex.demo.probes.docker;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 import us.monoid.web.Resty;
 
@@ -70,9 +68,8 @@ public class DockerDataCollector {
             //System.out.println(this.coresNumber);
             
             
-        } catch (JSONException | IOException ex) {
-            //ioe.printStackTrace();
-            System.out.println("error" + ex.getMessage());
+        } catch (Exception ex) {
+            System.out.println("error: " + ex.getMessage());
         }
     }
     

@@ -20,18 +20,12 @@ public class MongodbConsumer extends AbstractDataConsumer implements Measurement
     /**
      * Construct a BasicConsumer.
      */
-    public MongodbConsumer() {
+    public MongodbConsumer(String dbAddr, int dbPort, String dbName) {
         // The default way to report a measurement is to print it
-        Reporter reporter =  new PrintReporter();
-
-        addReporter(reporter);
+        Reporter printReporter =  new PrintReporter();
+        Reporter mongoReporter = new MongodbReporter(dbAddr, dbPort, dbName);
+        
+        addReporter(printReporter);
+        addReporter(mongoReporter);
     }
-
-    public MongodbConsumer(String addr, int dataPort) {
-        Reporter reporter =     new MongodbReporter();
-
-        addReporter(reporter);
-
-    }
-
 }

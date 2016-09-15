@@ -6,10 +6,8 @@ package eu.fivegex.demo;
 
 
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneConsumer;
-//import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneConsumer;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-//import java.net.InetSocketAddress;
 import java.util.Scanner;
 
 /**
@@ -22,12 +20,12 @@ public class DataConsumerWithMongoDBReporter {
     /*
      * Construct a SimpleConsumerUDP
      */
-    public DataConsumerWithMongoDBReporter(String addr, int dataPort) {
+    public DataConsumerWithMongoDBReporter(String addr, int dataPort, String dbAddr, int dbPort, String dbName) {
         // set up a BasicConsumer
         //consumer = new BasicConsumer();
 
         // set up a BasicConsumer for MongoDB
-        consumer = new MongodbConsumer(addr,dataPort);
+        consumer = new MongodbConsumer(dbAddr, dbPort, dbName);
 
         // set up an IP address for data
         InetSocketAddress address = new InetSocketAddress(addr, dataPort);
@@ -40,6 +38,10 @@ public class DataConsumerWithMongoDBReporter {
     }
     public static void main(String [] args) {
         String currentHost="localhost";
+        String mongoDBAddress = "";
+        int mongoDBPort = 0;
+        String mongDBName = "test";
+        
         int port = 22997;
         try {
             currentHost = InetAddress.getLocalHost().getHostName();
@@ -47,7 +49,7 @@ public class DataConsumerWithMongoDBReporter {
         }
 
         if (args.length == 0) {
-            new DataConsumerWithMongoDBReporter(currentHost, port);
+            new DataConsumerWithMongoDBReporter(currentHost, port, mongoDBAddress, mongoDBPort, mongDBName);
             System.err.println("DataConsumerWithMongoDBReporter listening on " + currentHost + "/" + port);
         } else if (args.length == 2) {
             String addr = args[0];
@@ -55,7 +57,7 @@ public class DataConsumerWithMongoDBReporter {
             Scanner sc = new Scanner(args[1]);
             port = sc.nextInt();
 
-            new DataConsumerWithMongoDBReporter(addr, port);
+            new DataConsumerWithMongoDBReporter(addr, port, mongoDBAddress, mongoDBPort, mongDBName);
             System.err.println("DataConsumerWithMongoDBReporter listening on " + addr + "/" + port);
         } else {
             System.err.println("usage: DataConsumerWithMongoDBReporter localhost port");
