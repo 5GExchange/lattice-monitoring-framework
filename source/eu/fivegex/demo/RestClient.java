@@ -1,10 +1,8 @@
 package eu.fivegex.demo;
 
-import eu.reservoir.monitoring.core.ID;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Scanner;
 
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
@@ -143,6 +141,21 @@ public class RestClient {
         }
     }
     
+    
+    // curl -X PUT http://localhost:6666/probe/<probeUUID>/?sliceid=<sliceUUID>
+    public JSONObject setProbeSliceID(String probeID, String sliceID) throws JSONException {
+        try {
+            String uri = vimURI + "/probe/" + probeID + "/?sliceid=" + sliceID;
+            
+            JSONObject jsobj = rest.json(uri, put(content(""))).toObject();
+
+            return jsobj;
+        } catch (IOException ioe) {
+            throw new JSONException("setProbeSliceID FAILED" + " IOException: " + ioe.getMessage());
+        }
+    }
+    
+    
     // curl -X DELETE http://localhost:6666/probe/<probeUUID>
     public JSONObject unloadProbe(String probeID) throws JSONException {
         try {
@@ -196,101 +209,4 @@ public class RestClient {
             throw new JSONException("stopDS FAILED" + " IOException: " + ioe.getMessage());
         }
     }
-    
-    
-    
-    
-    public static void main(String[] args) {
-        try {
-            RestClient client = new RestClient("localhost", 6666);
-
-            /* just for testing */
-
-            JSONObject out;
-
-            String endPointAddress = "192.168.56.101";
-            String endPoint = "osboxes1";
-
-            String userName = "lattice"; //"osboxes";
-            String probeClassName = "eu.fivegex.demo.probes.RandomProbe";
-
-            System.out.println("Deploying DS on endpoint: " + endPoint);
-            out = client.deployDS(endPoint, userName, "192.168.56.1+22997+192.168.56.1+6699+9999+1111");
-            System.out.println(out);
-            //System.in.read();
-
-            String dsID = out.getString("ID");
-            System.out.println("Creating probe on endpoint: " + endPoint + " - DS id: " + dsID);
-            System.out.println("Dinamically loading probe class: " + probeClassName);
-            out = client.loadProbeOnDsByID(dsID, probeClassName, "myProbe+myAttribute+15");
-            System.out.println(out);
-            System.in.read();
-
-            String probeID = out.getString("createdProbeID");
-            System.out.println("Turning on probe " + probeID + " on endpoint " + endPoint  + " - DS id: " + dsID);
-            client.turnProbeOn(probeID);
-            System.in.read();
-
-            System.out.println("Turning off probe " + probeID + " on endpoint " + endPoint + " - DS id: " + dsID);
-            client.turnProbeOff(probeID);
-            System.in.read();
-
-            System.out.println("Unloading probe: " + probeID + " on endpoint " + endPoint + " - DS id: " + dsID);
-            client.unloadProbe(probeID);
-            System.in.read();
-
-            System.out.println("Stopping DS on endpoint: "  + endPointAddress + " - DS id: " + dsID);
-            out = client.stopDS(endPointAddress, userName);
-            System.out.println(out);
-            System.in.read();
-
-            /* this should fail */
-            System.out.println("Creating probe on endpoint: " + endPoint + " - DS id: " + dsID);
-            System.out.println("Dinamically loading probe class: " + probeClassName);
-            out = client.loadProbeOnDsByID(dsID, probeClassName, "myProbe+myAttribute+15");
-            System.out.println(out);
-            System.in.read();
-
-            /*
-            System.out.println("Creating probe");
-            out = client.loadProbeOnDsByName(dsName, "eu.fivegex.demo.probes.RandomProbe", "myProbe+myAttribute+15");
-            System.in.read();
-
-            //getting created probe ID
-            String probeID = (String) out.get("createdProbeID");
-
-            //setting (random generated) service ID to the created probe
-            System.out.println("Setting service ID on probe: " + probeID);
-            client.setProbeServiceID(probeID, ID.generate().toString());
-            System.in.read();
-
-            //turning probe on
-            System.out.println("turning on probe: " + probeID);
-            client.turnProbeOn(probeID);
-            System.in.read();
-
-            //turing probe off
-            System.out.println("turning off probe: " + probeID);
-            client.turnProbeOff(probeID);
-            System.in.read();
-
-            //unloading the probe
-            System.out.println("unloading probe: " + probeID);
-            client.unloadProbe(probeID);
-            System.in.read();
-
-            System.out.println("getting probes catalogue: ");
-            System.out.println(client.getProbesCatalogue());
-            System.in.read();
-
-            System.out.println("deploying DS");
-            System.out.println(client.deployDS("192.168.56.101", "osboxes", ""));
-            */
-        }
-        catch (Exception e) {
-            System.out.println("Error!" + e.getMessage());
-        }
-    }
 }
-
-    

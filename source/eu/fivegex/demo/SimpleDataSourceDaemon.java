@@ -96,7 +96,8 @@ public final class SimpleDataSourceDaemon extends Thread {
         //the root of the DHT is by default on infoPlaneRootName 6699
         ds.setInfoPlane(new DHTInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
         
-	ds.connect();
+	if (!ds.connect()) 
+            System.exit(1); //terminating as there was an error while connecting to the planes
         
         ds.getDataSourceDelegate().addDataSourceInfo(ds);
     }
@@ -117,7 +118,7 @@ public final class SimpleDataSourceDaemon extends Thread {
     }
     
     
-    public static void main(String [] args) throws InterruptedException {
+    public static void main(String [] args) {
         //System.out.println(args.length);
         try {
             String dsName = null;

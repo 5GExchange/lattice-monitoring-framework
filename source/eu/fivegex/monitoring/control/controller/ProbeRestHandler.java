@@ -150,6 +150,23 @@ class ProbeRestHandler extends BasicRequestHandler {
         jsobj = controller_.setProbeServiceID(probeID, serviceID);    
         }
         
+        else if (query.containsKey("sliceid")) {
+            
+            scanner = new Scanner(query.get("sliceid"));
+            String sliceID;
+            
+            if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
+                sliceID = scanner.next();
+                scanner.close();
+            } else {
+            	scanner.close();
+                complain(response, "slice ID is not a valid UUID");
+                return;
+            }   
+            
+        jsobj = controller_.setProbeGroupID(probeID, sliceID);    
+        }
+        
         else if (query.containsKey("status")) {
             scanner = new Scanner(query.get("status"));
             

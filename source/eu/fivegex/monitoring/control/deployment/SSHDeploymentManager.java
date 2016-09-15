@@ -196,7 +196,7 @@ public class SSHDeploymentManager implements DeploymentDelegate {
                                     break;
                                 }
                                 
-                                Thread.sleep(1000);       
+                                Thread.sleep(2000); //this should also allow the DS to connect to the infoPlane before returning the associated ID    
                         }
                     } catch (JSchException | IOException e)
                         {

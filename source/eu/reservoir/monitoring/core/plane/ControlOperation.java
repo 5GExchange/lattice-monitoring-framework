@@ -19,7 +19,8 @@ public enum ControlOperation {
     LOAD_PROBE("loadProbe"),
     UNLOAD_PROBE("unloadProbe"),
     SET_PROBE_SERVICE_ID("setProbeServiceID"),
-    SET_PROBE_DATA_RATE("setProbeDataRate");
+    SET_PROBE_DATA_RATE("setProbeDataRate"),
+    SET_PROBE_GROUP_ID("setProbeGroupID");
     
     private static final HashMap<String, ControlOperation> lookup = new HashMap<>();
 

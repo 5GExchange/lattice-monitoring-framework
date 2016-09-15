@@ -18,6 +18,8 @@ import static us.monoid.web.Resty.delete;
 import static us.monoid.web.Resty.put;
 import static us.monoid.web.Resty.content;
 import static us.monoid.web.Resty.form;
+import static us.monoid.web.Resty.content;
+import static us.monoid.web.Resty.form;
 
 /**
  * Makes REST calls to VIM / GlobalController using Resty
@@ -186,6 +188,21 @@ public class LatticeTest {
         }
     }
     
+    
+    // curl -X PUT http://localhost:6666/probe/<probeUUID>/?sliceid=<sliceUUID>
+    public JSONObject setProbeSliceID(String probeID, String sliceID) throws JSONException {
+        try {
+            String uri = vimURI + "/probe/" + probeID + "/?sliceid=" + sliceID;
+            
+            JSONObject jsobj = rest.json(uri, put(content(""))).toObject();
+
+            return jsobj;
+        } catch (IOException ioe) {
+            throw new JSONException("setProbeSliceID FAILED" + " IOException: " + ioe.getMessage());
+        }
+    }
+    
+    
     // curl -X DELETE http://localhost:6666/probe/<probeUUID>
     public JSONObject unloadProbe(String probeID) throws JSONException {
         try {
@@ -240,8 +257,8 @@ public class LatticeTest {
         }
     }
     
-    private void testMemoryInfoProbe(String probeName) {
-        String probeClassName = "eu.fivegex.demo.probes.MemoryInfoProbe";
+    
+    private String instantiateDS() throws Exception {
         JSONObject out;
         
         System.out.println("Deploying DS on endpoint: " + endPointName);
@@ -255,19 +272,45 @@ public class LatticeTest {
                           localControlPort
                           );
             
-            String dsID = out.getString("ID");
+            return out.getString("ID");
+        }
+        catch (JSONException e) {
+            throw new Exception("Error while instantiating DS: " + e.getMessage());
+        }
+    }
+    
+    
+    private void unloadDS(String dsID) throws Exception {
+        JSONObject out;
+        System.out.println("Stopping DS on endpoint: "  + endPointAddress + " - DS id: " + dsID);
+        try {
+            out = stopDS(endPointAddress, endPointUserName);  
+
+            if (!out.getString("success").equals("true"))
+                throw new Exception("Error while stopping DS: " + dsID); 
+        }
+        catch (JSONException e) {
+            throw new Exception("Error while unloading DS: " + e.getMessage());
+        }
+    }
+    
+    private void testMemoryInfoProbe(String probeName, String dsID, String serviceID, String sliceID) throws Exception {
+        String probeClassName = "eu.fivegex.demo.probes.MemoryInfoProbe";
+        JSONObject out;
+        
+        try {
             System.out.println("Creating probe on endpoint: " + endPointName + " - DS id: " + dsID);
             System.out.println("Dinamically loading probe class: " + probeClassName);
-            
-            //Thread.sleep(500);
             
             out = loadProbeOnDsByID(dsID, probeClassName, probeName);
             
             String probeID = out.getString("createdProbeID");
-            
-            String serviceID = ID.generate().toString();
+
             System.out.println("Setting serviceID " + serviceID + " on probe " + probeID + " on endpoint " + endPointName  + " - DS id: " + dsID);
             setProbeServiceID(probeID, serviceID);
+
+            System.out.println("Setting sliceID " + sliceID + " on probe " + probeID + " on endpoint " + endPointName  + " - DS id: " + dsID);
+            setProbeSliceID(probeID, sliceID);
             
             System.out.println("Turning on probe " + probeID + " on endpoint " + endPointName  + " - DS id: " + dsID);
             turnProbeOn(probeID);
@@ -276,42 +319,22 @@ public class LatticeTest {
             
             System.out.println("Turning off probe " + probeID + " on endpoint " + endPointName + " - DS id: " + dsID);
             turnProbeOff(probeID);
-            
-            System.out.println("Stopping DS on endpoint: "  + endPointAddress + " - DS id: " + dsID);
-            out = stopDS(endPointAddress, endPointUserName);  
         }
-        catch (JSONException ex) {
-            //test failed
-            System.out.println("Test MemoryInfoProbe Failed!");
-            System.exit(1);
-        }
-        
         catch (InterruptedException ex) {
             return;
-        }
-        
+        } 
+        catch (JSONException ex) {
+            throw new Exception("Test Case MemoryInfoProbe Failed! " + "\nReason: " + ex.getMessage());
+        }  
     }
     
-    private void testDockerProbe(String probeName) { 
+    private void testDockerProbe(String probeName, String dsID, String serviceID, String sliceID) throws Exception { 
         String probeClassName = "eu.fivegex.demo.probes.docker.DockerProbe";
         JSONObject out;
         
-        System.out.println("Deploying DS on endpoint: " + endPointName);
-        
         try {
-            out = deployDS(endPointName, endPointUserName, dataConsumerAddress + "+" + 
-                          dataConsumerPort + "+" +
-                          controllerAddress + "+" +
-                          remoteInfoPort + "+" +
-                          localInfoPort + "+" +
-                          localControlPort
-                          );
-            
-            String dsID = out.getString("ID");
             System.out.println("Creating probe on endpoint: " + endPointName + " - DS id: " + dsID);
             System.out.println("Dinamically loading probe class: " + probeClassName);
-            
-            //Thread.sleep(500);
             
             out = loadProbeOnDsByID(dsID, probeClassName, dockerHost + "+" +
                                      dockerPort + "+" +
@@ -322,9 +345,11 @@ public class LatticeTest {
             
             String probeID = out.getString("createdProbeID");
             
-            String serviceID = ID.generate().toString();
             System.out.println("Setting serviceID " + serviceID + " on probe " + probeID + " on endpoint " + endPointName  + " - DS id: " + dsID);
             setProbeServiceID(probeID, serviceID);
+            
+            System.out.println("Setting sliceID " + sliceID + " on probe " + probeID + " on endpoint " + endPointName  + " - DS id: " + dsID);
+            setProbeSliceID(probeID, sliceID);
             
             System.out.println("Turning on probe " + probeID + " on endpoint " + endPointName  + " - DS id: " + dsID);
             turnProbeOn(probeID);
@@ -332,24 +357,22 @@ public class LatticeTest {
             Thread.sleep(5000);
             
             System.out.println("Turning off probe " + probeID + " on endpoint " + endPointName + " - DS id: " + dsID);
-            turnProbeOff(probeID);
-            
-            System.out.println("Stopping DS on endpoint: "  + endPointAddress + " - DS id: " + dsID);
-            out = stopDS(endPointAddress, endPointUserName);   
+            turnProbeOff(probeID);   
         }
-        catch (JSONException ex) {
-            //test failed
-            System.out.println("Test DockerProbe Failed!");
-            System.exit(1);
-        }
-        
         catch (InterruptedException ex) {
             return;
+        }
+        catch (JSONException ex) {
+            throw new Exception("Test Case DockerProbe Failed! " + "\nReason: " + ex.getMessage());
         }
     }
     
     
     public static void main(String[] args) {
+        LatticeTest client = null;
+        String dsID = null;
+        boolean errorStatus = false;
+        
         try {
             Map <String, String> settings = new HashMap<>();
             Properties prop = new Properties();
@@ -388,17 +411,31 @@ public class LatticeTest {
             settings.put("dockerContainerID", prop.getProperty("docker.containerid"));
             settings.put("dockerContainerName", "testContainer@" + prop.getProperty("docker.host"));
             
-            LatticeTest client = new LatticeTest(settings);
+            client = new LatticeTest(settings);
 
-            // TODO: change test to use a single DS and the same Service ID
-            client.testDockerProbe("testDockerProbe");
-            client.testMemoryInfoProbe("testMemoryProbe");
+            // instantiating a new DS on the endpoint as per configuration (field endPointAddress)
+            dsID = client.instantiateDS();
             
+            // generating service/slice IDs to be associated to all the test probes
+            String serviceID = ID.generate().toString();
+            String sliceID = ID.generate().toString();
+            
+            // instantiating some test probes on the previous DS
+            client.testMemoryInfoProbe("testMemoryProbe", dsID, serviceID, sliceID);
+            client.testDockerProbe("testDockerProbe", dsID, serviceID, sliceID);
         }
         catch (Exception e) {
-            System.out.println("Error! " + e.getMessage());
+            System.out.println("\n***** TEST FAILED *****\n" + e.getMessage() + "\n***********************\n");
+            errorStatus = true;
         }
+        finally {
+            // stopping the previous instantiated DS anyway
+            try {
+                client.unloadDS(dsID);
+            }
+            catch (Exception e) {}
+        }
+    if (errorStatus)
+        System.exit(1);
     }
 }
-
-    

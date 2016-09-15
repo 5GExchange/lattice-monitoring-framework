@@ -204,6 +204,27 @@ public class Controller {
         
         return result;
     }
+    
+    
+    JSONObject setProbeGroupID(String probeID, String groupID) throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        Boolean invocationResult;
+        
+        result.put("operation", "setProbeGroupID");
+        result.put("probeID",probeID);
+        result.put("sliceID",groupID);
+        
+        try {
+            invocationResult = this.getControlHandle().setProbeGroupID(ID.fromString(probeID), ID.fromString(groupID));
+            result.put("success", invocationResult);
+        } catch (Exception ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+        }
+        
+        return result;
+    }
 
     
     JSONObject startDS(String endPoint, String userName, String args) throws JSONException {
