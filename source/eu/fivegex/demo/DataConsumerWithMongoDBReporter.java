@@ -38,8 +38,8 @@ public class DataConsumerWithMongoDBReporter {
     }
     public static void main(String [] args) {
         String currentHost="localhost";
-        String mongoDBAddress = "";
-        int mongoDBPort = 0;
+        String mongoDBAddress = "192.168.56.102";
+        int mongoDBPort = 27017;
         String mongDBName = "test";
         
         int port = 22997;

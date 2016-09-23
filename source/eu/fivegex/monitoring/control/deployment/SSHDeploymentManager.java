@@ -5,8 +5,6 @@
  */
 package eu.fivegex.monitoring.control.deployment;
 
-import eu.fivegex.monitoring.control.controller.DeploymentException;
-import eu.fivegex.monitoring.control.controller.DeploymentDelegate;
 import eu.reservoir.monitoring.core.ID;
 import com.jcraft.jsch.*;
 import java.io.File;
@@ -63,7 +61,7 @@ public class SSHDeploymentManager implements DeploymentDelegate {
     
     private Session connectWithKey(String endPoint, String userName) throws JSchException {
         String privateKeyFile = System.getProperty("user.home") + "/.ssh/id_rsa";
-        System.out.println(privateKeyFile);        
+        //System.out.println(privateKeyFile);        
         this.jsch.addIdentity(privateKeyFile);
         
         Session session = this.jsch.getSession(userName, endPoint, 22);

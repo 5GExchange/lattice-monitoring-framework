@@ -243,7 +243,7 @@ public class HypervisorControl extends DynamicControl {
 	dataSource.setDataPlane(new MulticastDataPlaneProducer(dataGroup));
 
 	// set up info plane
-	dataSource.setInfoPlane(new DHTInfoPlane(infoRoot, infoRootPort, localPort));
+	dataSource.setInfoPlane(new DHTDataSourceInfoPlane(infoRoot, infoRootPort, localPort));
 
 	dataSource.connect();
 

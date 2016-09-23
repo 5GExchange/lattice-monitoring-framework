@@ -3,15 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.control.controller;
+package eu.reservoir.monitoring.core.plane;
+
+import eu.reservoir.monitoring.core.ID;
 
 /**
  *
  * @author uceeftu
  */
-public class DeploymentException extends Exception {
-    public DeploymentException (String msg) {
-        super(msg);
-    }
-    
+public interface DataConsumerControlService {
+    public float getDCMeasurementsRate(ID dcID) throws Exception; 
 }

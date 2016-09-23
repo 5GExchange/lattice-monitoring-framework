@@ -43,7 +43,7 @@ public abstract class AbstractUDPControlPlaneProducer implements ControlPlane, T
         // connected to a specific DS. We will create a different udpTransmitterAndReceiver
         // for each received request in the transmit method implementation
         
-        System.out.println("FT: AbstractUDPControlPLaneProducer.connect");
+        //System.out.println("FT: AbstractUDPControlPLaneProducer.connect");
         
         /*
 	try {

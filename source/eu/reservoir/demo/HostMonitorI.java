@@ -37,7 +37,7 @@ public class HostMonitorI {
 	// set up data plane
 	ds.setDataPlane(new MulticastDataPlaneProducer(address));
 
-	ds.setInfoPlane(new DHTInfoPlane(infoPlaneRootHost, remotePort, localPort));
+	ds.setInfoPlane(new DHTDataSourceInfoPlane(infoPlaneRootHost, remotePort, localPort));
 	ds.connect();
     }
 

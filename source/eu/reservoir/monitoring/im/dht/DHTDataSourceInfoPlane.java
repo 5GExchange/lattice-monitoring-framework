@@ -1,4 +1,4 @@
-// DHTInfoPlane.java
+// DHTDataSourceInfoPlane.java
 // Author: Stuart Clayman
 // Email: sclayman@ee.ucl.ac.uk
 // Date: Sept 2009
@@ -15,12 +15,12 @@ import eu.reservoir.monitoring.core.plane.InfoPlane;
 import java.io.IOException;
 
 /**
- * A DHTInfoPlane is an InfoPlane implementation
- * that sends the Information Model data.
+ * A DHTDataSourceInfoPlane is an InfoPlane implementation
+ that sends the Information Model data.
  * It is also a DataSourceInteracter so it can, if needed,
  * talk to the DataSource object it gets bound to.
  */
-public class DHTInfoPlane extends AbstractDHTInfoPlane implements InfoPlane, DataSourceDelegateInteracter {
+public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements InfoPlane, DataSourceDelegateInteracter {
     // DataSourceDelegate
     DataSourceDelegate dataSourceDelegate;
 
@@ -38,7 +38,7 @@ public class DHTInfoPlane extends AbstractDHTInfoPlane implements InfoPlane, Dat
      * Connect to the DHT root at hostname on port,
      * and start here on localPort.
      */
-    public DHTInfoPlane(String remoteHostname, int remotePort, int localPort) {
+    public DHTDataSourceInfoPlane(String remoteHostname, int remotePort, int localPort) {
 	rootHost = remoteHostname;
 	rootPort = remotePort;
 	port = localPort;
@@ -48,7 +48,7 @@ public class DHTInfoPlane extends AbstractDHTInfoPlane implements InfoPlane, Dat
 
     /**
      * Connect to a delivery mechansim.
-     * In a DHTInfoPlane we call announce.
+     * In a DHTDataSourceInfoPlane we call announce.
      */
     public boolean connect() {
 	if (super.connect()) {
@@ -60,7 +60,7 @@ public class DHTInfoPlane extends AbstractDHTInfoPlane implements InfoPlane, Dat
 
     /**
      * Dicconnect from a delivery mechansim.
-     * In a DHTInfoPlane we call dennounce.
+     * In a DHTDataSourceInfoPlane we call dennounce.
      */
     public boolean disconnect() {
 	if (super.disconnect()) {

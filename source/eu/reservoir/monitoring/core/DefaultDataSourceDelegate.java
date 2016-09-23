@@ -16,6 +16,7 @@ import java.io.Serializable;
  * from the real implementations of the Planes.
  */
 public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implements DataSourceDelegate {
+    
     /**
      * The DataSource this is delegating for.
      */
@@ -530,6 +531,11 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
         Probe p = dataSource.getProbeByID(probeID);
         dataSource.removeProbe(p);
         return true;
+    }
+    
+    @Override
+    public Object lookupDataConsumerInfo(ID dataConsumerID, String info) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
     }
     
     

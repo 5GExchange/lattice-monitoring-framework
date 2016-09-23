@@ -49,6 +49,14 @@ public interface InfoService {
      * Mostly used at the management end, as it uses Probe ID.
      */
     public Object lookupProbeAttributeInfo(ID probeID, int field, String info);
+    
+    /**
+     * Lookup some DC info in the InfoPlane.
+     * Mostly used at the management end, as it uses DC ID.
+     */
+    public Object lookupDataConsumerInfo(ID dataConsumerID, String info);
+    
+    
 
     /*
      * Add things

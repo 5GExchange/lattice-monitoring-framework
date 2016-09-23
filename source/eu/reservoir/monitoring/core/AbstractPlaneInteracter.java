@@ -93,15 +93,6 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
      */
     public boolean connect() {
         
-        /*System.out.println("FT: AbstractPlaneInteracter.connect");
-        
-        if (this.controlPlane == null) 
-            System.out.println("FT: Control Plane is null");
-        
-        if (this.infoPlane == null)
-            System.out.println("FT: Infoplane is null");
-        */
-        
 	boolean failed = false;
 	boolean conn = false;
 
@@ -152,8 +143,10 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 	    // failed to connect
 	    return false;
 	} else {
-	    // try and announce
-	    boolean ann = announce();
+            // try and announce
+            //boolean ann = announce();
+            //TODO: this announce part is not really clear - should be double checked
+            boolean ann = true;
 
 	    if (ann) {
 		// we connected and announced

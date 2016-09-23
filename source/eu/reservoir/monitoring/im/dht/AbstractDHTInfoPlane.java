@@ -7,11 +7,9 @@ package eu.reservoir.monitoring.im.dht;
 
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.Probe;
-import eu.reservoir.monitoring.core.DataSourceInteracter;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 import java.io.Serializable;
-import java.io.IOException;
 
 /**
  * A DHTInfoPlane is an InfoPlane implementation
@@ -66,6 +64,11 @@ public abstract class AbstractDHTInfoPlane implements InfoPlane  {
     public Object lookupProbeAttributeInfo(ID probeID, int field, String info) {
 	return imNode.getProbeAttributeInfo(probeID, field, info);
     }
+    
+    public Object lookupDataConsumerInfo(ID dataConsumerID, String info) {
+        return imNode.getDataConsumerInfo(dataConsumerID, info);
+    }
+    
 
     /**
      * Put a value in the InfoPlane.

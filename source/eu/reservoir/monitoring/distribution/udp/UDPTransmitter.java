@@ -58,8 +58,8 @@ public class UDPTransmitter {
 	this.address = dstAddr.getAddress();
 	this.port = dstAddr.getPort();
 
-        System.out.println("FT: dst address " + this.address);
-        System.out.println("FT: dst port " + this.port);
+        //System.out.println("FT: dst address " + this.address);
+        //System.out.println("FT: dst port " + this.port);
         
         
 	setUpSocket();

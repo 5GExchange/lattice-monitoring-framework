@@ -6,16 +6,16 @@
 package eu.reservoir.demo;
 
 import eu.reservoir.monitoring.appl.BasicDataSource;
-import eu.fivegex.monitoring.control.udp.UDPControlPlaneConsumer;
+import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneConsumer;
 import eu.reservoir.monitoring.core.AbstractDataSource;
-import eu.reservoir.monitoring.core.DataSourceInteracter;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
-import eu.reservoir.monitoring.im.dht.DHTInfoPlane;
+import eu.reservoir.monitoring.im.dht.DHTDataSourceInfoPlane;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Scanner;
+import eu.reservoir.monitoring.core.DataSourceInteracter;
 
 /**
  * This monitor sends emulated response times  uses a UDP Data Plane.
@@ -49,13 +49,13 @@ public class ResponseTimeEmulatorUDP {
 	ds.setDataPlane(new UDPDataPlaneProducer(address));
         
         // set up control plane: a data source is a consumer of Control Messages
-        ControlPlane controlPlane = new UDPControlPlaneConsumer(ctrlAddress);
+        ControlPlane controlPlane = new UDPDataSourceControlPlaneConsumer(ctrlAddress);
         ((DataSourceInteracter)controlPlane).setDataSource(ds);
         
         ds.setControlPlane(controlPlane);
         
         //the root of the DHT is on port 6699
-        ds.setInfoPlane(new DHTInfoPlane(addr, 6699, infoLocalPort));
+        ds.setInfoPlane(new DHTDataSourceInfoPlane(addr, 6699, infoLocalPort));
         
 	ds.connect();
         

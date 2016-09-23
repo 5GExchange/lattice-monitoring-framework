@@ -6,6 +6,7 @@
 package eu.fivegex.monitoring.control.udp;
 
 import eu.reservoir.monitoring.core.ControllableDataSource;
+import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Measurement;
 import eu.reservoir.monitoring.core.Probe;
@@ -29,12 +30,14 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.lang.reflect.Method;
+import eu.reservoir.monitoring.core.DataSourceInteracter;
 
 
 
-public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
+public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneConsumer implements DataSourceInteracter {
+    DataSource dataSource;
     
-    public UDPControlPlaneConsumer(InetSocketAddress address) {
+    public UDPDataSourceControlPlaneConsumer(InetSocketAddress address) {
         super(address);
     }
 
@@ -176,6 +179,18 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
         System.err.println("ControPlaneConsumer - invoked error method : failed to process control message: " + e.getMessage());
     }
 
+    @Override
+    public DataSource getDataSource() {
+        return dataSource;
+        }
+
+    
+    @Override
+    public DataSource setDataSource(DataSource ds) {
+        dataSource = ds;
+        return dataSource;
+        }
+    
     
     @Override
     public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception {
@@ -298,6 +313,11 @@ public class UDPControlPlaneConsumer extends AbstractUDPControlPlaneConsumer {
     @Override
     public boolean setDataSourceName(String name) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public float getDCMeasurementsRate(ID dcId) {
+        throw new UnsupportedOperationException("This operation is not supported on a DataSource"); //To change body of generated methods, choose Tools | Templates.
     }
     
 }

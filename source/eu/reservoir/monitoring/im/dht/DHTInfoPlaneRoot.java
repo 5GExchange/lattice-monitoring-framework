@@ -8,10 +8,10 @@ package eu.reservoir.monitoring.im.dht;
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
-import eu.reservoir.monitoring.core.DataSourceInteracter;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 
 import java.io.IOException;
+import eu.reservoir.monitoring.core.DataSourceInteracter;
 
 /**
  * A DHTInfoPlaneRoot is an InfoPlane implementation

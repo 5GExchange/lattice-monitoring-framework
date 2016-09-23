@@ -26,6 +26,9 @@ public class ControllerManagementConsole extends RestConsole{
         
         // /datasource/uuid/probe/?<args> and /datasource/name/probe/?<args>
         defineRequestHandler("/datasource/.*", new DataSourceRestHandler());
+        
+        // /dataconsumer/uuid/?<args> 
+        defineRequestHandler("/dataconsumer/.*", new DataConsumerRestHandler());
        }
     
 }

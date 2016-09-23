@@ -5,19 +5,18 @@
 
 package eu.reservoir.monitoring.im.dht;
 
+import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
-import eu.reservoir.monitoring.core.ProbeManager;
 import eu.reservoir.monitoring.core.ID;
 import java.io.Serializable;
 import java.io.IOException;
-import java.util.Map;
 import java.util.Collection;
 import java.math.BigInteger;
 
 /**
- * An IMNode is responsible for converting  DataSource and Probe
+ * An IMNode is responsible for converting  DataSource, DataConsumer and Probe
  * attributes into Hashtable keys and values for the DistributedHashTable.
  * <p>
  * For example, with a given DataSource you get:
@@ -95,6 +94,15 @@ public class IMNode {
 	}
     }
 
+    public IMNode addDataConsumer(DataConsumer dc) throws IOException {
+        putDHT("/dataconsumer/" + dc.getID() + "/name", dc.getName());        
+        putDHT("/dataconsumer/" + dc.getID() + "/inetSocketAddress", dc.getControlPlane().getControlEndPoint());
+        return this;
+    }
+    
+    //public IMNode addReporter(Reporter r) throws IOException { }
+    
+    
     /**
      * Add data for a DataSource
      */
@@ -250,7 +258,12 @@ public class IMNode {
 	return getDHT("/probeattribute/" + probeID + "/" + field + "/" + info);
     }
 
-
+    /**
+     * Lookup DataConsumer info
+     */
+    public Object getDataConsumerInfo(ID dcID, String info) {
+	return getDHT("/dataconsumer/" + dcID + "/" + info);
+    }
 
 
     /**

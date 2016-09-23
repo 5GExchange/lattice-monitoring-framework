@@ -242,7 +242,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
 
     @Override
     public boolean setProbeGroupID(ID probeID, ID id) throws Exception {
-    List<Object> args = new ArrayList();
+        List<Object> args = new ArrayList();
         args.add(probeID);
         args.add(id);
         Boolean result = false;
@@ -343,6 +343,28 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         
         return result;
         }
+    
+    
+    @Override
+    public float getDCMeasurementsRate(ID dcId) throws Exception {
+        List<Object> args = new ArrayList();
+        args.add(dcId);
+        
+        Float rate;
+        
+        ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.GET_DC_RATE, args);
+        
+        try {
+            InetSocketAddress dstAddr = resolver.getDCAddressFromID(dcId);
+            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());            
+            rate = (Float) transmit(m, mData);
+        } catch (Exception ex) {
+            System.out.println("Error while sending getDCMeasurementsRate " + ex.getMessage());
+            throw ex;
+          }
+        return rate;
+    }
+    
 
     @Override
     public boolean isProbeOn(ID probeID) {

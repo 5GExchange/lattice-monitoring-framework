@@ -15,6 +15,6 @@ import java.io.IOException;
  * It's role is to insulate the DataSource and the Probes
  * from the real implementations of the Planes.
  */
-public interface DataSourceDelegate extends DataSourceInteracter, PlaneInteracter, DataService, InfoService, ControlService {
+public interface DataSourceDelegate extends DataSourceInteracter, PlaneInteracter, DataService, InfoService, DataSourceControlService {
 
 }

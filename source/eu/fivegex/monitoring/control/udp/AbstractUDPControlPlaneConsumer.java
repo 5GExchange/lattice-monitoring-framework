@@ -6,8 +6,6 @@
 package eu.fivegex.monitoring.control.udp;
 
 
-import eu.reservoir.monitoring.core.DataSource;
-import eu.reservoir.monitoring.core.DataSourceInteracter;
 import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
@@ -22,13 +20,11 @@ import java.net.InetSocketAddress;
  *
  * @author uceeftu
  */
-public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, DataSourceInteracter, ReceivingAndReplying {
+public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, ReceivingAndReplying {
     
     InetSocketAddress address;
 
     UDPReceiver udpReceiver;
-    
-    DataSource dataSource;
 
     public AbstractUDPControlPlaneConsumer(InetSocketAddress address) {
         this.address = address;
@@ -43,7 +39,7 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, D
 	    // only connect if we're not already connected
 	    if (udpReceiver == null) {
                 
-                System.out.println("FT: -------- AbstractUDPControPlaneConsumer.connect - Connecting to the Control Plane ----------");
+                //System.out.println("FT: -------- AbstractUDPControPlaneConsumer.connect - Connecting to the Control Plane ----------");
                 
 		UDPReceiver rr = new UDPReceiver(this, address);
 
@@ -101,19 +97,6 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, D
     public void eof() {
         disconnect();
     }
-    
-    
-    @Override
-    public DataSource getDataSource() {
-        return dataSource;
-        }
-
-    
-    @Override
-    public DataSource setDataSource(DataSource ds) {
-        dataSource = ds;
-        return dataSource;
-        }
 
     @Override
     public InetSocketAddress getControlEndPoint() {

@@ -1,4 +1,4 @@
-// ControlService.java
+// DataSourceControlService.java
 // Author: Stuart Clayman
 // Email: sclayman@ee.ucl.ac.uk
 // Date: Sept 2009
@@ -9,9 +9,9 @@ import eu.reservoir.monitoring.core.*;
 
 /**
  * An interface for control.
- * TODO: Determine the methods of the ControlService.
+ * TODO: Determine the methods of the DataSourceControlService.
  */
-public interface ControlService {
+public interface DataSourceControlService {
     // Probe methods
 
     /*

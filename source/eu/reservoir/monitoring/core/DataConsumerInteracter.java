@@ -5,20 +5,21 @@
 
 package eu.reservoir.monitoring.core;
 
+
 /**
  * A DataSourceInteracter is responsible interacting with
  a DataSource.
  */
 
-public interface DataSourceInteracter {
+public interface DataConsumerInteracter {
     /**
-     * Get the DataSource
+     * Get the DataConsumer
      */
-    public DataSource getDataSource();
+    public DataConsumer getDataConsumer();
 
     /**
-     * Set the DataSource
+     * Set the DataConsumer
      */
-    public DataSource setDataSource(DataSource ds);
+    public DataConsumer setDataConsumer(DataConsumer ds);
 
 }

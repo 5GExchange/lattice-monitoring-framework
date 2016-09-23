@@ -5,6 +5,8 @@
  */
 package eu.fivegex.monitoring.control.controller;
 
+import eu.fivegex.monitoring.control.deployment.DeploymentException;
+import eu.fivegex.monitoring.control.deployment.DeploymentDelegate;
 import eu.fivegex.monitoring.control.probescatalogue.CatalogueException;
 import eu.fivegex.monitoring.control.probescatalogue.JSONProbeCatalogue;
 import eu.fivegex.monitoring.control.deployment.SSHDeploymentManager;
@@ -313,11 +315,31 @@ public class Controller {
         result.put("rate",dataRate);
         
         try {
-            System.out.println("Invoking SetDataRate: " + probeID + " " + dataRate);
             invocationResult = this.getControlHandle().setProbeDataRate(ID.fromString(probeID), new EveryNSeconds(Integer.valueOf(dataRate)));
             result.put("success", invocationResult);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+        }
+        
+        return result;
+    }
+    
+    
+    JSONObject getDataConsumerMeasurementRate(String dcID) throws JSONException {
+        JSONObject result = new JSONObject();
+        Float rate;
+        
+        result.put("operation", "getDataConsumerMeasurementRate");
+        
+        result.put("ID",dcID);
+        
+        try {
+            System.out.println("Invoking getDataConsumerMeasurementRate: " + dcID);
+            rate = this.getControlHandle().getDCMeasurementsRate(ID.fromString(dcID));
+            result.put("rate", rate.toString());
+            result.put("success", true);
+        } catch (Exception ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());
         }

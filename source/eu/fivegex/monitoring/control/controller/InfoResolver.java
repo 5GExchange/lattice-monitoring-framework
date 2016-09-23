@@ -52,4 +52,13 @@ public class InfoResolver {
         else 
             throw new DSNotFoundException("Data Source with name " + dsName + " not found in the infoplane");
         }  
+    
+    public InetSocketAddress getDCAddressFromID(ID dataConsumer) throws DCNotFoundException {
+        InetSocketAddress dsAddress = (InetSocketAddress)info.lookupDataConsumerInfo(dataConsumer, "inetSocketAddress");
+        if (dsAddress != null)
+            return dsAddress;
+        else 
+            throw new DCNotFoundException("Data Source with ID " + dataConsumer.toString() + " not found in the infoplane");
+    }
+    
 }

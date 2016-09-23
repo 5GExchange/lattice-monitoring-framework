@@ -18,7 +18,7 @@ import javax.swing.event.EventListenerList;  // who knows why this in swing
  * and the info plane and collects measurements.
  * The measurements are passed on to all the Reporters added to the Consumer.
  */
-public abstract class AbstractDataConsumer extends AbstractPlaneInteracter implements MeasurementReceiver, Runnable {
+public abstract class AbstractDataConsumer extends AbstractPlaneInteracter implements MeasurementReceiver, Runnable {  
     /*
      * EventListenerList for Reporters.
      * It behaves similarly to may Java Event distribution mechansims:

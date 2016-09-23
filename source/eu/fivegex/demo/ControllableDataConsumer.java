@@ -9,17 +9,34 @@ import eu.reservoir.monitoring.appl.PrintReporter;
 import eu.reservoir.monitoring.core.AbstractDataConsumer;
 import eu.reservoir.monitoring.core.MeasurementReceiver;
 import eu.reservoir.monitoring.core.Reporter;
+import eu.reservoir.monitoring.core.DataConsumer;
+import eu.reservoir.monitoring.core.ID;
 
 /**
  *
  * @author uceeftu
  */
-public final class BasicConsumerWithRateReporter extends AbstractDataConsumer implements MeasurementReceiver {
+public final class ControllableDataConsumer extends AbstractDataConsumer implements MeasurementReceiver, DataConsumer {
+    /*
+     * The ID
+     */
+    ID myID;
+    
+    String dataConsumerName;
+    
     int mReportingInterval;
+    float lastMeasurementRate = 0f;
     MeasurementRateReporter mRateReporter;
     Reporter printReporter;
     
-    public BasicConsumerWithRateReporter(int rate) {
+    
+    public ControllableDataConsumer(String name) {
+        this(name, 10); //default interval every 10 sec
+    }
+    
+    public ControllableDataConsumer(String name, int rate) {
+        dataConsumerName = name;
+        myID = ID.generate();
         printReporter = new PrintReporter();
         mRateReporter = new MeasurementRateReporter();
         this.mReportingInterval = rate;
@@ -29,17 +46,22 @@ public final class BasicConsumerWithRateReporter extends AbstractDataConsumer im
     private void init() {
         addReporter(mRateReporter);
         addReporter(printReporter);
+        
+        startMeasurementsRateThread();
+    } 
+    
+    
+    private void startMeasurementsRateThread() {
         Thread t = new Thread(new Runnable () {
                                     @Override
                                     public void run() { 
                                         long t1 = System.currentTimeMillis();
-                                        System.out.println("Thread Started"); 
                                         while(true) {
                                             try {
                                                 Thread.sleep(mReportingInterval*1000);
                                                 long t2 = System.currentTimeMillis();
                                                 long tDelta = t2 - t1;
-                                                printRate(tDelta/1000); // convert in seconds
+                                                computeMeasurementsRate(tDelta/1000); // convert in seconds
                                                 t1 = t2;
                                                 mRateReporter.resetMeasurementNumber();
                                             } catch (InterruptedException ex) { return; }
@@ -48,11 +70,39 @@ public final class BasicConsumerWithRateReporter extends AbstractDataConsumer im
                                   }
                              );
         t.start();
-    } 
+    }
     
    
-    private void printRate(long interval) {
-        System.out.println("Measurement Rate (measurements/sec): " + (float)mRateReporter.getMeasurementNumber()/interval);
+    private void computeMeasurementsRate(long interval) {
+        this.lastMeasurementRate = (float)mRateReporter.getMeasurementNumber()/interval;
+        System.out.println("Measurement Rate (measurements/sec): " + lastMeasurementRate);
+    }
+
+    @Override
+    public float getMeasurementsRate() {
+        return this.lastMeasurementRate;
+    }
+
+    @Override
+    public ID getID() {
+        return myID;
+    }
+
+    @Override
+    public DataConsumer setID(ID id) {
+        this.myID = id;
+        return this;
+    }
+
+    @Override
+    public String getName() {
+        return this.dataConsumerName;
+    }
+
+    @Override
+    public DataConsumer setName(String dcName) {
+        this.dataConsumerName = dcName;
+        return this;
     }
     
 }

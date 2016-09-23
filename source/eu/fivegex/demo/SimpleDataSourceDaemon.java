@@ -1,11 +1,10 @@
 package eu.fivegex.demo;
 
-import eu.fivegex.monitoring.control.udp.UDPControlPlaneConsumer;
+import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
-import eu.reservoir.monitoring.core.DataSourceInteracter;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
-import eu.reservoir.monitoring.im.dht.DHTInfoPlane;
+import eu.reservoir.monitoring.im.dht.DHTDataSourceInfoPlane;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,6 +13,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Scanner;
+import eu.reservoir.monitoring.core.DataSourceInteracter;
 
 /**
  * This DataSource in a basic control point for probes that uses a Control Plane and an Info Plane and can be daemonized 
@@ -88,13 +88,13 @@ public final class SimpleDataSourceDaemon extends Thread {
 	ds.setDataPlane(new UDPDataPlaneProducer(DataAddress));
         
         // set up control plane: a data source is a consumer of Control Messages
-        ControlPlane controlPlane = new UDPControlPlaneConsumer(ctrlAddress);
+        ControlPlane controlPlane = new UDPDataSourceControlPlaneConsumer(ctrlAddress);
         ((DataSourceInteracter)controlPlane).setDataSource(ds);
         
         ds.setControlPlane(controlPlane);
         
         //the root of the DHT is by default on infoPlaneRootName 6699
-        ds.setInfoPlane(new DHTInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
+        ds.setInfoPlane(new DHTDataSourceInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
         
 	if (!ds.connect()) 
             System.exit(1); //terminating as there was an error while connecting to the planes

@@ -1,4 +1,4 @@
-package eu.fivegex.demo;
+package eu.fivegex.monitoring.test;
 
 import eu.reservoir.monitoring.core.ID;
 import java.io.FileInputStream;
@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import us.monoid.json.JSONArray;
 
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
@@ -16,8 +18,6 @@ import us.monoid.web.Resty;
 
 import static us.monoid.web.Resty.delete;
 import static us.monoid.web.Resty.put;
-import static us.monoid.web.Resty.content;
-import static us.monoid.web.Resty.form;
 import static us.monoid.web.Resty.content;
 import static us.monoid.web.Resty.form;
 
@@ -368,6 +368,25 @@ public class LatticeTest {
     }
     
     
+    private MongoDBInteracter createMongoDBEntry(String serviceID, String probeName) throws JSONException, ParseException, IOException {
+        String mongoDBAddress = "192.168.56.102";
+        String mongoDBCollection = "cs";
+        int mongoDBPort = 27017;
+        
+        JSONObject obj = new JSONObject();
+        obj.put("agreementId", serviceID);
+        obj.put("name", "Lattice Test");
+        obj.put("maxResult", 10);
+        obj.put("kpiList", new JSONArray().put(probeName));
+        
+        MongoDBInteracter mongo = new MongoDBInteracter(mongoDBAddress, mongoDBPort, mongoDBCollection);
+        mongo.createMongoDBEntry(obj);
+        return mongo; //just a bad thing
+    }
+    
+    
+    
+    
     public static void main(String[] args) {
         LatticeTest client = null;
         String dsID = null;
@@ -419,13 +438,24 @@ public class LatticeTest {
             // generating service/slice IDs to be associated to all the test probes
             String serviceID = ID.generate().toString();
             String sliceID = ID.generate().toString();
+            String probeName = "testMemoryProbe";
+            
+            // creating entry in DB
+            MongoDBInteracter m = client.createMongoDBEntry(serviceID, probeName);
             
             // instantiating some test probes on the previous DS
-            client.testMemoryInfoProbe("testMemoryProbe", dsID, serviceID, sliceID);
-            client.testDockerProbe("testDockerProbe", dsID, serviceID, sliceID);
+            client.testMemoryInfoProbe(probeName, dsID, serviceID, sliceID);
+            //client.testDockerProbe("testDockerProbe", dsID, serviceID, sliceID);
+            
+            if (m.getMongoDBEntry(serviceID) == null)
+                throw new Exception("Cannot find any entries with service ID " + serviceID + " in the DB");
+                
+            
         }
         catch (Exception e) {
-            System.out.println("\n***** TEST FAILED *****\n" + e.getMessage() + "\n***********************\n");
+            System.out.println("\n************************************************** TEST FAILED **************************************************\n" + 
+                               e.getMessage() + 
+                               "\n*****************************************************************************************************************\n");
             errorStatus = true;
         }
         finally {
@@ -433,7 +463,8 @@ public class LatticeTest {
             try {
                 client.unloadDS(dsID);
             }
-            catch (Exception e) {}
+            catch (Exception e) { // the DS was either already stopped or not running
+            }
         }
     if (errorStatus)
         System.exit(1);

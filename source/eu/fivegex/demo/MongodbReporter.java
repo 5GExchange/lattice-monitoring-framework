@@ -7,6 +7,8 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
 import eu.reservoir.monitoring.core.Measurement;
+import eu.reservoir.monitoring.core.ProbeValue;
+import eu.reservoir.monitoring.core.ProbeValueWithName;
 import eu.reservoir.monitoring.core.Reporter;
 import eu.reservoir.monitoring.core.Timestamp;
 import eu.reservoir.monitoring.distribution.ConsumerMeasurementWithMetadataAndProbeName;
@@ -30,28 +32,22 @@ public class MongodbReporter implements Reporter {
     
     @Override
     public void report(Measurement m) {
-            /*
-            System.err.println("connect to mongoDB..................");
-            mongoClient = new MongoClient( "10.100.0.10" , 27017 );
-            this.mongoClient = mongoClient;
-            System.out.println("connected");
-            db = mongoClient.getDatabase("test");
-            */
             String probeName = ((ConsumerMeasurementWithMetadataAndProbeName)m).getProbeName();
             
             Timestamp t = ((ConsumerMeasurementWithMetadataAndProbeName)m).getTimestamp();
             
-            System.out.println("************"+probeName+"**************");
-
-            // I think we should use the measurement timestamp rather than the current time -> t.toString rather than System.currentTimeMillis()
-            Bson doc1 = new Document("$set",new Document(probeName+"."+String.valueOf(System.currentTimeMillis()),new Document().append(probeName,m.getValues().get(0).getValue())));
-            db.getCollection("cs").updateOne(new Document("_id", m.getServiceID().getUUID().toString()), doc1);
-
-            //this should not be needed any more as the MongodBConsumer has now also a PrintReporter
-            System.out.println("------------------------------------------------------------------------------");
-            System.out.println("service Id:" +m.getServiceID()+"\t values: "+m.getValues().get(0).getValue() );
-            System.out.println("------------------------------------------------------------------------------");
-
+            Document attributes = new Document();
+            for (ProbeValue attribute : m.getValues()) {
+                attributes.append(((ProbeValueWithName)attribute).getName(), attribute.getValue());
+            }
+            
+            Bson doc1 = new Document("$set",
+                                    new Document(probeName + "." + t.toString(),       
+                                    // first arg was probeName      
+                                    // new Document().append(((ProbeValueWithName)m.getValues().get(0)).getName(), m.getValues().get(0).getValue())));
+                                    attributes));
+            
+            db.getCollection("cs").updateOne(new Document("_id", m.getServiceID().toString()), doc1);
     }
 
 

@@ -9,17 +9,17 @@ import eu.fivegex.demo.probes.MemoryInfoProbe;
 import eu.fivegex.demo.probes.docker.DockerProbe;
 import eu.fivegex.demo.probes.openstack.OpenstackProbe;
 import eu.reservoir.demo.RandomProbe;
-import eu.fivegex.monitoring.control.udp.UDPControlPlaneConsumer;
+import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
-import eu.reservoir.monitoring.core.DataSourceInteracter;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
-import eu.reservoir.monitoring.im.dht.DHTInfoPlane;
+import eu.reservoir.monitoring.im.dht.DHTDataSourceInfoPlane;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Scanner;
+import eu.reservoir.monitoring.core.DataSourceInteracter;
 
 /**
  * This DataSource in a basic control point for probes that uses a Control Plane and an Info Plane
@@ -61,13 +61,13 @@ public class SimpleDataSourceTest {
 	ds.setDataPlane(new UDPDataPlaneProducer(DataAddress));
         
         // set up control plane: a data source is a consumer of Control Messages
-        ControlPlane controlPlane = new UDPControlPlaneConsumer(ctrlAddress);
+        ControlPlane controlPlane = new UDPDataSourceControlPlaneConsumer(ctrlAddress);
         ((DataSourceInteracter)controlPlane).setDataSource(ds);
         
         ds.setControlPlane(controlPlane);
         
         //the root of the DHT is by default on infoPlaneRootName 6699
-        ds.setInfoPlane(new DHTInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
+        ds.setInfoPlane(new DHTDataSourceInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
         
 	ds.connect();
         
