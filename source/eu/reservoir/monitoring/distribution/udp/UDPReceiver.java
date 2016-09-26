@@ -9,7 +9,6 @@ import eu.reservoir.monitoring.distribution.*;
 import eu.reservoir.monitoring.core.TypeException;
 import java.net.*;
 import java.io.*;
-import java.util.*;
 
 /**
  * This is a UDP receiver for monitoring messages.

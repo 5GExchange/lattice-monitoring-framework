@@ -10,6 +10,7 @@ import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
 import eu.reservoir.monitoring.core.ID;
+import eu.reservoir.monitoring.core.ControllableReporter;
 import java.io.Serializable;
 import java.io.IOException;
 import java.util.Collection;
@@ -97,10 +98,21 @@ public class IMNode {
     public IMNode addDataConsumer(DataConsumer dc) throws IOException {
         putDHT("/dataconsumer/" + dc.getID() + "/name", dc.getName());        
         putDHT("/dataconsumer/" + dc.getID() + "/inetSocketAddress", dc.getControlPlane().getControlEndPoint());
+        
+        Object [] reporters = dc.getReporters();
+        for (Object r: reporters) {
+            if (r instanceof ControllableReporter)
+                addReporter((ControllableReporter)r);
+        }
+        
         return this;
     }
     
-    //public IMNode addReporter(Reporter r) throws IOException { }
+    public IMNode addReporter(ControllableReporter r) throws IOException {
+        putDHT("/reporter/" + r.getId() + "/name", r.getName());
+        putDHT("/reporter/" + r.getId() + "/datasource", r.getDcId());
+        return this;
+    }
     
     
     /**

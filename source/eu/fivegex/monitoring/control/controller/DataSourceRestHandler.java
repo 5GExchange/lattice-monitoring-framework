@@ -6,7 +6,6 @@
 package eu.fivegex.monitoring.control.controller;
 
 import cc.clayman.console.BasicRequestHandler;
-import cc.clayman.console.RequestHandler;
 import java.io.IOException;
 import java.io.PrintStream;
 import org.simpleframework.http.Path;

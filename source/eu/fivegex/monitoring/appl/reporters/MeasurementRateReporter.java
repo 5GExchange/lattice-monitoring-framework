@@ -3,17 +3,21 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.demo;
+package eu.fivegex.monitoring.appl.reporters;
 
+import eu.reservoir.monitoring.core.AbstractReporter;
 import eu.reservoir.monitoring.core.Measurement;
-import eu.reservoir.monitoring.core.Reporter;
 
 /**
  *
  * @author uceeftu
  */
-public class MeasurementRateReporter implements Reporter {
+public class MeasurementRateReporter extends AbstractReporter {
     Long measurementNumber=0L;
+
+    public MeasurementRateReporter() {
+        super("measurement-rate-reporter");
+    }
     
     @Override
     public void report(Measurement m) {

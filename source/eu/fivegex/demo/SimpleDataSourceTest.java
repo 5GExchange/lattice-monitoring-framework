@@ -6,9 +6,9 @@
 package eu.fivegex.demo;
 
 import eu.fivegex.demo.probes.MemoryInfoProbe;
+import eu.fivegex.demo.probes.RandomProbe;
 import eu.fivegex.demo.probes.docker.DockerProbe;
 import eu.fivegex.demo.probes.openstack.OpenstackProbe;
-import eu.reservoir.demo.RandomProbe;
 import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.Probe;
@@ -124,8 +124,6 @@ public class SimpleDataSourceTest {
                 controlLocalPort = sc.nextInt();
                 
                 dsName = controlEndPoint = InetAddress.getLocalHost().getHostName();
-                //dsName = controlEnd.getHostName(); 
-                //System.out.println(controlEnd.toString());
                 System.out.println(dsName);
                 
             } else {
@@ -140,7 +138,7 @@ public class SimpleDataSourceTest {
             infoHost: host where the infoplane root node is running
             infoRemotePort: port where the info plane root node is listening
             infoLocalPort: port to be used by this DS to connect to the info plane
-            controlLocalPort: port to be used locally for the contro plane
+            controlLocalPort: port to be used locally for the control plane
             */
 
             SimpleDataSourceTest hostMon = new SimpleDataSourceTest(dsName, 
@@ -170,8 +168,13 @@ public class SimpleDataSourceTest {
             hostMon.turnOnProbe(docker);
             */
             
+            /*
             Probe memory = new MemoryInfoProbe("testMemoryProbe");
             hostMon.turnOnProbe(memory);
+            */
+            
+            Probe random = new RandomProbe("Random Probe", "random attribute", "200");
+            hostMon.turnOnProbe(random);
             
             
         } catch (Exception ex) {

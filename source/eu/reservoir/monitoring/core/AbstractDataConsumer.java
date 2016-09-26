@@ -8,7 +8,6 @@ package eu.reservoir.monitoring.core;
 import eu.reservoir.monitoring.core.plane.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.List;
-import java.io.IOException;
 
 import javax.swing.event.EventListenerList;  // who knows why this in swing
 

@@ -3,17 +3,20 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.demo;
+package eu.fivegex.monitoring.appl.dataconsumers;
 
-import eu.reservoir.monitoring.appl.PrintReporter;
+import eu.fivegex.monitoring.appl.reporters.MeasurementRateReporter;
+import eu.fivegex.monitoring.appl.reporters.PrintReporter;
 import eu.reservoir.monitoring.core.AbstractDataConsumer;
 import eu.reservoir.monitoring.core.MeasurementReceiver;
-import eu.reservoir.monitoring.core.Reporter;
+import eu.reservoir.monitoring.core.ControllableReporter;
 import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.ID;
 
 /**
- *
+ * Extends AbstractDataConsumer functionalities adding remote control
+ * it also provides measurements rate reporting as specified in the DataConsumer Interface
+ * it comes with a default PrintReporter
  * @author uceeftu
  */
 public final class ControllableDataConsumer extends AbstractDataConsumer implements MeasurementReceiver, DataConsumer {
@@ -27,7 +30,7 @@ public final class ControllableDataConsumer extends AbstractDataConsumer impleme
     int mReportingInterval;
     float lastMeasurementRate = 0f;
     MeasurementRateReporter mRateReporter;
-    Reporter printReporter;
+    ControllableReporter printReporter;
     
     
     public ControllableDataConsumer(String name) {
@@ -44,7 +47,9 @@ public final class ControllableDataConsumer extends AbstractDataConsumer impleme
     }
     
     private void init() {
+        mRateReporter.setDcId(myID); // this is required to put entry in the infoplane
         addReporter(mRateReporter);
+        printReporter.setDcId(myID);
         addReporter(printReporter);
         
         startMeasurementsRateThread();
@@ -75,7 +80,7 @@ public final class ControllableDataConsumer extends AbstractDataConsumer impleme
    
     private void computeMeasurementsRate(long interval) {
         this.lastMeasurementRate = (float)mRateReporter.getMeasurementNumber()/interval;
-        System.out.println("Measurement Rate (measurements/sec): " + lastMeasurementRate);
+        System.out.println("Current Measurement Rate (measurements/sec): " + lastMeasurementRate);
     }
 
     @Override

@@ -13,4 +13,6 @@ import eu.reservoir.monitoring.core.ID;
  */
 public interface DataConsumerControlService {
     public float getDCMeasurementsRate(ID dcID) throws Exception; 
+    
+    public ID loadReporter(ID dataConsumerID, String reporterClassName, Object ... reporterArgs) throws Exception;
 }

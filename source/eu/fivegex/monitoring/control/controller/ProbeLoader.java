@@ -3,11 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.reservoir.monitoring.core;
+package eu.fivegex.monitoring.control.controller;
 
+import eu.reservoir.monitoring.core.Probe;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  *
@@ -53,7 +53,7 @@ public final class ProbeLoader implements Serializable {
             probe = cons0.newInstance(constructorParameters);
             
             }  catch ( Exception ex /*ClassNotFoundException | InstantiationException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex*/) {
-                System.out.println("Exception in ProbeLoader" + ex.getMessage());
+                System.out.println("Exception in ProbeLoader: " + ex.getMessage());
                 throw new Exception(ex);
             }   
     }

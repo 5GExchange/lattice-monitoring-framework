@@ -1,12 +1,10 @@
 // MongodbConsumer.java
 // 
 
-package eu.fivegex.demo;
+package eu.fivegex.demo.mongodb;
 
 import eu.reservoir.monitoring.core.*;
 import eu.reservoir.monitoring.appl.*;
-//import eu.reservoir.monitoring.core.plane.*;
-//import java.io.IOException;
 
 /**
  * A BasicConsumer is an object that is used in application
@@ -20,10 +18,9 @@ public class MongodbConsumer extends AbstractDataConsumer implements Measurement
     /**
      * Construct a BasicConsumer.
      */
-    public MongodbConsumer(String dbAddr, int dbPort, String dbName) {
-        // The default way to report a measurement is to print it
+    public MongodbConsumer(String dbAddr, int dbPort, String dbName, String collectionName) {
         Reporter printReporter =  new PrintReporter();
-        Reporter mongoReporter = new MongodbReporter(dbAddr, dbPort, dbName);
+        Reporter mongoReporter = new MongodbReporter(dbAddr, dbPort, dbName, collectionName);
         
         addReporter(printReporter);
         addReporter(mongoReporter);

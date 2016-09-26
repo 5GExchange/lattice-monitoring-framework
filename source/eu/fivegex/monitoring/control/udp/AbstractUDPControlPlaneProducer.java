@@ -7,7 +7,7 @@ package eu.fivegex.monitoring.control.udp;
 
 import eu.fivegex.monitoring.control.controller.InfoResolver;
 import eu.reservoir.monitoring.core.TypeException;
-import eu.reservoir.monitoring.core.plane.ControlPlane;
+import eu.reservoir.monitoring.core.plane.ControllerControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneMessage;
 import eu.reservoir.monitoring.distribution.MetaData;
 import java.io.IOException;
@@ -18,7 +18,7 @@ import java.io.ByteArrayInputStream;
  *
  * @author uceeftu
  */
-public abstract class AbstractUDPControlPlaneProducer implements ControlPlane, TransmittingControl {
+public abstract class AbstractUDPControlPlaneProducer implements ControllerControlPlane, TransmittingControl {
     //InetSocketAddress address;
     //UDPTransmitterAndReceiver udpTransmitterAndReceiver;
     

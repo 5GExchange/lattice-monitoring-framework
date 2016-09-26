@@ -10,12 +10,11 @@ import eu.fivegex.monitoring.control.deployment.DeploymentDelegate;
 import eu.fivegex.monitoring.control.probescatalogue.CatalogueException;
 import eu.fivegex.monitoring.control.probescatalogue.JSONProbeCatalogue;
 import eu.fivegex.monitoring.control.deployment.SSHDeploymentManager;
-import eu.reservoir.monitoring.appl.BasicConsumer;
 import eu.reservoir.monitoring.appl.datarate.EveryNSeconds;
 import eu.fivegex.monitoring.control.udp.UDPControlPlaneProducer;
+import eu.reservoir.monitoring.core.AbstractPlaneInteracter;
 import eu.reservoir.monitoring.core.ID;
-import eu.reservoir.monitoring.core.PlaneInteracter;
-import eu.reservoir.monitoring.core.plane.ControlPlane;
+import eu.reservoir.monitoring.core.plane.ControllerControlPlane;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 import eu.reservoir.monitoring.im.dht.DHTInfoPlaneRoot;
 import java.io.FileInputStream;
@@ -30,10 +29,9 @@ import us.monoid.json.JSONObject;
  *
  * @author uceeftu
  */
-public class Controller {
+public class Controller extends AbstractPlaneInteracter {
 	
     private static final Controller controller = new Controller();
-    private PlaneInteracter planeInteracter;
     private InfoResolver resolver;
     
     private ControllerManagementConsole console = null;
@@ -42,23 +40,19 @@ public class Controller {
     private Boolean usingDeploymentManager;
     
     private Controller() {}
-    
-    private void init(String infoPlaneAddr, int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {
-        
-        // we create an object to interact to the Lattice planes  
-        planeInteracter = new BasicConsumer();
-        
-        // we create the root of the infoPlane (the controller needs to be started first)
+     
+    private void init(String infoPlaneAddr, int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {        
+        // Controller is the root of the infoPlane
         InfoPlane infoPlane = new DHTInfoPlaneRoot(infoPlaneAddr, infoPlanePort);
-	planeInteracter.setInfoPlane(infoPlane);
+	setInfoPlane(infoPlane);
         
-        // we create the wrapper to the InfoPlane to resolve probes IDs to DSs IP:port
+        // we create the wrapper to the InfoPlane to resolve probes IDs to DSs IP:port, etc.
         resolver = new InfoResolver(infoPlane);
         
         // we create a control plane producer that is not connected to any specific Data source
-        planeInteracter.setControlPlane(new UDPControlPlaneProducer(resolver));
+        setControlPlane(new UDPControlPlaneProducer(resolver));
         
-        planeInteracter.connect();
+        connect();
         
         this.usingDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.enabled", "false"));
         
@@ -88,8 +82,8 @@ public class Controller {
     }
     
     
-    public ControlPlane getControlHandle(){
-        return planeInteracter.getControlPlane();
+    public ControllerControlPlane getControlHandle(){
+            return (ControllerControlPlane)getControlPlane();
     }
     
     
@@ -152,8 +146,8 @@ public class Controller {
         }
         
         /*
-        System.out.println("Received " + probeArgsAsObjects.length + " arguments:");
-        for (Object o : probeArgsAsObjects)
+        System.out.println("Received " + reporterArgsAsObjects.length + " arguments:");
+        for (Object o : reporterArgsAsObjects)
             System.out.println((String)o);
         */
         
@@ -346,6 +340,38 @@ public class Controller {
         
         return result;
     }
+    
+    
+    JSONObject loadReporter(String id, String repoterClassName, String reporterArgs) throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        ID createdReporterID;
+        
+        result.put("operation", "loadReporter");
+        result.put("repoterClassName",repoterClassName);
+        
+        Object [] reporterArgsAsObjects = new Object[0];
+        
+        if (reporterArgs != null) {
+            reporterArgsAsObjects = (Object[])reporterArgs.split(" ");
+        }
+        
+        /*
+        System.out.println("Received " + reporterArgsAsObjects.length + " arguments:");
+        for (Object o : reporterArgsAsObjects)
+            System.out.println((String)o);
+        */
+        
+        try {
+            createdReporterID = this.getControlHandle().loadReporter(ID.fromString(id), repoterClassName, reporterArgsAsObjects);
+            result.put("createdReporterID", createdReporterID.toString());
+            result.put("success", true);
+        } catch (Exception ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+        }
+        return result;
+        }
     
     
     

@@ -11,6 +11,6 @@ import java.net.InetSocketAddress;
  * A ControlPlane.
  * This has the common methods for all 
  */
-public interface ControlPlane extends Plane, DataSourceControlService, DataConsumerControlService {
+public interface ControlPlane extends Plane {
     public InetSocketAddress getControlEndPoint();
 }

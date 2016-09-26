@@ -6,7 +6,6 @@
 package eu.reservoir.monitoring.core;
 
 import eu.reservoir.monitoring.core.plane.*;
-import java.io.IOException;
 
 /**
  * An object that interacts with the data plane, the control plane,

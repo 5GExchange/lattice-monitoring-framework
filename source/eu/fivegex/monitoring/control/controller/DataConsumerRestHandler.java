@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Scanner;
 import org.simpleframework.http.Path;
+import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
 import us.monoid.json.JSONException;
@@ -64,12 +65,22 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         */
         
         try {
-            if (method.equals("GET")) {
-                if (name == null && segments.length == 3) {
-                    getDCMeasurementRate(request, response);
+            if (method.equals("POST")) {
+                if (name == null && segments.length == 3)
+                    loadReporter(request, response);
+                else if (name == null && segments.length == 1) {
+                    //TODO: deployDC(request,response);
                 }
                 else
-                    notFound(response, "GET bad request");
+                    notFound(response, "POST bad request");
+            }
+            
+            else if (method.equals("GET")) {
+                    if (name == null && segments.length == 3) {
+                        getDCMeasurementRate(request, response);
+                    }
+                    else
+                        notFound(response, "GET bad request");
             } 
             
             return true;
@@ -79,7 +90,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
             } catch (JSONException jex) {
                 System.out.println("JSONException" + jex.getMessage());
             } catch (DCNotFoundException idEx) {
-                System.out.println("DSNotFoundException --- " + idEx.getMessage());
+                System.out.println("DCNotFoundException --- " + idEx.getMessage());
             } finally {
                         try {
                             response.close();
@@ -91,6 +102,63 @@ class DataConsumerRestHandler extends BasicRequestHandler {
     }
    
    
+    private void loadReporter(Request request, Response response) throws JSONException, IOException, DCNotFoundException {
+        Path path = request.getPath();
+        String[] segments = path.getSegments(); 
+        Query query = request.getQuery();
+        
+        String dcID;
+        String className;
+        //String rawArgs="";
+        String rawArgs=null;
+        
+        if (query.containsKey("className")) {
+            className = query.get("className");
+        } else {
+            badRequest(response, "missing arg className");
+            response.close();
+            return;
+        }
+        
+        if (query.containsKey("args")) {
+            rawArgs = query.get("args");
+            rawArgs = rawArgs.trim();
+            rawArgs = rawArgs.replaceAll("\\+", " ");
+        }
+
+        boolean success = true;
+        String failMessage = null;
+        JSONObject jsobj = null;
+        
+        if (segments[1].matches("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}") && segments[2].equals("reporter")) {
+            dcID = segments[1];
+            jsobj = controller_.loadReporter(dcID, className, rawArgs);
+        }
+        
+        else {
+            badRequest(response, "wrong path");
+            response.close();
+            return;
+        }
+        
+        if (jsobj.get("success").equals("false")) {
+            failMessage = (String)jsobj.get("msg");
+            System.out.println("loadReporter: failure detected: " + failMessage);
+            success = false;   
+        }   
+    
+        if (success) {
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+        
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+        
+    }
     
     
     private void getDCMeasurementRate(Request request, Response response) throws JSONException, IOException, DCNotFoundException {

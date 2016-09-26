@@ -38,4 +38,23 @@ public interface DataConsumer extends PlaneInteracter {
      * Get the current rate of received measurements
      */
     public float getMeasurementsRate(); 
+    
+    
+    /**
+     * Add a reporter to this Data Consumer
+     */
+    public void addReporter(Reporter l);
+    
+    
+    /**
+     * Remove a reporter from this Data Consumer
+     */
+    public void removeReporter(Reporter l);
+	
+
+    /**
+     * List all Reporters.
+     */
+    public Object[] getReporters();
+    
 }

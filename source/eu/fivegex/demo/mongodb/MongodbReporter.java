@@ -1,10 +1,12 @@
-package eu.fivegex.demo;
+package eu.fivegex.demo.mongodb;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import com.mongodb.MongoClient;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import eu.reservoir.monitoring.core.AbstractReporter;
 
 import eu.reservoir.monitoring.core.Measurement;
 import eu.reservoir.monitoring.core.ProbeValue;
@@ -13,21 +15,23 @@ import eu.reservoir.monitoring.core.Reporter;
 import eu.reservoir.monitoring.core.Timestamp;
 import eu.reservoir.monitoring.distribution.ConsumerMeasurementWithMetadataAndProbeName;
 
-public class MongodbReporter implements Reporter {
+public class MongodbReporter extends AbstractReporter implements Reporter {
     private final MongoDatabase db;
     private final MongoClient mongoClient;
     private final String mongoDBAddress;
     private final int mongoDBPort;
-    //private MongoCollection<Document> collection;
+    private final MongoCollection<Document> collection;
 
     
-    public MongodbReporter(String address, int port, String dbName) {
+    public MongodbReporter(String address, int port, String dbName, String collectionName) {
+        super("mongoDB-reporter");
         this.mongoDBAddress = address;
         this.mongoDBPort = port;
         System.out.println("connecting to MongoDB Server...");
         this.mongoClient = new MongoClient(mongoDBAddress, mongoDBPort);
         System.out.println("connected!");
         this.db=mongoClient.getDatabase(dbName);
+        this.collection = db.getCollection(collectionName);
     }
     
     @Override
@@ -47,7 +51,7 @@ public class MongodbReporter implements Reporter {
                                     // new Document().append(((ProbeValueWithName)m.getValues().get(0)).getName(), m.getValues().get(0).getValue())));
                                     attributes));
             
-            db.getCollection("cs").updateOne(new Document("_id", m.getServiceID().toString()), doc1);
+            collection.updateOne(new Document("_id", m.getServiceID().toString()), doc1);
     }
 
 

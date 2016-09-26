@@ -5,15 +5,14 @@
  */
 package eu.fivegex.monitoring.control.udp;
 
+import eu.fivegex.monitoring.control.controller.ReporterLoader;
 import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.ID;
-import eu.reservoir.monitoring.core.Measurement;
-import eu.reservoir.monitoring.core.Rational;
-import eu.reservoir.monitoring.core.Timestamp;
 import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.core.plane.ControlOperation;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
+import eu.reservoir.monitoring.core.plane.DataConsumerControlPlane;
 import eu.reservoir.monitoring.core.plane.MessageType;
 import eu.reservoir.monitoring.distribution.MetaData;
 import eu.reservoir.monitoring.distribution.XDRDataInputStream;
@@ -31,7 +30,7 @@ import java.lang.reflect.Method;
 
 
 
-public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlaneConsumer implements DataConsumerInteracter {
+public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlaneConsumer implements DataConsumerControlPlane, DataConsumerInteracter {
     DataConsumer dataConsumer;
     
     public UDPDataConsumerControlPlaneConsumer(InetSocketAddress address) {
@@ -87,7 +86,7 @@ public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlane
                 System.out.println("Operation Method: " + ctrlOperationMethod);
                 System.out.println("Source Message ID: " + sourceMessageID);
                 
-                byte [] args = new byte[2048];
+                byte [] args = new byte[4096];
                 dataIn.readFully(args);
 
                 List<Object> methodArgs;
@@ -122,15 +121,15 @@ public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlane
 	    }
 
         } catch (Exception ex) {
-                ControlPlaneReplyMessage errorMessage = new ControlPlaneReplyMessage((Object)ex, ctrlOperationName, sourceMessageID);
+                ControlPlaneReplyMessage errorMessage = new ControlPlaneReplyMessage(ex.getCause(), ctrlOperationName, sourceMessageID);
                 try {
                     transmitReply(errorMessage, metaData);
                 } catch (Exception ex1) {
-                    System.err.println("ControPlaneConsumer (exception detected): failed to transmit control error message: " + ex1.getMessage());
+                    System.out.println("ControPlaneConsumer error - failed to transmit control error message: " + ex1.getMessage());
                 }
                 
-                System.err.println("ControPlaneConsumer (exception detected): failed to process control message: " + ex.getMessage());
-                throw new IOException(ex.getMessage());
+                System.out.println("ControPlaneConsumer error - " + ex.getCause().getMessage());
+                throw new IOException(ex.getCause().getMessage());
                 
             
         }
@@ -192,106 +191,13 @@ public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlane
         System.out.println("******* UDPControlPlaneConsumer -> getDCMeasurementsRate");
         return dataConsumer.getMeasurementsRate();
     }
-    
-    
-    @Override
-    public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
 
     @Override
-    public boolean unloadProbe(ID probeID) throws Exception {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-    
-
-    @Override
-    public String getProbeName(ID probeID) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public boolean setProbeName(ID probeID, String name) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public ID getProbeServiceID(ID probeID) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public boolean setProbeServiceID(ID probeID, ID id) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-        }
-
-    @Override
-    public ID getProbeGroupID(ID probeID) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public boolean setProbeGroupID(ID probeID, ID id) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public Rational getProbeDataRate(ID probeID) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public boolean setProbeDataRate(ID probeID, Rational dataRate) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public Measurement getProbeLastMeasurement(ID probeID) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public Timestamp getProbeLastMeasurementCollection(ID probeID) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public boolean turnOnProbe(ID probeID) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public boolean turnOffProbe(ID probeID) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public boolean isProbeOn(ID probeID) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public boolean activateProbe(ID probeID) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public boolean deactivateProbe(ID probeID) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public boolean isProbeActive(ID probeID) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public String getDataSourceName() {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
-    }
-
-    @Override
-    public boolean setDataSourceName(String name) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataConsumer");
+    public ID loadReporter(ID dataConsumerID, String reporterClassName, Object... reporterArgs) throws Exception {
+        System.out.println("******* UDPControlPlaneConsumer -> loadReporter");
+        ReporterLoader r = new ReporterLoader(reporterClassName, reporterArgs);
+        r.getReporter().setDcId(dataConsumerID);
+        dataConsumer.addReporter(r.getReporter());
+        return r.getReporter().getId();
     }
 }

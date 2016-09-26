@@ -10,6 +10,8 @@ import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import org.bson.Document;
+import org.bson.json.JsonWriterSettings;
 import us.monoid.json.JSONArray;
 
 import us.monoid.json.JSONException;
@@ -446,11 +448,13 @@ public class LatticeTest {
             // instantiating some test probes on the previous DS
             client.testMemoryInfoProbe(probeName, dsID, serviceID, sliceID);
             //client.testDockerProbe("testDockerProbe", dsID, serviceID, sliceID);
-            
-            if (m.getMongoDBEntry(serviceID) == null)
+
+            Document mongoDBEntry = m.getMongoDBEntry(serviceID);
+            System.out.println("Reading data (1 measurement) from the DB related to the previous service " + serviceID);
+            if (mongoDBEntry != null)
+                System.out.println(mongoDBEntry.toJson(new JsonWriterSettings(true)));
+            else
                 throw new Exception("Cannot find any entries with service ID " + serviceID + " in the DB");
-                
-            
         }
         catch (Exception e) {
             System.out.println("\n************************************************** TEST FAILED **************************************************\n" + 

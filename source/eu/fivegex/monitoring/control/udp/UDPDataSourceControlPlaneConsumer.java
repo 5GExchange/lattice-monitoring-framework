@@ -5,18 +5,12 @@
  */
 package eu.fivegex.monitoring.control.udp;
 
-import eu.reservoir.monitoring.core.ControllableDataSource;
-import eu.reservoir.monitoring.core.DataSource;
-import eu.reservoir.monitoring.core.ID;
-import eu.reservoir.monitoring.core.Measurement;
-import eu.reservoir.monitoring.core.Probe;
-import eu.reservoir.monitoring.core.ProbeLoader;
-import eu.reservoir.monitoring.core.Rational;
-import eu.reservoir.monitoring.core.Timestamp;
-import eu.reservoir.monitoring.core.TypeException;
+import eu.reservoir.monitoring.core.*;
+import eu.fivegex.monitoring.control.controller.ProbeLoader;
 import eu.reservoir.monitoring.core.plane.ControlOperation;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
 import eu.reservoir.monitoring.core.plane.MessageType;
+import eu.reservoir.monitoring.core.plane.DataSourceControlPlane;
 import eu.reservoir.monitoring.distribution.MetaData;
 import eu.reservoir.monitoring.distribution.XDRDataInputStream;
 import eu.reservoir.monitoring.distribution.XDRDataOutputStream;
@@ -30,11 +24,11 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.lang.reflect.Method;
-import eu.reservoir.monitoring.core.DataSourceInteracter;
 
 
 
-public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneConsumer implements DataSourceInteracter {
+
+public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneConsumer implements DataSourceControlPlane, DataSourceInteracter {
     DataSource dataSource;
     
     public UDPDataSourceControlPlaneConsumer(InetSocketAddress address) {
@@ -90,7 +84,7 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
                 System.out.println("Operation Method: " + ctrlOperationMethod);
                 System.out.println("Source Message ID: " + sourceMessageID);
                 
-                byte [] args = new byte[2048];
+                byte [] args = new byte[4096];
                 dataIn.readFully(args);
 
                 List<Object> methodArgs;
@@ -125,15 +119,15 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
 	    }
 
         } catch (Exception ex) {
-                ControlPlaneReplyMessage errorMessage = new ControlPlaneReplyMessage((Object)ex, ctrlOperationName, sourceMessageID);
+                ControlPlaneReplyMessage errorMessage = new ControlPlaneReplyMessage(ex.getCause(), ctrlOperationName, sourceMessageID);
                 try {
                     transmitReply(errorMessage, metaData);
                 } catch (Exception ex1) {
-                    System.err.println("ControPlaneConsumer (exception detected): failed to transmit control error message: " + ex1.getMessage());
+                    System.out.println("ControPlaneConsumer error - failed to transmit control error message: " + ex1.getMessage());
                 }
                 
-                System.err.println("ControPlaneConsumer (exception detected): failed to process control message: " + ex.getMessage());
-                throw new IOException(ex.getMessage());
+                System.out.println("ControPlaneConsumer error: " + ex.getCause().getMessage());
+                throw new IOException(ex.getCause().getMessage());
                 
             
         }
@@ -200,7 +194,7 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
             if (dataSource instanceof ControllableDataSource)
                 return ((ControllableDataSource)dataSource).addProbe(p);
             else
-                throw new Exception("Probe cannot be loaded on that DS");
+                throw new Exception("Probe cannot be loaded on the DS");
         } catch (Exception ex) {
             throw new Exception(ex.getMessage());
         }
@@ -315,9 +309,11 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    /*
     @Override
     public float getDCMeasurementsRate(ID dcId) {
         throw new UnsupportedOperationException("This operation is not supported on a DataSource"); //To change body of generated methods, choose Tools | Templates.
     }
+    */
     
 }

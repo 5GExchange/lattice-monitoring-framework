@@ -73,9 +73,8 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
                 SyncUDPTransmitterAndReceiver udpTransmitterAndReceiver = new SyncUDPTransmitterAndReceiver(this);
                 result = udpTransmitterAndReceiver.transmitAndWaitReply(byteStream, ((UDPControlTransmissionMetaData)metadata).getInetSocketAddress(), 0);
                 //udpTransmitterAndReceiver.transmit(byteStream, ((UDPControlTransmissionMetaData)metadata).getInetSocketAddress(), 0);
-                
-                if (result instanceof Exception)
-                    throw new Exception((Exception)result);
+                if (result instanceof Exception) 
+                    throw new Exception((Exception)result); 
                 
                 break;
         }
@@ -121,7 +120,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
 
                 //System.out.println("Operation code: " + ctrlOperationName);
                 
-                byte [] args = new byte[2048];
+                byte [] args = new byte[4096];
                 dataIn.readFully(args);
 
                 ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(args));
@@ -147,6 +146,9 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         }
         return result;
     }
+    
+    
+    /* DS Control Service methods */
 
     @Override
     public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception { //we also need the DS id on which the probe will be loaded
@@ -344,27 +346,6 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         return result;
         }
     
-    
-    @Override
-    public float getDCMeasurementsRate(ID dcId) throws Exception {
-        List<Object> args = new ArrayList();
-        args.add(dcId);
-        
-        Float rate;
-        
-        ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.GET_DC_RATE, args);
-        
-        try {
-            InetSocketAddress dstAddr = resolver.getDCAddressFromID(dcId);
-            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());            
-            rate = (Float) transmit(m, mData);
-        } catch (Exception ex) {
-            System.out.println("Error while sending getDCMeasurementsRate " + ex.getMessage());
-            throw ex;
-          }
-        return rate;
-    }
-    
 
     @Override
     public boolean isProbeOn(ID probeID) {
@@ -399,6 +380,52 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
     @Override
     public boolean transmitted(int id) {
         return true;
+    }
+    
+    
+    /* DC Control Service methods */
+    
+    @Override
+    public float getDCMeasurementsRate(ID dcId) throws Exception {
+        List<Object> args = new ArrayList();
+        args.add(dcId);
+        
+        Float rate;
+        
+        ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.GET_DC_RATE, args);
+        
+        try {
+            InetSocketAddress dstAddr = resolver.getDCAddressFromID(dcId);
+            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());            
+            rate = (Float) transmit(m, mData);
+        } catch (Exception ex) {
+            System.out.println("Error while sending getDCMeasurementsRate command " + ex.getMessage());
+            throw ex;
+          }
+        return rate;
+    }
+
+    @Override
+    public ID loadReporter(ID dataConsumerID, String reporterClassName, Object... reporterArgs) throws Exception {
+        List<Object> args = new ArrayList();
+        args.add(dataConsumerID);
+        args.add(reporterClassName);
+        args.add(reporterArgs);
+        
+        ID reporterID = null;
+        
+        ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.LOAD_REPORTER, args);
+        
+        try {
+            InetSocketAddress dstAddr = resolver.getDCAddressFromID(dataConsumerID);
+            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            //we return the ID of the new created reporter as result
+            reporterID = (ID) transmit(m, mData);
+        } catch (Exception ex) {
+            System.out.println("Error while sending loadReporter command " + ex.getMessage());
+            throw ex;
+          }
+        return reporterID;
     }
     
 }

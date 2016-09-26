@@ -13,7 +13,7 @@ import java.util.HashMap;
  * @author uceeftu
  */
 public enum ControlOperation {
-    
+    // DS control service
     TURN_OFF_PROBE("turnOffProbe"),
     TURN_ON_PROBE("turnOnProbe"),
     LOAD_PROBE("loadProbe"),
@@ -21,7 +21,10 @@ public enum ControlOperation {
     SET_PROBE_SERVICE_ID("setProbeServiceID"),
     SET_PROBE_DATA_RATE("setProbeDataRate"),
     SET_PROBE_GROUP_ID("setProbeGroupID"),
-    GET_DC_RATE("getDCMeasurementsRate");
+    
+    // DC control service 
+    GET_DC_RATE("getDCMeasurementsRate"),
+    LOAD_REPORTER("loadReporter");
     
     private static final HashMap<String, ControlOperation> lookup = new HashMap<>();
 

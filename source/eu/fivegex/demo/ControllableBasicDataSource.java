@@ -8,7 +8,7 @@ package eu.fivegex.demo;
 import eu.reservoir.monitoring.appl.BasicDataSource;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.ID;
-import eu.reservoir.monitoring.core.ProbeLoader;
+import eu.fivegex.monitoring.control.controller.ProbeLoader;
 
 /**
  *

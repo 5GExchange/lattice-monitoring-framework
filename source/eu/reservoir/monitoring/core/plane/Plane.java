@@ -5,7 +5,6 @@
 
 package eu.reservoir.monitoring.core.plane;
 
-import eu.reservoir.monitoring.core.DataSource;
 
 /**
  * A Plane.
