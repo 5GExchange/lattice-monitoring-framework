@@ -56,6 +56,11 @@ public interface InfoService {
      */
     public Object lookupDataConsumerInfo(ID dataConsumerID, String info);
     
+    /**
+     * Lookup some Reporter info in the InfoPlane.
+     */
+    public Object lookupReporterInfo(ID reporterID, String info);
+    
     
 
     /*
@@ -76,6 +81,17 @@ public interface InfoService {
      * Add ProbeAttribute Info to a Probe Info.
      */
     public boolean addProbeAttributeInfo(Probe p, ProbeAttribute pa);
+    
+    /**
+     * Add DataConsumer info.
+     */
+    public boolean addDataConsumerInfo(DataConsumer dc);
+    
+    /**
+     * Add Reporter info.
+     */
+    public boolean addReporterInfo(Reporter r);
+    
 
     /*
      * Modify things
@@ -114,6 +130,18 @@ public interface InfoService {
      * Remove ProbeAttribute Info for a Probe.
      */
     public boolean removeProbeAttributeInfo(Probe p, ProbeAttribute pa);
+    
+    /**
+     * Remove DataConsumer Info.
+     */
+    public boolean removeDataConsumerInfo(DataConsumer dc);
+    
+    
+    /**
+     * Remove Reporter Info.
+     */
+    public boolean removeReporterInfo(Reporter r);
+    
 
     /*
      * General .

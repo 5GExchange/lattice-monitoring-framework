@@ -196,8 +196,14 @@ public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlane
     public ID loadReporter(ID dataConsumerID, String reporterClassName, Object... reporterArgs) throws Exception {
         System.out.println("******* UDPControlPlaneConsumer -> loadReporter");
         ReporterLoader r = new ReporterLoader(reporterClassName, reporterArgs);
-        r.getReporter().setDcId(dataConsumerID);
         dataConsumer.addReporter(r.getReporter());
         return r.getReporter().getId();
+    }
+
+    @Override
+    public boolean unloadReporter(ID reporterID) throws Exception {
+        System.out.println("******* UDPControlPlaneConsumer -> loadReporter");
+        dataConsumer.removeReporter(dataConsumer.getReporterById(reporterID));
+        return true;
     }
 }

@@ -25,7 +25,6 @@ import java.util.Scanner;
  * This receives measurements from a UDP Data Plane.
  */
 public class SimpleControllableDataConsumer {
-    // The Basic consumer
     ControllableDataConsumer consumer;
 
     /*

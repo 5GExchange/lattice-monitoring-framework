@@ -428,4 +428,23 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         return reporterID;
     }
     
+    
+    @Override
+    public boolean unloadReporter(ID reporterID) throws Exception {
+        List<Object> args = new ArrayList();
+        args.add(reporterID);
+        Boolean result = false;
+        
+        ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.UNLOAD_REPORTER, args);
+        try {
+            InetSocketAddress dstAddr = resolver.getDCAddressFromReporterID(reporterID);
+            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            result = (Boolean) transmit(m, mData);
+        } catch (Exception ex) {
+            System.out.println("Error while sending unload reporter command " + ex.getMessage());
+            throw ex;
+          }
+        return result;
+    }
+    
 }

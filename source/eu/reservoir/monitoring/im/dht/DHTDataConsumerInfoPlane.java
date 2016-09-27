@@ -5,11 +5,13 @@
 
 package eu.reservoir.monitoring.im.dht;
 
+import eu.reservoir.monitoring.core.ControllableReporter;
 import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
+import eu.reservoir.monitoring.core.Reporter;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 
 import java.io.IOException;
@@ -72,13 +74,8 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
      * Announce that the plane is up and running
      */
     public boolean announce() {
-	try {
-	    imNode.addDataConsumer(dataConsumer);
-	    System.err.println("DHTInfoPlane: just announced DataConsumer " + dataConsumer);
-	    return true;
-	} catch (IOException ioe) {
-	    return false;
-	}
+	addDataConsumerInfo(dataConsumer);
+        return true;
     }
 
     /**
@@ -88,6 +85,50 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
 	// DataSource dataSource = dataSourceDelegate.getDataSource();
 	// return imNode.removeDataSource(dataSource);
 	return true;
+    }
+
+    @Override
+    public boolean addDataConsumerInfo(DataConsumer dc) {
+        try {
+	    imNode.addDataConsumer(dataConsumer);
+	    System.err.println("DHTInfoPlane: just announced DataConsumer " + dataConsumer);
+	    return true;
+	} catch (IOException ioe) {
+	    return false;
+	}
+    }
+
+    @Override
+    public boolean addReporterInfo(Reporter r) {
+        try {
+	    imNode.addReporter((ControllableReporter)r);
+	    System.err.println("DHTInfoPlane: just added reporter " + ((ControllableReporter)r).getName());
+	    return true;
+	} catch (IOException ioe) {
+	    return false;
+	}
+    }
+
+    @Override
+    public boolean removeDataConsumerInfo(DataConsumer dc) {
+        try {
+	    imNode.removeDataConsumer(dc);
+	    System.err.println("DHTInfoPlane: just removed Data Consumer " + dc);
+	    return true;
+	} catch (IOException ioe) {
+	    return false;
+	}
+    }
+
+    @Override
+    public boolean removeReporterInfo(Reporter r) {
+        try {
+	    imNode.addReporter((ControllableReporter)r);
+	    System.err.println("DHTInfoPlane: just removed reporter " + r);
+	    return true;
+	} catch (IOException ioe) {
+	    return false;
+	}
     }
     
     /* maybe we should consider refactoring the interface InfoService

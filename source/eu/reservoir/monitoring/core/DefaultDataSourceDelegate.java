@@ -538,6 +538,29 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
     public Object lookupDataConsumerInfo(ID dataConsumerID, String info) {
         throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
     }
-    
-    
+
+    @Override
+    public boolean addDataConsumerInfo(DataConsumer dc) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean addReporterInfo(Reporter r) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean removeDataConsumerInfo(DataConsumer dc) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean removeReporterInfo(Reporter r) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Object lookupReporterInfo(ID reporterID, String info) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
+    }
 }

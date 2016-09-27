@@ -5,11 +5,13 @@
 
 package eu.reservoir.monitoring.im.dht;
 
+import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
 import eu.reservoir.monitoring.core.DataSourceDelegate;
 import eu.reservoir.monitoring.core.DataSourceDelegateInteracter;
+import eu.reservoir.monitoring.core.Reporter;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 
 import java.io.IOException;
@@ -241,8 +243,25 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	}
     }
 
+    @Override
+    public boolean addDataConsumerInfo(DataConsumer dc) {
+        return false;
+    }
 
- 
+    @Override
+    public boolean addReporterInfo(Reporter r) {
+        return false;
+    }
 
+    @Override
+    public boolean removeDataConsumerInfo(DataConsumer dc) {
+        return false;
+    }
 
+    @Override
+    public boolean removeReporterInfo(Reporter r) {
+        return false;
+    }
+    
+    
 }

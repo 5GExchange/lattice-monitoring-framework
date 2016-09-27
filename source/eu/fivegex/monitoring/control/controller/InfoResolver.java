@@ -61,4 +61,22 @@ public class InfoResolver {
             throw new DCNotFoundException("Data Source with ID " + dataConsumer.toString() + " not found in the infoplane");
     }
     
+    public InetSocketAddress getDCAddressFromReporterID(ID reporter) throws ReporterNotFoundException, DCNotFoundException {
+        String dcID = (String)info.lookupReporterInfo(reporter, "dataconsumer");
+        
+        if (dcID != null) {
+            ID dataConsumerID = ID.fromString(dcID);
+            System.out.println("Found this data consumer ID: " + dataConsumerID);
+            InetSocketAddress dsAddress = getDCAddressFromID(dataConsumerID);
+            if (dsAddress != null)
+                return dsAddress;
+            else
+                throw new DCNotFoundException("Data Consumer with ID " + dataConsumerID.toString() + " not found in the infoplane");
+        }
+        else
+            throw new ReporterNotFoundException("probe with ID " + reporter.toString() + " not found in the infoplane");
+    }
+    
+    
+    
 }

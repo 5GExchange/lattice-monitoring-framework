@@ -15,4 +15,6 @@ public interface DataConsumerControlService {
     public float getDCMeasurementsRate(ID dcID) throws Exception; 
     
     public ID loadReporter(ID dataConsumerID, String reporterClassName, Object ... reporterArgs) throws Exception;
+    
+    public boolean unloadReporter(ID reporterID) throws Exception;
 }

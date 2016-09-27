@@ -65,8 +65,14 @@ public abstract class AbstractDHTInfoPlane implements InfoPlane  {
 	return imNode.getProbeAttributeInfo(probeID, field, info);
     }
     
+    @Override
     public Object lookupDataConsumerInfo(ID dataConsumerID, String info) {
         return imNode.getDataConsumerInfo(dataConsumerID, info);
+    }
+    
+    @Override
+    public Object lookupReporterInfo(ID reporterID, String info) {
+        return imNode.getReporterInfo(reporterID, info);
     }
     
 

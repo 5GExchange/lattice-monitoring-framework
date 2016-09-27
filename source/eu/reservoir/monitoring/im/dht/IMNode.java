@@ -110,7 +110,7 @@ public class IMNode {
     
     public IMNode addReporter(ControllableReporter r) throws IOException {
         putDHT("/reporter/" + r.getId() + "/name", r.getName());
-        putDHT("/reporter/" + r.getId() + "/datasource", r.getDcId());
+        putDHT("/reporter/" + r.getId() + "/dataconsumer", r.getDcId().toString());
         return this;
     }
     
@@ -248,6 +248,27 @@ public class IMNode {
 	return this;
     }
 
+    
+    public IMNode removeDataConsumer(DataConsumer dc) throws IOException {
+	remDHT("/dataconsumer/" + dc.getID() + "/name");
+        remDHT("/dataconsumer/" + dc.getID() + "/inetSocketAddress"); //we also need to remove the control end point
+	Object[] reporters = dc.getReporters();
+
+	// skip through all reporters
+	for (Object r : reporters) {
+	    removeReporter((ControllableReporter)r);
+	}
+	    
+	return this;
+    }
+    
+    
+    public IMNode removeReporter(ControllableReporter r) throws IOException {
+        remDHT("/reporter/" + r.getId() + "/name");
+        remDHT("/reporter/" + r.getId() + "/dataconsumer");
+        return this;
+    }
+    
 
     /**
      * Lookup DataSource info
@@ -276,6 +297,16 @@ public class IMNode {
     public Object getDataConsumerInfo(ID dcID, String info) {
 	return getDHT("/dataconsumer/" + dcID + "/" + info);
     }
+    
+    
+    /**
+     * Lookup Reporter info
+     */
+    public Object getReporterInfo(ID reporterID, String info) {
+	return getDHT("/reporter/" + reporterID + "/" + info);
+    }
+    
+    
 
 
     /**

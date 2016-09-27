@@ -35,7 +35,7 @@ public abstract class AbstractDataConsumer extends AbstractPlaneInteracter imple
      * By using a BlockingQueue we get locking and synchronization built-in,
      * and saves having to build it ourselves.
      */
-    LinkedBlockingQueue measurementQueue;
+    protected LinkedBlockingQueue measurementQueue;
 
     /*
      * My Thread.
@@ -45,7 +45,7 @@ public abstract class AbstractDataConsumer extends AbstractPlaneInteracter imple
     /*
      * Thread running?
      */
-    boolean threadRunning = false;
+    protected boolean threadRunning = false;
 
 
 
@@ -275,7 +275,7 @@ public abstract class AbstractDataConsumer extends AbstractPlaneInteracter imple
      * Notify all listeners that have registered interest for
      * notification on Measurements.
      */
-    void fireEvent(Measurement measurement) {
+    protected void fireEvent(Measurement measurement) {
 	// Guaranteed to return a non-null array
 	Object[] listeners = getReporters();
 	// Process the listeners last to first, notifying

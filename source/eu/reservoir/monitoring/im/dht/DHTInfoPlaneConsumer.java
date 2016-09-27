@@ -5,6 +5,7 @@
 
 package eu.reservoir.monitoring.im.dht;
 
+import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
@@ -12,6 +13,7 @@ import eu.reservoir.monitoring.core.plane.InfoPlane;
 
 import java.io.IOException;
 import eu.reservoir.monitoring.core.DataSourceInteracter;
+import eu.reservoir.monitoring.core.Reporter;
 
 /**
  * A DHTInfoPlaneConsumer is an InfoPlane implementation
@@ -127,5 +129,28 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
     public boolean removeProbeAttributeInfo(Probe p, ProbeAttribute pa) {
 	    return false;
     }
+
+    @Override
+    public boolean addDataConsumerInfo(DataConsumer dc) {
+        return false;
+    }
+
+    @Override
+    public boolean addReporterInfo(Reporter r) {
+        return false;
+    }
+
+    @Override
+    public boolean removeDataConsumerInfo(DataConsumer dc) {
+        return false;
+    }
+
+    @Override
+    public boolean removeReporterInfo(Reporter r) {
+        return false;
+    }
+    
+    
+    
 
 }

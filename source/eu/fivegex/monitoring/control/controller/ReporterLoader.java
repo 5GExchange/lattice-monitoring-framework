@@ -52,8 +52,8 @@ public final class ReporterLoader implements Serializable { // to be refactored 
             // create an instance of the Probe
             reporter = cons0.newInstance(constructorParameters);
             
-            }  catch ( Exception ex /*ClassNotFoundException | InstantiationException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex*/) {
-                System.out.println("Exception in ReporterLoader " + ex.getMessage());
+            }  catch (Exception ex) {
+                System.out.println("Exception in ReporterLoader " + ex.getCause().getMessage());
                 throw new Exception(ex);
             }   
     }

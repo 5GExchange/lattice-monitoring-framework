@@ -85,7 +85,6 @@ public class SimpleDataSourceTest {
 
 
     public static void main(String[] args) throws InterruptedException {
-        //System.out.println(args.length);
 	try {
             String dsName = null;
             String dataConsumerAddr = null;

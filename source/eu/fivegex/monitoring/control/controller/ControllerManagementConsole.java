@@ -29,6 +29,9 @@ public class ControllerManagementConsole extends RestConsole{
         
         // /dataconsumer/uuid/?<args> 
         defineRequestHandler("/dataconsumer/.*", new DataConsumerRestHandler());
+        
+        // /dataconsumer/uuid/?<args> 
+        defineRequestHandler("/reporter/.*", new ReporterRestHandler());
        }
     
 }

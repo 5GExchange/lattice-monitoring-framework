@@ -342,13 +342,13 @@ public class Controller extends AbstractPlaneInteracter {
     }
     
     
-    JSONObject loadReporter(String id, String repoterClassName, String reporterArgs) throws JSONException {
+    JSONObject loadReporter(String id, String reporterClassName, String reporterArgs) throws JSONException {
         JSONObject result = new JSONObject();
         
         ID createdReporterID;
         
         result.put("operation", "loadReporter");
-        result.put("repoterClassName",repoterClassName);
+        result.put("reporterClassName",reporterClassName);
         
         Object [] reporterArgsAsObjects = new Object[0];
         
@@ -356,16 +356,29 @@ public class Controller extends AbstractPlaneInteracter {
             reporterArgsAsObjects = (Object[])reporterArgs.split(" ");
         }
         
-        /*
-        System.out.println("Received " + reporterArgsAsObjects.length + " arguments:");
-        for (Object o : reporterArgsAsObjects)
-            System.out.println((String)o);
-        */
-        
         try {
-            createdReporterID = this.getControlHandle().loadReporter(ID.fromString(id), repoterClassName, reporterArgsAsObjects);
+            createdReporterID = this.getControlHandle().loadReporter(ID.fromString(id), reporterClassName, reporterArgsAsObjects);
             result.put("createdReporterID", createdReporterID.toString());
             result.put("success", true);
+        } catch (Exception ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+        }
+        return result;
+        }
+    
+    
+    JSONObject unloadReporter(String id) throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        Boolean invocationResult;
+        
+        result.put("operation", "unlodReporter");
+        result.put("reporterID",id);
+        
+        try {
+            invocationResult = this.getControlHandle().unloadReporter(ID.fromString(id));
+            result.put("success", invocationResult);
         } catch (Exception ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());

@@ -308,12 +308,4 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
     public boolean setDataSourceName(String name) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-
-    /*
-    @Override
-    public float getDCMeasurementsRate(ID dcId) {
-        throw new UnsupportedOperationException("This operation is not supported on a DataSource"); //To change body of generated methods, choose Tools | Templates.
-    }
-    */
-    
 }

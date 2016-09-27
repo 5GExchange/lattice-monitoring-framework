@@ -9,9 +9,9 @@ package eu.fivegex.monitoring.control.controller;
  *
  * @author uceeftu
  */
-class DCNotFoundException extends Exception {
+class ReporterNotFoundException extends Exception {
 
-    public DCNotFoundException(String message) {
+    public ReporterNotFoundException(String message) {
         super(message);
     }
     

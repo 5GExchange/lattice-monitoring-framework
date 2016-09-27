@@ -43,18 +43,23 @@ public interface DataConsumer extends PlaneInteracter {
     /**
      * Add a reporter to this Data Consumer
      */
-    public void addReporter(Reporter l);
+    public void addReporter(ControllableReporter l);
     
     
     /**
      * Remove a reporter from this Data Consumer
      */
-    public void removeReporter(Reporter l);
+    public void removeReporter(ControllableReporter l);
 	
 
     /**
      * List all Reporters.
      */
     public Object[] getReporters();
+    
+    /**
+     * Return the reporter object given the related ID
+     */
+    public ControllableReporter getReporterById(ID reporterID);
     
 }
