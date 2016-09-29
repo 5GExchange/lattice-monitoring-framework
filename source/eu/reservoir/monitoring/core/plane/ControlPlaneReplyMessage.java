@@ -14,10 +14,11 @@ import java.io.ObjectOutputStream;
  *
  * @author uceeftu
  */
-public class ControlPlaneReplyMessage extends DataPlaneMessage{
+public class ControlPlaneReplyMessage {
     private final ControlOperation methodName;
     private final Object Payload;
     private final ID replyToMessageID;
+    private final MessageType type;
 
     public ID getReplyToMessageID() {
         return replyToMessageID;
@@ -41,5 +42,8 @@ public class ControlPlaneReplyMessage extends DataPlaneMessage{
      public ControlOperation getControlOperation() {
         return methodName;
     }
-    
+
+    public MessageType getType() {
+        return type;
+    }
 }

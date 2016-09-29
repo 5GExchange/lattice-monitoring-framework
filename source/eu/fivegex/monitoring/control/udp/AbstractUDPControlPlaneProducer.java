@@ -5,7 +5,7 @@
  */
 package eu.fivegex.monitoring.control.udp;
 
-import eu.fivegex.monitoring.control.controller.InfoResolver;
+import eu.fivegex.monitoring.control.controller.InformationManager;
 import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.core.plane.ControllerControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneMessage;
@@ -18,63 +18,53 @@ import java.io.ByteArrayInputStream;
  *
  * @author uceeftu
  */
-public abstract class AbstractUDPControlPlaneProducer implements ControllerControlPlane, TransmittingControl {
+public abstract class AbstractUDPControlPlaneProducer implements ControllerControlPlane, TransmittingControl, ReceivingAnnounce  {
     //InetSocketAddress address;
-    //UDPTransmitterAndReceiver udpTransmitterAndReceiver;
+    UDPAnnounceReceiver AnnounceListener;
+    int announceListenerPort;
     
-    InfoResolver resolver;
-   
-    /*
-    public AbstractUDPControlPlaneProducer(InetSocketAddress address, InfoResolver resolver) {
-        this.address = address;
-        this.resolver = resolver;
-    }
-    */
+    InformationManager resolver;
     
-    public AbstractUDPControlPlaneProducer(InfoResolver resolver) {
+    public AbstractUDPControlPlaneProducer(InformationManager resolver, int port) {
         //this.address = null; // we are not connecting to a specific endpoint
         this.resolver = resolver;
+        this.announceListenerPort = port;
     }
     
 
     @Override
     public boolean connect() {
         // this method does nothing as we do not create a Datagramsocket 
-        // connected to a specific DS. We will create a different udpTransmitterAndReceiver
+        // connected to a specific DS. We will create a different AnnounceListener
         // for each received request in the transmit method implementation
         
         //System.out.println("FT: AbstractUDPControlPLaneProducer.connect");
-        
-        /*
+
 	try {
 	    // only connect if we're not already connected
-	    if (udpTransmitterAndReceiver == null) {
-                
-                udpTransmitterAndReceiver = new UDPTransmitterAndReceiver(this);
-                
-		return true;
+	    if (AnnounceListener == null) {
+                AnnounceListener = new UDPAnnounceReceiver(this, announceListenerPort);
+                AnnounceListener.listen();
+                return true;
 	    } else {
 		return true;
 	    }
 	} catch (IOException ioe) {
 	    // Current implementation will be to do a stack trace
 	    //ioe.printStackTrace();
-
 	    return false;
 	}
-    */
-    return true;
     }
 
     @Override
     public boolean disconnect() {
         /*
         try {
-	    udpTransmitterAndReceiver.end();
-	    udpTransmitterAndReceiver = null;
+	    AnnounceListener.end();
+	    AnnounceListener = null;
 	    return true;
 	} catch (IOException ieo) {
-	    udpTransmitterAndReceiver = null;
+	    AnnounceListener = null;
 	    return false;
 	}
         */

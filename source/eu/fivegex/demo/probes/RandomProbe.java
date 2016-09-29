@@ -18,7 +18,6 @@ public class RandomProbe extends AbstractProbe implements Probe  {
     int scaleFactor;
 
     
-    //FT: this has been added to allow invocations through the REST API
     public RandomProbe(String name, String fieldName, String scaleFactor) {
         this(name, fieldName, Integer.valueOf(scaleFactor));
     }
@@ -53,16 +52,15 @@ public class RandomProbe extends AbstractProbe implements Probe  {
 	try {
 	    ArrayList<ProbeValue> list = new ArrayList<ProbeValue>(1);
 
-	    float next = scaleFactor + (randomNo.nextFloat() * (scaleFactor / 5));;
+	    float next = scaleFactor + (randomNo.nextFloat() * (scaleFactor / 5));
 
 	    //System.err.println("rand = " + next);
 
 	    list.add(new DefaultProbeValue(0, next));
 
-	    return new ProducerMeasurement(this, list);
+	    return new ProducerMeasurement(this, list); // we could use the constructor that includes the Measurement type
 	} catch (Exception e) {
-	    System.err.println(e);
-	    e.printStackTrace();
+	    System.err.println(e.getMessage());
 	    return null;
 	}
     }

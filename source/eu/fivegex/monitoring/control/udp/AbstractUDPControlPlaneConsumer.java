@@ -22,12 +22,14 @@ import java.net.InetSocketAddress;
  */
 public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, ReceivingAndReplying {
     
-    InetSocketAddress address;
+    InetSocketAddress localAddress;
+    InetSocketAddress controllerAddress;
 
     UDPReceiver udpReceiver;
 
-    public AbstractUDPControlPlaneConsumer(InetSocketAddress address) {
-        this.address = address;
+    public AbstractUDPControlPlaneConsumer(InetSocketAddress localAddress, InetSocketAddress controllerAddress) {
+        this.localAddress = localAddress;
+        this.controllerAddress = controllerAddress;
     }
     
     
@@ -41,7 +43,7 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, R
                 
                 //System.out.println("FT: -------- AbstractUDPControPlaneConsumer.connect - Connecting to the Control Plane ----------");
                 
-		UDPReceiver rr = new UDPReceiver(this, address);
+		UDPReceiver rr = new UDPReceiver(this, localAddress);
 
 		rr.listen();
 		
@@ -100,7 +102,7 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, R
 
     @Override
     public InetSocketAddress getControlEndPoint() {
-        return this.address;
+        return this.localAddress;
     }
     
     

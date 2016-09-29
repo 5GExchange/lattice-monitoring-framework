@@ -142,10 +142,8 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 	    // failed to connect
 	    return false;
 	} else {
-            // try and announce
-            //boolean ann = announce();
-            //TODO: this announce part is not really clear - should be double checked
-            boolean ann = true;
+            // try and announce on all the plane (currently accounce is supported on Info and Control Planes
+            boolean ann = announce();
 
 	    if (ann) {
 		// we connected and announced

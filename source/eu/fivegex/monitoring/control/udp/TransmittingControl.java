@@ -21,7 +21,7 @@ public interface TransmittingControl extends Transmitting {
     
     /*
     A Class implementing this interface is a tranmistter of control messages 
-    that also needs to asynchrounously receive replies related to the control messages it sends 
+    that also needs to receive replies related to the control messages it sends 
     */
     public Object receivedReply(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException;
 }

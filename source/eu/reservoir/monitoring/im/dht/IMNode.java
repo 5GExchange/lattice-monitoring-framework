@@ -99,6 +99,19 @@ public class IMNode {
         putDHT("/dataconsumer/" + dc.getID() + "/name", dc.getName());        
         putDHT("/dataconsumer/" + dc.getID() + "/inetSocketAddress", dc.getControlPlane().getControlEndPoint());
         
+        /* test 
+        java.util.ArrayList<ID> dcs = (java.util.ArrayList<ID>)getDHT("/dataconsumer/list");
+        if (dcs == null)
+            dcs = new java.util.ArrayList<ID>();
+        
+        dcs.add(dc.getID());
+        putDHT("/dataconsumer/list", dcs);
+        
+        java.util.List<Object> out = (java.util.List<Object>)getDHT("/dataconsumer/list");
+        for (Object o : out) 
+            System.out.println(((ID)o).toString());
+        */
+        
         Object [] reporters = dc.getReporters();
         for (Object r: reporters) {
             if (r instanceof ControllableReporter)

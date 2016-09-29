@@ -37,7 +37,8 @@ public class SimpleDataSourceTest {
                            int infoPlaneRootPort,
                            int infoPlaneLocalPort,
                            String localControlEndPoint,
-                           int controlPlaneLocalPort) throws UnknownHostException {
+                           int controlPlaneLocalPort,
+                           int controlRemotePort) throws UnknownHostException {
         
         
 	// set up data source
@@ -57,11 +58,16 @@ public class SimpleDataSourceTest {
 
         InetSocketAddress ctrlAddress = new InetSocketAddress(InetAddress.getByName(localControlEndPoint), controlPlaneLocalPort);
         
+        //  we are assuming here that the infoplane and control plane host of the controller are the same
+        InetSocketAddress ctrlRemoteAddress = new InetSocketAddress(InetAddress.getByName(infoPlaneRootName), controlRemotePort);
+        
 	// set up data plane
 	ds.setDataPlane(new UDPDataPlaneProducer(DataAddress));
         
-        // set up control plane: a data source is a consumer of Control Messages
-        ControlPlane controlPlane = new UDPDataSourceControlPlaneConsumer(ctrlAddress);
+        // set up control plane: a data source is a consumer of Control Messages 
+        // ctrlAddress is the address:port where this DS will listen for ctrl messages
+        // ctrlRemoteAddress is the port where the controller is listening for announce messages
+        ControlPlane controlPlane = new UDPDataSourceControlPlaneConsumer(ctrlAddress, ctrlRemoteAddress);
         ((DataSourceInteracter)controlPlane).setDataSource(ds);
         
         ds.setControlPlane(controlPlane);
@@ -94,6 +100,7 @@ public class SimpleDataSourceTest {
             int infoLocalPort = 9999;
             String controlEndPoint = null;
             int controlLocalPort = 1111;
+            int controllerRemotePort = 8888;
             
             if (args.length == 0) {
                 // use existing settings
@@ -147,7 +154,8 @@ public class SimpleDataSourceTest {
                                                             infoRemotePort, 
                                                             infoLocalPort, 
                                                             controlEndPoint, 
-                                                            controlLocalPort);
+                                                            controlLocalPort,
+                                                            controllerRemotePort);
             
             /*
             Probe openStack = new OpenstackProbe("localhost", 

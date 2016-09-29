@@ -50,11 +50,13 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
      * In a DHTDataSourceInfoPlane we call announce.
      */
     public boolean connect() {
+        /*
 	if (super.connect()) {
 	    return announce();
 	} else {
 	    return false;
-	}
+	}*/
+        return super.connect();
     }
 
     /**

@@ -14,10 +14,11 @@ import java.util.List;
 
 
 
-public class ControlPlaneMessage extends DataPlaneMessage {
-    private ControlOperation methodName;
-    private List<Object> methodArgs;
-    private ID messageID;
+public class ControlPlaneMessage {
+    private final ControlOperation methodName;
+    private final List<Object> methodArgs;
+    private final ID messageID;
+    private final MessageType type;
     
     public ControlPlaneMessage(ControlOperation m, List<Object> args) {
         type = MessageType.CONTROL;
@@ -46,4 +47,9 @@ public class ControlPlaneMessage extends DataPlaneMessage {
         byte[] bytes = bos.toByteArray();
         return bytes;
         }
+
+    public MessageType getType() {
+        return type;
+    }
+    
     }

@@ -49,20 +49,22 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
     }
 
     /**
-     * Connect to a delivery mechansim.
+     * Connect to a delivery mechanism.
      * In a DHTDataSourceInfoPlane we call announce.
      */
     public boolean connect() {
+        /*
 	if (super.connect()) {
 	    return announce();
 	} else {
 	    return false;
-	}
+	}*/
+        return super.connect();
     }
 
     /**
-     * Dicconnect from a delivery mechansim.
-     * In a DHTDataSourceInfoPlane we call dennounce.
+     * Disconnect from a delivery mechanism.
+     * In a DHTDataSourceInfoPlane we call deannounce.
      */
     public boolean disconnect() {
 	if (super.disconnect()) {

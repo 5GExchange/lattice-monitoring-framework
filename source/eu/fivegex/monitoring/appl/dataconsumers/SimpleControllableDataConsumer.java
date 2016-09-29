@@ -36,7 +36,8 @@ public class SimpleControllableDataConsumer {
                                           int infoPlaneRootPort,
                                           int infoPlaneLocalPort,
                                           String controlAddr,
-                                          int controlPort) throws UnknownHostException {
+                                          int controlPort,
+                                          int controlRemotePort) throws UnknownHostException {
         
 	// set up a ControllableDataConsumer
 	consumer = new ControllableDataConsumer("controllable-DC");
@@ -45,11 +46,14 @@ public class SimpleControllableDataConsumer {
 	// set up an IP address for data and control
 	InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(dataAddr), dataPort);
         InetSocketAddress ctrlAddress = new InetSocketAddress(InetAddress.getByName(controlAddr), controlPort);
-
+        
+        //  we are assuming here that the infoplane and control plane host of the controller are the same
+        InetSocketAddress ctrlRemoteAddress = new InetSocketAddress(InetAddress.getByName(infoPlaneRootName), controlRemotePort);
+        
 	// set up data plane
 	consumer.setDataPlane(new UDPDataPlaneConsumer(address));
         
-        ControlPlane controlPlane = new UDPDataConsumerControlPlaneConsumer(ctrlAddress);
+        ControlPlane controlPlane = new UDPDataConsumerControlPlaneConsumer(ctrlAddress, ctrlRemoteAddress);
         ((DataConsumerInteracter)controlPlane).setDataConsumer(consumer);
         consumer.setControlPlane(controlPlane);
         
@@ -69,12 +73,13 @@ public class SimpleControllableDataConsumer {
             int infoLocalPort = 10000;
             String controlEndPoint = null;
             int controlLocalPort = 2222;
+            int controllerRemotePort = 8888;
             
             if (args.length == 0) {
                 String loopBack = InetAddress.getLoopbackAddress().getHostName();
                 System.out.println("No arguments provided - running on loopback: " + loopBack);
                 dcAddr = infoHost = controlEndPoint = loopBack;
-                new SimpleControllableDataConsumer(dcAddr, dataPort, infoHost, infoRemotePort, infoLocalPort, controlEndPoint, controlLocalPort);
+                new SimpleControllableDataConsumer(dcAddr, dataPort, infoHost, infoRemotePort, infoLocalPort, controlEndPoint, controlLocalPort, controllerRemotePort);
                 System.err.println("DataConsumerWithMeasurementRate listening on Data plane: " + dcAddr + "/" + dataPort);
                 System.err.println("DataConsumerWithMeasurementRate listening on Control plane: " + controlEndPoint + "/" + controlLocalPort);
             } else if (args.length == 5) {  
@@ -94,7 +99,7 @@ public class SimpleControllableDataConsumer {
                 
                 dcAddr = controlEndPoint = InetAddress.getLocalHost().getHostName();
 
-                new SimpleControllableDataConsumer(dcAddr, dataPort, infoHost, infoRemotePort, infoLocalPort, controlEndPoint, controlLocalPort);
+                new SimpleControllableDataConsumer(dcAddr, dataPort, infoHost, infoRemotePort, infoLocalPort, controlEndPoint, controlLocalPort, controllerRemotePort);
 
                 System.err.println("DataConsumerWithMeasurementRate listening on Data plane: " + dcAddr + "/" + dataPort);
                 System.err.println("DataConsumerWithMeasurementRate listening on Control plane: " + controlEndPoint + "/" + controlLocalPort);

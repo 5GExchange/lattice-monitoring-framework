@@ -6,19 +6,76 @@
 package eu.fivegex.monitoring.control.controller;
 
 import eu.reservoir.monitoring.core.ID;
+import eu.reservoir.monitoring.core.plane.AnnounceMessage.EntityType;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import us.monoid.json.JSONException;
+import us.monoid.json.JSONObject;
 
 /**
  *
  * @author uceeftu
  */
-public class InfoResolver {
-    InfoPlane info;
+public class InformationManager {
+    private final InfoPlane info;
+    private final List<ID> dataSources;
+    private final List<ID> dataConsumers;
     
-    public InfoResolver(InfoPlane info){
+    public InformationManager(InfoPlane info){
         this.info=info;
+        dataSources = Collections.synchronizedList(new ArrayList());
+        dataConsumers = Collections.synchronizedList(new ArrayList());
     }
+    
+    
+    public void addNewAnnouncedEntity(ID id, EntityType type) {
+        // we add to the list only if that entity information is also in the info Plane
+        if (type == EntityType.DATASOURCE && info.lookupDataSourceInfo(id, "inetSocketAddress") != null) {
+            System.out.println("InfoResolver: adding Data Source " + id.toString());
+            addDataSource(id);
+        }
+        else if (type == EntityType.DATACONSUMER && info.lookupDataConsumerInfo(id, "inetSocketAddress") != null) {
+            System.out.println("InfoResolver: adding Data Consumer " + id.toString());
+            addDataConsumer(id);
+        }
+    }
+    
+    public List<ID> getDataSourcesList() {
+        synchronized(dataSources) {
+            return dataSources;
+        }
+    }
+    
+    public List<ID> getDataConsumersList() {
+        synchronized(dataConsumers) {
+            return dataConsumers;
+        }
+    }
+    
+    public JSONObject getDataSourceAsJSON() throws DSNotFoundException, JSONException {
+        JSONObject obj = new JSONObject();
+        for (ID id: getDataSourcesList()) {
+            JSONObject dsAddr = new JSONObject();
+            InetSocketAddress dsInfo = getDSAddressFromID(id);
+            dsAddr.put("host", dsInfo.getAddress().getHostAddress());
+            dsAddr.put("port", dsInfo.getPort());
+            obj.put(id.toString(), dsAddr);
+        }
+        return obj;
+    }
+    
+    
+    void addDataSource(ID id) {
+        dataSources.add(id);
+    }
+    
+    void addDataConsumer(ID id) {
+        dataConsumers.add(id);
+    }
+    
     
     public InetSocketAddress getDSAddressFromProbeID(ID probe) throws ProbeIDNotFoundException, DSNotFoundException {
         String dsID = (String)info.lookupProbeInfo(probe, "datasource");

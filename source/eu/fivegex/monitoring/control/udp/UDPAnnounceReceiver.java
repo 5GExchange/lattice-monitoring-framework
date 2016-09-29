@@ -1,23 +1,24 @@
-// UDPReceiver.java
+// UDPTransmitterAndReceiver.java
 // Author: Stuart Clayman
 // Email: sclayman@ee.ucl.ac.uk
-// Date: Oct 2009
+// Date: Oct 2008
 
-package eu.reservoir.monitoring.distribution.udp;
+package eu.fivegex.monitoring.control.udp;
 
-import eu.reservoir.monitoring.distribution.*;
 import eu.reservoir.monitoring.core.TypeException;
+import eu.reservoir.monitoring.distribution.*;
+import eu.reservoir.monitoring.distribution.udp.UDPTransmissionMetaData;
 import java.net.*;
 import java.io.*;
 
 /**
- * This is a UDP receiver for monitoring messages.
+ * This is a UDP receiver for Announce messages
  */
-public class UDPReceiver implements Runnable {
-    /*
+public class UDPAnnounceReceiver implements Runnable{
+     /*
      * The receiver that interactes messages.
      */
-    Receiving receiver = null;
+    ReceivingAnnounce receiver = null;
 
     /*
      * The socket doing the listening
@@ -79,18 +80,13 @@ public class UDPReceiver implements Runnable {
     Exception lastException;
 
 
-    /**
-     * Construct a receiver for a particular IP address
-     */
-    public UDPReceiver(Receiving receiver, InetSocketAddress ipAddr) throws IOException {
-	//address = ipAddr;
-
-	this.receiver = receiver;
-	this.dstAddr = ipAddr.getAddress();
-	this.port = ipAddr.getPort();
+    public UDPAnnounceReceiver(ReceivingAnnounce receiving, int port) throws IOException {
+	this.receiver = receiving;
+	this.port = port;
 
 	setUpSocket();
     }
+    
 
     /**
      * Set up the socket for the given addr/port,
@@ -98,6 +94,7 @@ public class UDPReceiver implements Runnable {
      */
     void setUpSocket() throws IOException {
 	socket = new DatagramSocket(port);
+        socket.setBroadcast(true);
 
 	// allocate an emtpy packet for use later
 	packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
@@ -112,7 +109,7 @@ public class UDPReceiver implements Runnable {
 	//socket.bind(address);
         
 	// start the thread
-	myThread = new Thread(this, "UDPReceiver-" + Integer.toString(port));
+	myThread = new Thread(this, "UDPAnnounceReceiver-" + Integer.toString(port));
 
 	myThread.start();
     }
@@ -147,8 +144,8 @@ public class UDPReceiver implements Runnable {
 	    // receive from socket
 	    socket.receive(packet);
 
-            
-	     /*System.out.println("FT: UDPReceiver Received " + packet.getLength() +
+            /*
+	     System.out.println("FT: UDPAnnounceReceiver Received " + packet.getLength() +
 			   " bytes from "+ packet.getAddress() + 
 			   ":" + packet.getPort()); 
             */
@@ -178,32 +175,6 @@ public class UDPReceiver implements Runnable {
 	    lastException = e;
 	    return false;
 	}
-    }
-    
-    public int sendMessage(ByteArrayOutputStream byteStream){
-        DatagramPacket message = new DatagramPacket(byteStream.toByteArray(), byteStream.size(), srcAddr, srcPort);
-        
-        /*
-        packet.setData(byteStream.toByteArray());
-	packet.setLength(byteStream.size());
-        
-        //setting addr and port to the endpoint that initially sent out the message
-        
-        packet.setAddress(srcAddr);
-        
-        packet.setPort(srcPort);
-        */
-
-        try {
-            // now send it
-            socket.send(message);
-        } catch (IOException ex) {
-            System.out.println("IO error occurred" + ex.getMessage());
-            return -1;
-        }
-        //System.out.println("FT: UDPReceiver.SendReply - sent REPLY through the socket to :" + srcAddr + " port: " + srcPort + " - " + byteStream.size() + " bytes");
-	return byteStream.size();
-        
     }
     
     /**
@@ -240,6 +211,11 @@ public class UDPReceiver implements Runnable {
 	    }
 	}
     }
-	    
-
+    
+    
+    
+    
+    
+    
 }
+

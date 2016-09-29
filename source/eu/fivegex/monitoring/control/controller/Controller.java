@@ -32,7 +32,7 @@ import us.monoid.json.JSONObject;
 public class Controller extends AbstractPlaneInteracter {
 	
     private static final Controller controller = new Controller();
-    private InfoResolver resolver;
+    private InformationManager resolver;
     
     private ControllerManagementConsole console = null;
     private DeploymentDelegate deploymentManager; 
@@ -42,15 +42,15 @@ public class Controller extends AbstractPlaneInteracter {
     private Controller() {}
      
     private void init(String infoPlaneAddr, int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {        
-        // Controller is the root of the infoPlane
+        // Controller is the root of the infoPlane - other nodes use it to perform bootstrap
         InfoPlane infoPlane = new DHTInfoPlaneRoot(infoPlaneAddr, infoPlanePort);
 	setInfoPlane(infoPlane);
         
         // we create the wrapper to the InfoPlane to resolve probes IDs to DSs IP:port, etc.
-        resolver = new InfoResolver(infoPlane);
+        resolver = new InformationManager(infoPlane);
         
         // we create a control plane producer that is not connected to any specific Data source
-        setControlPlane(new UDPControlPlaneProducer(resolver));
+        setControlPlane(new UDPControlPlaneProducer(resolver, 8888)); // TODO: Use parameter to specify port 
         
         connect();
         
@@ -87,7 +87,7 @@ public class Controller extends AbstractPlaneInteracter {
     }
     
     
-    public InfoResolver getResolver() {
+    public InformationManager getResolver() {
         return resolver;
     }
     
@@ -386,6 +386,22 @@ public class Controller extends AbstractPlaneInteracter {
         return result;
         }
     
+    JSONObject getDataSources() throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        result.put("operation", "getDataSources");
+        
+        try {
+            JSONObject dataSources = this.resolver.getDataSourceAsJSON();
+            result.put("datasources", dataSources);
+            result.put("success", true);
+        } catch (Exception ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+          }
+        return result;  
+    }
+    
     
     
     
@@ -446,6 +462,11 @@ public class Controller extends AbstractPlaneInteracter {
         }
          
         myController.init(currentHost, infoPlaneLocalPort, restConsolePort, probePackage, probeSuffix, prop);
+        System.in.read();
+        
+        try { 
+            System.out.println(myController.getDataSources());
+        } catch (JSONException e) {}
         
     }
 }

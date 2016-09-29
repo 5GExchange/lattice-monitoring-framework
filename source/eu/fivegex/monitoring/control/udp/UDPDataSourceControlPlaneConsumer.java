@@ -7,6 +7,8 @@ package eu.fivegex.monitoring.control.udp;
 
 import eu.reservoir.monitoring.core.*;
 import eu.fivegex.monitoring.control.controller.ProbeLoader;
+import eu.reservoir.monitoring.core.plane.AnnounceMessage;
+import eu.reservoir.monitoring.core.plane.AnnounceMessage.EntityType;
 import eu.reservoir.monitoring.core.plane.ControlOperation;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
 import eu.reservoir.monitoring.core.plane.MessageType;
@@ -28,11 +30,11 @@ import java.lang.reflect.Method;
 
 
 
-public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneConsumer implements DataSourceControlPlane, DataSourceInteracter {
+public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneConsumer implements DataSourceControlPlane, DataSourceInteracter, TransmittingAnnounce {
     DataSource dataSource;
     
-    public UDPDataSourceControlPlaneConsumer(InetSocketAddress address) {
-        super(address);
+    public UDPDataSourceControlPlaneConsumer(InetSocketAddress localAddress, InetSocketAddress controllerAddress) {
+        super(localAddress, controllerAddress);
     }
 
     @Override
@@ -156,16 +158,44 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
         // write result Object 
         dataOutput.write(answer.getPayloadAsByte());
         
-        int sendReply = udpReceiver.sendReply(byteStream);
+        int sendReply = udpReceiver.sendMessage(byteStream);
         
         return sendReply;
     }
 
     @Override
     public boolean announce() {
-        // creating a message to announce the IP address of the DS control endpoint
-        return true;
+        // creating a message to announce the ID and IP localAddress of the DS control endpoint
+        System.out.println("UDP Control Plane Consumer - Announcing Data Source");
+        
+        AnnounceMessage message = new AnnounceMessage(dataSource.getID(), EntityType.DATASOURCE);
+        
+        try {
+            // convert the object to a byte []
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            DataOutput dataOutput = new XDRDataOutputStream(byteStream);
+
+            // write type
+            dataOutput.writeInt(message.getMessageType().getValue());      
+
+            
+            System.out.println("Entity " + message.getEntity());
+            // write entity type value as int
+            dataOutput.writeInt(message.getEntity().getValue());
+            
+            // write entity ID 
+            dataOutput.writeLong(dataSource.getID().getMostSignificantBits());
+            dataOutput.writeLong(dataSource.getID().getLeastSignificantBits());
+            
+            UDPAnnounceTransmitter udpAt = new UDPAnnounceTransmitter(this, controllerAddress);
+            udpAt.transmit(byteStream, 0);
+            return true;
+        
+        } catch (IOException e) {
+            System.out.println("Error while announcing " + e.getMessage());
+            return false;
         }
+    }
     
     
      @Override
@@ -173,6 +203,15 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
         System.err.println("ControPlaneConsumer - invoked error method : failed to process control message: " + e.getMessage());
     }
 
+    @Override
+    public boolean transmitted(int id) {
+        System.out.println("Just announced DS");
+        return true;
+    }
+
+    
+    
+  
     @Override
     public DataSource getDataSource() {
         return dataSource;

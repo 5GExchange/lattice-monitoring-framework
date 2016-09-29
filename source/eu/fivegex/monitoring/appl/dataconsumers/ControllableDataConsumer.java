@@ -115,7 +115,7 @@ public final class ControllableDataConsumer extends AbstractDataConsumer impleme
    
     private void computeMeasurementsRate(long interval) {
         this.lastMeasurementRate = (float)this.getMeasurementsCounter()/interval;
-        System.out.println("Current Measurement Rate (measurements/sec): " + lastMeasurementRate);
+        //System.out.println("Current Measurement Rate (measurements/sec): " + lastMeasurementRate);
     }
 
     @Override

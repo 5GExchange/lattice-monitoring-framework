@@ -31,7 +31,8 @@ public final class SimpleDataSourceDaemon extends Thread {
                            int infoPlaneRootPort,
                            int infoPlaneLocalPort,
                            String localControlEndPoint,
-                           int controlPlaneLocalPort) throws UnknownHostException, FileNotFoundException, IOException {
+                           int controlPlaneLocalPort,
+                           int controlRemotePort) throws UnknownHostException, FileNotFoundException, IOException {
         
         this.attachShutDownHook();
         
@@ -84,11 +85,16 @@ public final class SimpleDataSourceDaemon extends Thread {
 
         InetSocketAddress ctrlAddress = new InetSocketAddress(InetAddress.getByName(localControlEndPoint), controlPlaneLocalPort);
         
+        //  we are assuming here that the infoplane and control plane host of the controller are the same
+        InetSocketAddress ctrlRemoteAddress = new InetSocketAddress(InetAddress.getByName(infoPlaneRootName), controlRemotePort);
+        
 	// set up data plane
 	ds.setDataPlane(new UDPDataPlaneProducer(DataAddress));
         
-        // set up control plane: a data source is a consumer of Control Messages
-        ControlPlane controlPlane = new UDPDataSourceControlPlaneConsumer(ctrlAddress);
+        // set up control plane: a data source is a consumer of Control Messages 
+        // ctrlAddress is the address:port where this DS will listen for ctrl messages
+        // ctrlRemoteAddress is the port where the controller is listening for announce messages
+        ControlPlane controlPlane = new UDPDataSourceControlPlaneConsumer(ctrlAddress, ctrlRemoteAddress);
         ((DataSourceInteracter)controlPlane).setDataSource(ds);
         
         ds.setControlPlane(controlPlane);
@@ -129,6 +135,7 @@ public final class SimpleDataSourceDaemon extends Thread {
             int infoLocalPort = 9999;
             String controlEndPoint = null;
             int controlLocalPort = 1111;
+            int controllerRemotePort = 8888;
             
             if (args.length == 0) {
                 // use existing settings
@@ -184,7 +191,8 @@ public final class SimpleDataSourceDaemon extends Thread {
                                                             infoRemotePort, 
                                                             infoLocalPort, 
                                                             controlEndPoint, 
-                                                            controlLocalPort);
+                                                            controlLocalPort,
+                                                            controllerRemotePort);
             
         } catch (Exception ex) {
             System.out.println("Error while starting the Data Source " + ex.getMessage());
