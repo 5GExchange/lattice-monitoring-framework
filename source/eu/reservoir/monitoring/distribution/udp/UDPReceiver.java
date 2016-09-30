@@ -91,6 +91,19 @@ public class UDPReceiver implements Runnable {
 
 	setUpSocket();
     }
+    
+    /**
+     * Construct a receiver for a particular port 
+     */
+    public UDPReceiver(Receiving receiver, int port) throws IOException {
+	//address = ipAddr;
+
+	this.receiver = receiver;
+	this.port = port;
+
+	setUpSocket();
+    }
+    
 
     /**
      * Set up the socket for the given addr/port,
@@ -137,7 +150,7 @@ public class UDPReceiver implements Runnable {
     }
 
     /**
-     * Receive a  message from the multicast address.
+     * Receive a  replyMessage from the multicast address.
      */
     protected boolean receive() {
 	try {
@@ -181,28 +194,16 @@ public class UDPReceiver implements Runnable {
     }
     
     public int sendMessage(ByteArrayOutputStream byteStream){
-        DatagramPacket message = new DatagramPacket(byteStream.toByteArray(), byteStream.size(), srcAddr, srcPort);
-        
-        /*
-        packet.setData(byteStream.toByteArray());
-	packet.setLength(byteStream.size());
-        
-        //setting addr and port to the endpoint that initially sent out the message
-        
-        packet.setAddress(srcAddr);
-        
-        packet.setPort(srcPort);
-        */
+        DatagramPacket replyMessage = new DatagramPacket(byteStream.toByteArray(), byteStream.size(), srcAddr, srcPort);
 
         try {
             // now send it
-            socket.send(message);
+            socket.send(replyMessage);
         } catch (IOException ex) {
             System.out.println("IO error occurred" + ex.getMessage());
             return -1;
         }
-        //System.out.println("FT: UDPReceiver.SendReply - sent REPLY through the socket to :" + srcAddr + " port: " + srcPort + " - " + byteStream.size() + " bytes");
-	return byteStream.size();
+        return byteStream.size();
         
     }
     
@@ -219,8 +220,7 @@ public class UDPReceiver implements Runnable {
 		// construct the transmission meta data
 		UDPTransmissionMetaData metaData = new UDPTransmissionMetaData(length, srcAddr, dstAddr, srcPort);
 
-
-		// now notify the receiver with the message
+		// now notify the receiver with the replyMessage
 		// and the address it came in on
 		try {
 		    receiver.received(byteStream, metaData);

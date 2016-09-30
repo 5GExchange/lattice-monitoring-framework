@@ -3,13 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.control.controller;
+package eu.fivegex.monitoring.control;
 
 /**
  *
  * @author uceeftu
  */
-class DCNotFoundException extends Exception {
+public class DCNotFoundException extends Exception {
 
     public DCNotFoundException(String message) {
         super(message);

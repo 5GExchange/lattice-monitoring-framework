@@ -5,7 +5,7 @@
  */
 package eu.reservoir.monitoring.core;
 
-import eu.fivegex.monitoring.control.controller.ProbeLoader;
+import eu.fivegex.monitoring.control.ProbeLoader;
 
 /**
  *

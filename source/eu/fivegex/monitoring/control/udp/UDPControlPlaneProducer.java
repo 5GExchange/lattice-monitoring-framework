@@ -27,8 +27,6 @@ import java.io.ObjectInputStream;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
@@ -65,13 +63,18 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         System.out.println("\n--------- Type Control ----------");
         System.out.println("Message ID: " + messageID);
         
-        SyncUDPTransmitterAndReceiver udpTransmitterAndReceiver = new SyncUDPTransmitterAndReceiver(this);
-        result = udpTransmitterAndReceiver.transmitAndWaitReply(byteStream, ((UDPControlTransmissionMetaData)metadata).getInetSocketAddress(), 0);
+        
+        UDPTransmitterSyncReply udpTransmitterAndReceiver = new UDPTransmitterSyncReply(this, ((UDPControlTransmissionMetaData)metadata).getInetSocketAddress());
+        result = udpTransmitterAndReceiver.transmitAndWaitReply(byteStream);
+        
+        //SyncUDPTransmitterAndReceiver udpTransmitterAndReceiver = new SyncUDPTransmitterAndReceiver(this);
+        //result = udpTransmitterAndReceiver.transmitAndWaitReply(byteStream, ((UDPControlTransmissionMetaData)metadata).getInetSocketAddress(), 0);
         if (result instanceof Exception) 
             throw new Exception((Exception)result);        
     return result;    
     }
 
+    // called when a control reply message is received
     @Override
     public Object receivedReply(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException {
         Object result=null;
@@ -106,10 +109,10 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
 
                     System.out.println("Received REPLY message for request ID " + sourceMessageID + " and Operation code " + ctrlOperationName + ": " + result.toString());
 
-                    /*System.out.println("FT: UDPControlPlaneConsumer.received - Received " + type + ". mType " + mType + 
+                    /*System.out.println("FT: UDPControlPlaneConsumer.receivedReply - Received " + type + ". mType " + mType + 
                             " operation code " + ctrlOperation + " ctrl operation name " + ctrlOperationName);
 
-                    System.out.println("FT: UDPControlPlaneConsumer.received - Received args:");
+                    System.out.println("FT: UDPControlPlaneConsumer.receivedReply - Received args:");
 
                     for (Object o : methodArgs) {
                         System.out.println(o.toString() + " ");
@@ -163,6 +166,11 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
     @Override
     public void error(Exception e) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    @Override
+    public boolean transmitted(int id) {
+        return true;
     }
     
     @Override
@@ -383,11 +391,6 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
     @Override
     public boolean setDataSourceName(String name) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public boolean transmitted(int id) {
-        return true;
     }
     
     

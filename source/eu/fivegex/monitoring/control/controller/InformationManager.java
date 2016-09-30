@@ -5,6 +5,10 @@
  */
 package eu.fivegex.monitoring.control.controller;
 
+import eu.fivegex.monitoring.control.ProbeNotFoundException;
+import eu.fivegex.monitoring.control.ReporterNotFoundException;
+import eu.fivegex.monitoring.control.DSNotFoundException;
+import eu.fivegex.monitoring.control.DCNotFoundException;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.plane.AnnounceMessage.EntityType;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
@@ -77,7 +81,7 @@ public class InformationManager {
     }
     
     
-    public InetSocketAddress getDSAddressFromProbeID(ID probe) throws ProbeIDNotFoundException, DSNotFoundException {
+    public InetSocketAddress getDSAddressFromProbeID(ID probe) throws ProbeNotFoundException, DSNotFoundException {
         String dsID = (String)info.lookupProbeInfo(probe, "datasource");
         
         if (dsID != null) {
@@ -90,7 +94,7 @@ public class InformationManager {
                 throw new DSNotFoundException("Data Source with ID " + dataSourceID.toString() + " not found in the infoplane");
         }
         else
-            throw new ProbeIDNotFoundException("probe with ID " + probe.toString() + " not found in the infoplane");
+            throw new ProbeNotFoundException("probe with ID " + probe.toString() + " not found in the infoplane");
     }
     
     public InetSocketAddress getDSAddressFromID(ID dataSource) throws DSNotFoundException {

@@ -32,7 +32,7 @@ import us.monoid.json.JSONObject;
 public class Controller extends AbstractPlaneInteracter {
 	
     private static final Controller controller = new Controller();
-    private InformationManager resolver;
+    private InformationManager informationManager;
     
     private ControllerManagementConsole console = null;
     private DeploymentDelegate deploymentManager; 
@@ -47,10 +47,10 @@ public class Controller extends AbstractPlaneInteracter {
 	setInfoPlane(infoPlane);
         
         // we create the wrapper to the InfoPlane to resolve probes IDs to DSs IP:port, etc.
-        resolver = new InformationManager(infoPlane);
+        informationManager = new InformationManager(infoPlane);
         
         // we create a control plane producer that is not connected to any specific Data source
-        setControlPlane(new UDPControlPlaneProducer(resolver, 8888)); // TODO: Use parameter to specify port 
+        setControlPlane(new UDPControlPlaneProducer(informationManager, 8888)); // TODO: Use parameter to specify port 
         
         connect();
         
@@ -88,7 +88,7 @@ public class Controller extends AbstractPlaneInteracter {
     
     
     public InformationManager getResolver() {
-        return resolver;
+        return informationManager;
     }
     
     
@@ -392,7 +392,7 @@ public class Controller extends AbstractPlaneInteracter {
         result.put("operation", "getDataSources");
         
         try {
-            JSONObject dataSources = this.resolver.getDataSourceAsJSON();
+            JSONObject dataSources = this.informationManager.getDataSourceAsJSON();
             result.put("datasources", dataSources);
             result.put("success", true);
         } catch (Exception ex) {

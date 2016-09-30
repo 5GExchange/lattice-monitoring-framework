@@ -5,7 +5,7 @@
  */
 package eu.fivegex.monitoring.control.udp;
 
-import eu.fivegex.monitoring.control.controller.ReporterLoader;
+import eu.fivegex.monitoring.control.ReporterLoader;
 import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.ID;
@@ -188,8 +188,8 @@ public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlane
             dataOutput.writeLong(dataConsumer.getID().getMostSignificantBits());
             dataOutput.writeLong(dataConsumer.getID().getLeastSignificantBits());
             
-            UDPAnnounceTransmitter udpAt = new UDPAnnounceTransmitter(this, controllerAddress);
-            udpAt.transmit(byteStream, 0);
+            UDPTransmitterSyncReply udpAt = new UDPTransmitterSyncReply(this, controllerAddress);
+            udpAt.transmit(byteStream, 0); // not waiting for a reply
             return true;
         
         } catch (IOException e) {

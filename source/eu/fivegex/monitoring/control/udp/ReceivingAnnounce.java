@@ -15,5 +15,4 @@ import eu.reservoir.monitoring.distribution.Receiving;
  */
 interface ReceivingAnnounce extends Receiving {
     public void addNewAnnouncedEntity(ID entityID, EntityType type);
-    
 }

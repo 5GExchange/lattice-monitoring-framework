@@ -3,19 +3,19 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.control.controller;
+package eu.fivegex.monitoring.control;
 
 /**
  *
  * @author uceeftu
  */
-public class ProbeIDNotFoundException extends Exception {
+public class ProbeNotFoundException extends Exception {
 
     /**
      * Creates a new instance of <code>ProbeIDNotFoundException</code> without
      * detail message.
      */
-    public ProbeIDNotFoundException() {
+    public ProbeNotFoundException() {
     }
 
     /**
@@ -24,7 +24,7 @@ public class ProbeIDNotFoundException extends Exception {
      *
      * @param msg the detail message.
      */
-    public ProbeIDNotFoundException(String msg) {
+    public ProbeNotFoundException(String msg) {
         super(msg);
     }
 }

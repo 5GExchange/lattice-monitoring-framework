@@ -6,7 +6,7 @@
 package eu.fivegex.monitoring.control.udp;
 
 import eu.reservoir.monitoring.core.*;
-import eu.fivegex.monitoring.control.controller.ProbeLoader;
+import eu.fivegex.monitoring.control.ProbeLoader;
 import eu.reservoir.monitoring.core.plane.AnnounceMessage;
 import eu.reservoir.monitoring.core.plane.AnnounceMessage.EntityType;
 import eu.reservoir.monitoring.core.plane.ControlOperation;
@@ -187,7 +187,7 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
             dataOutput.writeLong(dataSource.getID().getMostSignificantBits());
             dataOutput.writeLong(dataSource.getID().getLeastSignificantBits());
             
-            UDPAnnounceTransmitter udpAt = new UDPAnnounceTransmitter(this, controllerAddress);
+            UDPTransmitterSyncReply udpAt = new UDPTransmitterSyncReply(this, controllerAddress);
             udpAt.transmit(byteStream, 0);
             return true;
         

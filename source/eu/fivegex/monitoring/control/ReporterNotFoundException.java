@@ -3,13 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.control.controller;
+package eu.fivegex.monitoring.control;
 
 /**
  *
  * @author uceeftu
  */
-class ReporterNotFoundException extends Exception {
+public class ReporterNotFoundException extends Exception {
 
     public ReporterNotFoundException(String message) {
         super(message);

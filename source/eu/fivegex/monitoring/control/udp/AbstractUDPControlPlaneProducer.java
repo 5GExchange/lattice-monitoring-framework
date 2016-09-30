@@ -10,6 +10,7 @@ import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.core.plane.ControllerControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneMessage;
 import eu.reservoir.monitoring.distribution.MetaData;
+import eu.reservoir.monitoring.distribution.udp.UDPReceiver;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.io.ByteArrayInputStream;
@@ -18,9 +19,9 @@ import java.io.ByteArrayInputStream;
  *
  * @author uceeftu
  */
-public abstract class AbstractUDPControlPlaneProducer implements ControllerControlPlane, TransmittingControl, ReceivingAnnounce  {
-    //InetSocketAddress address;
-    UDPAnnounceReceiver AnnounceListener;
+public abstract class AbstractUDPControlPlaneProducer implements ControllerControlPlane, TransmittingAndReceiving, ReceivingAnnounce  {
+    UDPReceiver AnnounceListener;
+    
     int announceListenerPort;
     
     InformationManager resolver;
@@ -35,15 +36,13 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
     @Override
     public boolean connect() {
         // this method does nothing as we do not create a Datagramsocket 
-        // connected to a specific DS. We will create a different AnnounceListener
-        // for each received request in the transmit method implementation
-        
-        //System.out.println("FT: AbstractUDPControlPLaneProducer.connect");
+        // connected to a specific DS. We will create a different UDPTransmitterSyncReply
+        // for each sending request in the transmit method implementation
 
 	try {
 	    // only connect if we're not already connected
 	    if (AnnounceListener == null) {
-                AnnounceListener = new UDPAnnounceReceiver(this, announceListenerPort);
+                AnnounceListener = new UDPReceiver(this, announceListenerPort);
                 AnnounceListener.listen();
                 return true;
 	    } else {
@@ -87,6 +86,7 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
     public abstract Object transmit(ControlPlaneMessage dpm, MetaData metaData) throws Exception;
 
     
+    // this overrides both receivedReply from TransmittingAndReceiving and ReceivingAnnounce
     @Override
     public abstract Object receivedReply(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException;
     

@@ -5,6 +5,7 @@
  */
 package eu.fivegex.monitoring.control.controller;
 
+import eu.fivegex.monitoring.control.ProbeNotFoundException;
 import cc.clayman.console.BasicRequestHandler;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -96,7 +97,7 @@ class ProbeRestHandler extends BasicRequestHandler {
                 System.out.println("IOException" + ex.getMessage());
             } catch (JSONException jex) {
                 System.out.println("JSONException" + jex.getMessage());
-            } catch (ProbeIDNotFoundException idEx) {
+            } catch (ProbeNotFoundException idEx) {
                 System.out.println("ProbeIDNotFoundException --- " + idEx.getMessage());
             } finally {
                         try {
@@ -108,7 +109,7 @@ class ProbeRestHandler extends BasicRequestHandler {
      return false;
     }
 
-    private void probeOperation(Request request, Response response) throws JSONException, IOException, ProbeIDNotFoundException {
+    private void probeOperation(Request request, Response response) throws JSONException, IOException, ProbeNotFoundException {
         Scanner scanner;
         boolean success = true;
         String failMessage = null;
@@ -238,7 +239,7 @@ class ProbeRestHandler extends BasicRequestHandler {
     
     
     
-    private void deleteProbe(Request request, Response response) throws JSONException, IOException, ProbeIDNotFoundException {
+    private void deleteProbe(Request request, Response response) throws JSONException, IOException, ProbeNotFoundException {
         boolean success = true;
         String failMessage = null;
         JSONObject jsobj = null;

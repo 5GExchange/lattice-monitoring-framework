@@ -5,12 +5,12 @@
  */
 package eu.fivegex.monitoring.control.controller;
 
+import eu.fivegex.monitoring.control.ReporterNotFoundException;
 import cc.clayman.console.BasicRequestHandler;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Scanner;
 import org.simpleframework.http.Path;
-import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
 import us.monoid.json.JSONException;

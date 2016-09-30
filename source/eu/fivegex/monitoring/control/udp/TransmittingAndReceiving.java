@@ -16,11 +16,11 @@ import java.io.IOException;
  * An interface for distribution components that need
  * to do transmitting of ControlPlaneMessage objects.
  */
-public interface TransmittingControl extends Transmitting {
+public interface TransmittingAndReceiving extends Transmitting {
     public Object transmit(ControlPlaneMessage dpm, MetaData metaData) throws Exception;
     
     /*
-    A Class implementing this interface is a tranmistter of control messages 
+    A Class implementing this interface is basically a transmitter of control messages 
     that also needs to receive replies related to the control messages it sends 
     */
     public Object receivedReply(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException;
