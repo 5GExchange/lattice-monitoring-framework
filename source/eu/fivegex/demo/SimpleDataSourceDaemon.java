@@ -104,18 +104,17 @@ public final class SimpleDataSourceDaemon extends Thread {
         
 	if (!ds.connect()) 
             System.exit(1); //terminating as there was an error while connecting to the planes
-        
-        ds.getDataSourceDelegate().addDataSourceInfo(ds);
     }
 
 
     @Override
     public void run() {
-        System.out.println("Removing information from InfoPlane before shutting down");
+        System.out.println("Disconnecting from the planes before shutting down");
         try {
-            this.ds.getInfoPlane().removeDataSourceInfo(ds);
-        } catch (NullPointerException e) {
-            System.out.println("It looks like we are not connected to the infoPlane - there is nothing to remove");
+            // first performs deannounce and then disconnect for each of the planes
+            ds.disconnect(); 
+        } catch (Exception e) {
+            System.out.println("Something went wrong while Disconnecting from the planes " + e.getMessage());
           }
     }
     

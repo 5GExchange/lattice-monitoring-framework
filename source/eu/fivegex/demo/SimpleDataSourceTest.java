@@ -19,12 +19,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Scanner;
-import eu.reservoir.monitoring.core.DataSourceInteracter;
 
 /**
  * This DataSource in a basic control point for probes that uses a Control Plane and an Info Plane
  */
-public class SimpleDataSourceTest {
+public final class SimpleDataSourceTest extends Thread {
     ControllableDataSource ds;
 
     /*
@@ -38,8 +37,9 @@ public class SimpleDataSourceTest {
                            int infoPlaneLocalPort,
                            String localControlEndPoint,
                            int controlPlaneLocalPort,
-                           int controlRemotePort) throws UnknownHostException {
+                           int controlRemotePort) throws Exception, UnknownHostException {
         
+        this.attachShutDownHook();
         
 	// set up data source
 	ds = new ControllableBasicDataSource(myDsName);
@@ -68,7 +68,6 @@ public class SimpleDataSourceTest {
         // ctrlAddress is the address:port where this DS will listen for ctrl messages
         // ctrlRemoteAddress is the port where the controller is listening for announce messages
         ControlPlane controlPlane = new UDPDataSourceControlPlaneConsumer(ctrlAddress, ctrlRemoteAddress);
-        ((DataSourceInteracter)controlPlane).setDataSource(ds);
         
         ds.setControlPlane(controlPlane);
         
@@ -76,9 +75,6 @@ public class SimpleDataSourceTest {
         ds.setInfoPlane(new DHTDataSourceInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
         
 	ds.connect();
-        
-        ds.getDataSourceDelegate().addDataSourceInfo(ds);
-        
     }
     
     
@@ -89,6 +85,22 @@ public class SimpleDataSourceTest {
 	}
     }
 
+    
+    @Override
+    public void run() {
+        System.out.println("Disconnecting from the planes before shutting down");
+        try {
+            // first performs deannounce and then disconnect for each of the planes
+            ds.disconnect(); 
+        } catch (Exception e) {
+            System.out.println("Something went wrong while Disconnecting from the planes " + e.getMessage());
+          }
+    }
+    
+    public void attachShutDownHook() {
+        Runtime.getRuntime().addShutdownHook(this);
+    }
+    
 
     public static void main(String[] args) throws InterruptedException {
 	try {

@@ -14,7 +14,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Scanner;
-import eu.reservoir.monitoring.core.DataSourceInteracter;
 
 /**
  * This DataSource in a basic control point for probes that uses a Control Plane and an Info Plane
@@ -61,17 +60,13 @@ public class SimpleDataSource {
         
         // set up control plane: a data source is a consumer of Control Messages
         ControlPlane controlPlane = new UDPDataSourceControlPlaneConsumer(ctrlAddress, ctrlRemoteAddress);
-        ((DataSourceInteracter)controlPlane).setDataSource(ds);
         
         ds.setControlPlane(controlPlane);
         
         //the root of the DHT is by default on infoPlaneRootName 6699
         ds.setInfoPlane(new DHTDataSourceInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
         
-	ds.connect();
-        
-        ds.getDataSourceDelegate().addDataSourceInfo(ds);
-        
+	ds.connect();        
     }
 
 

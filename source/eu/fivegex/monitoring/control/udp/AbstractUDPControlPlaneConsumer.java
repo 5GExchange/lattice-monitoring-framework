@@ -12,6 +12,7 @@ import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
 import eu.reservoir.monitoring.distribution.MetaData;
 import eu.reservoir.monitoring.distribution.ReceivingAndReplying;
 import eu.reservoir.monitoring.distribution.udp.UDPReceiver;
+import eu.reservoir.monitoring.distribution.udp.UDPTransmitter;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -20,12 +21,13 @@ import java.net.InetSocketAddress;
  *
  * @author uceeftu
  */
-public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, ReceivingAndReplying {
+public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, ReceivingAndReplying, TransmittingAnnounce {
     
     InetSocketAddress localAddress;
     InetSocketAddress controllerAddress;
 
     UDPReceiver udpReceiver;
+    UDPTransmitter udpAt; 
 
     public AbstractUDPControlPlaneConsumer(InetSocketAddress localAddress, InetSocketAddress controllerAddress) {
         this.localAddress = localAddress;
@@ -49,6 +51,7 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, R
 		
 		udpReceiver = rr;
 
+                udpAt = new UDPTransmitter(this, controllerAddress);
 		return true;
 	    } else {
 		return true;

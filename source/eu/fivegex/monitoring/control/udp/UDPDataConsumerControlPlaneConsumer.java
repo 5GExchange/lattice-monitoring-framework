@@ -31,7 +31,7 @@ import java.lang.reflect.Method;
 
 
 
-public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlaneConsumer implements DataConsumerControlPlane, DataConsumerInteracter, TransmittingAnnounce {
+public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlaneConsumer implements DataConsumerControlPlane, DataConsumerInteracter {
     DataConsumer dataConsumer;
     
     public UDPDataConsumerControlPlaneConsumer(InetSocketAddress localAddress, InetSocketAddress controllerAddress) {
@@ -188,7 +188,6 @@ public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlane
             dataOutput.writeLong(dataConsumer.getID().getMostSignificantBits());
             dataOutput.writeLong(dataConsumer.getID().getLeastSignificantBits());
             
-            UDPTransmitterSyncReply udpAt = new UDPTransmitterSyncReply(this, controllerAddress);
             udpAt.transmit(byteStream, 0); // not waiting for a reply
             return true;
         

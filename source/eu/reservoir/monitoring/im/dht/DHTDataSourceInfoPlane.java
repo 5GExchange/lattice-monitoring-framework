@@ -67,11 +67,13 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
      * In a DHTDataSourceInfoPlane we call deannounce.
      */
     public boolean disconnect() {
+        /*
 	if (super.disconnect()) {
 	    return dennounce();
 	} else {
 	    return false;
-	}
+	}*/
+        return super.disconnect();
     }
 
 
@@ -82,6 +84,10 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    DataSource dataSource = dataSourceDelegate.getDataSource();
 	    imNode.addDataSource(dataSource);
+            
+            // adding also mapping name -> ID - may be removed in future
+            addDataSourceInfo(dataSource);
+            
 	    System.err.println("DHTInfoPlane: just announced DataSource " + dataSource);
 	    return true;
 	} catch (IOException ioe) {
@@ -93,9 +99,13 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
      * Un-announce that the plane is up and running
      */
     public boolean dennounce() {
-	// DataSource dataSource = dataSourceDelegate.getDataSource();
-	// return imNode.removeDataSource(dataSource);
-	return true;
+        try {
+            DataSource dataSource = dataSourceDelegate.getDataSource();
+            imNode.removeDataSource(dataSource);
+            return true;
+        } catch (IOException ioe) {
+            return false;
+        }
     }
 
 

@@ -14,7 +14,7 @@ import java.io.*;
 /**
  * This is a UDP transmitter for monitoring messages
  */
-public class UDPTransmitterSyncReply {
+public final class UDPTransmitterSyncReply {
     /*
      * The transmitting that interacts with a DataSourceDelegate.
      */
@@ -30,6 +30,11 @@ public class UDPTransmitterSyncReply {
      */
     DatagramPacket packet;
 
+    /*
+     * A packet being received 
+     */
+    DatagramPacket replyPacket;
+    
     /*
      * The destination IP dstAddress
      */
@@ -48,13 +53,15 @@ public class UDPTransmitterSyncReply {
      */
     public UDPTransmitterSyncReply(Transmitting transmitting, InetSocketAddress dstAddr) throws IOException {
         this(transmitting);
+        
 	this.dstAddress = dstAddr.getAddress();
 	this.dsPort = dstAddr.getPort();
         
-        // allocate an emtpy packet for use later; Double Check!
-	packet = new DatagramPacket(new byte[1], 1);
 	packet.setAddress(dstAddress);
 	packet.setPort(dsPort);
+        
+        //check
+        //connect();
     }
     
      /**
@@ -63,6 +70,12 @@ public class UDPTransmitterSyncReply {
     public UDPTransmitterSyncReply(Transmitting transmitting) throws IOException {
         this.transmitting=transmitting;
 	socket = new DatagramSocket();
+        
+        // allocate emtpy packet for sending messages later
+	packet = new DatagramPacket(new byte[1], 1);
+        
+        // allocate emtpy packet for receiving messages later
+        replyPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
     }
     
 
@@ -80,7 +93,8 @@ public class UDPTransmitterSyncReply {
      */
     public void end()  throws IOException {
 	// disconnect now
-	socket.disconnect();
+	//socket.disconnect();
+        socket.close();
     }
 
     /**
@@ -112,10 +126,12 @@ public class UDPTransmitterSyncReply {
 
 	// notify the transmitting object
 	if (transmitting != null) {
-            DatagramPacket replyPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
+            //DatagramPacket replyPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
 
             //this sets the timeout to 5 secs
             socket.setSoTimeout(5000);
+            
+            // we block this thread until a reply message is received
             socket.receive(replyPacket);
             //System.out.println("Received reply from Src address: " + replyPacket.getAddress() + " Src port: " + replyPacket.getPort());
             
@@ -130,4 +146,12 @@ public class UDPTransmitterSyncReply {
 	return null;    
     }
     
+    
+    public Object transmitAndWaitReply(ByteArrayOutputStream byteStream, UDPControlTransmissionMetaData MessageMetaData, int id) throws IOException, TypeException {
+        // setting destination parameters in the packet now        
+        packet.setAddress(MessageMetaData.getAddress());
+	packet.setPort(MessageMetaData.getPort());
+        
+        return transmitAndWaitReply(byteStream);
+    }    
 }

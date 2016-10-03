@@ -31,8 +31,8 @@ import java.util.List;
 
 public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
     
-    public UDPControlPlaneProducer(InformationManager resolver, int port) {
-        super(resolver, port);
+    public UDPControlPlaneProducer(InformationManager resolver, int port, int maxPoolSize) {
+        super(resolver, port, maxPoolSize);
     }
     
 
@@ -62,13 +62,14 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         
         System.out.println("\n--------- Type Control ----------");
         System.out.println("Message ID: " + messageID);
+
+        // getting a Transmitter from the Pool
+        UDPTransmitterSyncReply connection = controlTransmittersPool.getConnection();
+        result = connection.transmitAndWaitReply(byteStream, (UDPControlTransmissionMetaData)metadata, 0); // TODO use actual ID
         
+        // putting the Transmitter back to the Pool
+        controlTransmittersPool.releaseConnection(connection);
         
-        UDPTransmitterSyncReply udpTransmitterAndReceiver = new UDPTransmitterSyncReply(this, ((UDPControlTransmissionMetaData)metadata).getInetSocketAddress());
-        result = udpTransmitterAndReceiver.transmitAndWaitReply(byteStream);
-        
-        //SyncUDPTransmitterAndReceiver udpTransmitterAndReceiver = new SyncUDPTransmitterAndReceiver(this);
-        //result = udpTransmitterAndReceiver.transmitAndWaitReply(byteStream, ((UDPControlTransmissionMetaData)metadata).getInetSocketAddress(), 0);
         if (result instanceof Exception) 
             throw new Exception((Exception)result);        
     return result;    
@@ -108,15 +109,6 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
                     ois.close();
 
                     System.out.println("Received REPLY message for request ID " + sourceMessageID + " and Operation code " + ctrlOperationName + ": " + result.toString());
-
-                    /*System.out.println("FT: UDPControlPlaneConsumer.receivedReply - Received " + type + ". mType " + mType + 
-                            " operation code " + ctrlOperation + " ctrl operation name " + ctrlOperationName);
-
-                    System.out.println("FT: UDPControlPlaneConsumer.receivedReply - Received args:");
-
-                    for (Object o : methodArgs) {
-                        System.out.println(o.toString() + " ");
-                    }*/
             }         
         }
         catch (Exception exception) {
@@ -354,12 +346,11 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
             InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
             MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) transmit(m, mData);
+            return result;
         } catch (Exception ex) {
             System.out.println("Error while sending turn off probe command " + ex.getMessage());
             throw ex;
           }
-        
-        return result;
         }
     
 

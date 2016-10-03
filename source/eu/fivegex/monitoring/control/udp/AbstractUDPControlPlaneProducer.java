@@ -21,33 +21,35 @@ import java.io.ByteArrayInputStream;
  */
 public abstract class AbstractUDPControlPlaneProducer implements ControllerControlPlane, TransmittingAndReceiving, ReceivingAnnounce  {
     UDPReceiver AnnounceListener;
-    
+    UDPTransmitterPool controlTransmittersPool;
+    int maxPoolSize;
     int announceListenerPort;
     
     InformationManager resolver;
     
-    public AbstractUDPControlPlaneProducer(InformationManager resolver, int port) {
-        //this.address = null; // we are not connecting to a specific endpoint
+    public AbstractUDPControlPlaneProducer(InformationManager resolver, int port, int maxPoolSize) {
         this.resolver = resolver;
         this.announceListenerPort = port;
+        this.maxPoolSize = maxPoolSize;
     }
     
 
     @Override
     public boolean connect() {
-        // this method does nothing as we do not create a Datagramsocket 
-        // connected to a specific DS. We will create a different UDPTransmitterSyncReply
-        // for each sending request in the transmit method implementation
-
 	try {
-	    // only connect if we're not already connected
+	    // Creating listener for Announce Messages - only connect if we're not already connected
 	    if (AnnounceListener == null) {
                 AnnounceListener = new UDPReceiver(this, announceListenerPort);
                 AnnounceListener.listen();
-                return true;
-	    } else {
-		return true;
-	    }
+            }
+            
+            if (controlTransmittersPool == null) {
+                // creating a pool for Control Messages transmission
+                // 8 seems to match the max size of the threadPool created by the RestConsole
+                controlTransmittersPool = new UDPTransmitterPool(this, maxPoolSize); 
+            }       
+            return true;
+            
 	} catch (IOException ioe) {
 	    // Current implementation will be to do a stack trace
 	    //ioe.printStackTrace();
@@ -57,17 +59,15 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
 
     @Override
     public boolean disconnect() {
-        /*
         try {
 	    AnnounceListener.end();
 	    AnnounceListener = null;
+            controlTransmittersPool.disconnect();
 	    return true;
 	} catch (IOException ieo) {
 	    AnnounceListener = null;
 	    return false;
 	}
-        */
-    return true;
     }
 
     @Override

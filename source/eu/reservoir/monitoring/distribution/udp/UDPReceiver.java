@@ -138,13 +138,9 @@ public class UDPReceiver implements Runnable {
 	// stop the thread
         threadRunning = false;
 
-        //System.err.println("UDPReceiver: about to do socket close");
-
         socket.close();
 
-        //System.err.println("UDPReceiver: about to do socket disconnect");
-
-        // disconnect
+        // disconnect: this shouldn't have any effect
         socket.disconnect();
 
     }
@@ -236,7 +232,9 @@ public class UDPReceiver implements Runnable {
 	    } else {
 		// the receive() failed
 		// we find the exception in lastException
-		receiver.error(lastException);
+                // we notify the receiver only if the socket was not explicitly closed
+                if (threadRunning)
+                    receiver.error(lastException);
 	    }
 	}
     }

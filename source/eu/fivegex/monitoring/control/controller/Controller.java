@@ -49,8 +49,10 @@ public class Controller extends AbstractPlaneInteracter {
         // we create the wrapper to the InfoPlane to resolve probes IDs to DSs IP:port, etc.
         informationManager = new InformationManager(infoPlane);
         
-        // we create a control plane producer that is not connected to any specific Data source
-        setControlPlane(new UDPControlPlaneProducer(informationManager, 8888)); // TODO: Use parameter to specify port 
+        // we create a control plane producer 
+        // announcePort to listen for announce Messages from DSs/DCs
+        // maxPoolSize to instantiate a pool of UDP Transmitters (each tranmistter is not connected to any specific DS)
+        setControlPlane(new UDPControlPlaneProducer(informationManager, 8888, 8)); // TODO: Use parameters to specify both port and maxPoolSize 
         
         connect();
         

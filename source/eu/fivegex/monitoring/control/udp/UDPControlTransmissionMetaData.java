@@ -15,23 +15,29 @@ import java.net.InetSocketAddress;
  * @author uceeftu
  */
 public class UDPControlTransmissionMetaData implements MetaData, Serializable{
-    InetAddress srcAddress;
-    int port;
-    InetSocketAddress address;
+    private InetAddress address;
+    private int port;
 
     public UDPControlTransmissionMetaData(InetAddress srcAddress, int port) {
-        this.srcAddress = srcAddress;
+        this.address = srcAddress;
         this.port = port;
     }
 
     public InetSocketAddress getInetSocketAddress() {
-        address = new InetSocketAddress(srcAddress,port);
+        return new InetSocketAddress(address,port);
+    }
+
+    public InetAddress getAddress() {
         return address;
+    }
+
+    public int getPort() {
+        return port;
     }
     
     @Override
     public String toString() {
-        return "UDPControlTransmissionMetaData{" + "srcAddress=" + srcAddress + ", port=" + port + '}';
+        return "UDPControlTransmissionMetaData{" + "Address=" + address + ", port=" + port + '}';
     }
     
     

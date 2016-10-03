@@ -30,8 +30,8 @@ import java.lang.reflect.Method;
 
 
 
-public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneConsumer implements DataSourceControlPlane, DataSourceInteracter, TransmittingAnnounce {
-    DataSource dataSource;
+public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneConsumer implements DataSourceControlPlane, DataSourceDelegateInteracter, TransmittingAnnounce {
+    DataSourceDelegate dataSourceDelegate;
     
     public UDPDataSourceControlPlaneConsumer(InetSocketAddress localAddress, InetSocketAddress controllerAddress) {
         super(localAddress, controllerAddress);
@@ -39,7 +39,7 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
 
     @Override
     public void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException {
-
+        
         ControlOperation ctrlOperationName=null;
         ID sourceMessageID=null;
                 
@@ -165,6 +165,7 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
 
     @Override
     public boolean announce() {
+        DataSource dataSource = dataSourceDelegate.getDataSource();
         // creating a message to announce the ID and IP localAddress of the DS control endpoint
         System.out.println("UDP Control Plane Consumer - Announcing Data Source");
         
@@ -187,7 +188,6 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
             dataOutput.writeLong(dataSource.getID().getMostSignificantBits());
             dataOutput.writeLong(dataSource.getID().getLeastSignificantBits());
             
-            UDPTransmitterSyncReply udpAt = new UDPTransmitterSyncReply(this, controllerAddress);
             udpAt.transmit(byteStream, 0);
             return true;
         
@@ -200,7 +200,7 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
     
      @Override
     public void error(Exception e) {
-        System.err.println("ControPlaneConsumer - invoked error method : failed to process control message: " + e.getMessage());
+        System.err.println("ControPlaneConsumer error: " + e.getMessage());
     }
 
     @Override
@@ -208,25 +208,24 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
         System.out.println("Just announced DS");
         return true;
     }
-
     
-    
-  
-    @Override
-    public DataSource getDataSource() {
-        return dataSource;
-        }
-
     
     @Override
-    public DataSource setDataSource(DataSource ds) {
-        dataSource = ds;
-        return dataSource;
-        }
+    public DataSourceDelegate getDataSourceDelegate() {
+	return dataSourceDelegate;
+    }
+
+    @Override
+    public DataSourceDelegate setDataSourceDelegate(DataSourceDelegate ds) {
+	System.err.println("DataSource Control Plane Consumer: setDataSource: " + ds);
+	dataSourceDelegate = ds;
+	return ds;
+    }
     
     
     @Override
     public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception {
+        DataSource dataSource = dataSourceDelegate.getDataSource();
         try {
             System.out.println("******* UDPControlPlaneConsumer -> loadProbe");
             ProbeLoader p = new ProbeLoader(probeClassName, probeArgs);
@@ -241,6 +240,7 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
 
     @Override
     public boolean unloadProbe(ID probeID) throws Exception {
+        DataSource dataSource = dataSourceDelegate.getDataSource();
         System.out.println("******* UDPControlPlaneConsumer -> unloadProbe");
         Probe p = dataSource.getProbeByID(probeID);
         dataSource.removeProbe(p);
@@ -265,6 +265,7 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
 
     @Override
     public boolean setProbeServiceID(ID probeID, ID id) {
+        DataSource dataSource = dataSourceDelegate.getDataSource();
         System.out.println("******* UDPControlPlaneConsumer -> setProbeServiceID");
         dataSource.setProbeServiceID(probeID, id);
         return true;
@@ -277,6 +278,7 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
 
     @Override
     public boolean setProbeGroupID(ID probeID, ID id) {
+        DataSource dataSource = dataSourceDelegate.getDataSource();
         System.out.println("******* UDPControlPlaneConsumer -> setProbeGroupID");
         dataSource.setProbeGroupID(probeID, id);
         return true;
@@ -289,6 +291,7 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
 
     @Override
     public boolean setProbeDataRate(ID probeID, Rational dataRate) {
+        DataSource dataSource = dataSourceDelegate.getDataSource();
         System.out.println("******* UDPControlPlaneConsumer -> setProbeDataRate");
         dataSource.setProbeDataRate(probeID, dataRate);
         return true;
@@ -306,16 +309,26 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
 
     @Override
     public boolean turnOnProbe(ID probeID) {
+        DataSource dataSource = dataSourceDelegate.getDataSource();
         System.out.println("******* UDPControlPlaneConsumer -> turnOnProbe");
-        dataSource.turnOnProbe(probeID);
-        return true;
+        if (!dataSource.isProbeOn(probeID)) {
+            dataSource.turnOnProbe(probeID);
+            return true;
+        }
+        else 
+            return true;
     }
 
     @Override
     public boolean turnOffProbe(ID probeID) {
+        DataSource dataSource = dataSourceDelegate.getDataSource();
         System.out.println("******* UDPControlPlaneConsumer -> turnOffProbe");
-        dataSource.turnOffProbe(probeID);
-        return true;
+        if (dataSource.isProbeOn(probeID)) {
+            dataSource.turnOffProbe(probeID);
+            return true;
+        }
+        else
+            return false;
     }
 
     @Override
