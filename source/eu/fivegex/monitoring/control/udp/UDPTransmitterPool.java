@@ -14,7 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author uceeftu
  */
 public final class UDPTransmitterPool {
-    Integer used = 0;
+    volatile Integer usedObjects;
     int maxSize;
     LinkedBlockingQueue<UDPTransmitterSyncReply> socketQueue;
     Transmitting transmitting;
@@ -23,7 +23,7 @@ public final class UDPTransmitterPool {
         this.transmitting = transmitting;
         this.maxSize = size;
         this.socketQueue = new LinkedBlockingQueue(size);
-        //initPool();   
+        this.usedObjects = 0;
     }
     
     public void disconnect() throws IOException {
@@ -31,30 +31,24 @@ public final class UDPTransmitterPool {
             t.end();
     }
     
-    public UDPTransmitterSyncReply getConnection() throws IOException {
-        try {
-            synchronized (used) {
-                if (socketQueue.isEmpty() && used < maxSize) {
-                    used++;
-                    return new UDPTransmitterSyncReply(transmitting);
-                }
+    public UDPTransmitterSyncReply getConnection() throws IOException, InterruptedException {
+        synchronized (usedObjects) {
+            if (socketQueue.isEmpty() && usedObjects < maxSize) {
+                usedObjects++;
+                return new UDPTransmitterSyncReply(transmitting);
             }
-            UDPTransmitterSyncReply t = socketQueue.take();
-            synchronized (used) {
-                used++;
-            }
-            return t;
-        } catch (InterruptedException e) {
-            return null;
         }
+        UDPTransmitterSyncReply t = socketQueue.take();
+        synchronized (usedObjects) {
+            usedObjects++;
+        }
+        return t;
     }
     
-    public void releaseConnection(UDPTransmitterSyncReply conn) {
-        try {
-            socketQueue.put(conn);
-            synchronized (used) {
-                used--;
-            }
-        } catch (InterruptedException e) { }
+    public void releaseConnection(UDPTransmitterSyncReply conn) throws InterruptedException {
+        socketQueue.put(conn);
+        synchronized (usedObjects) {
+            usedObjects--;
+        }
     }   
 }

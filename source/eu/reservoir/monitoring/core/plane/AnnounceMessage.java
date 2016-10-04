@@ -14,8 +14,8 @@ import java.util.HashMap;
 
 public class AnnounceMessage {
     private final ID entityID;
-    private final MessageType messageType;
-    private EntityType entity;
+    protected MessageType messageType; // subclass Deannounce will set this to Deannounce
+    private final EntityType entity;
     //time?
     
     public AnnounceMessage(ID id, EntityType e) {

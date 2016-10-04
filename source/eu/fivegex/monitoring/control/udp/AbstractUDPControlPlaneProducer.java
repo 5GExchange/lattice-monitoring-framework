@@ -72,14 +72,14 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
 
     @Override
     public boolean announce() {
-        // do nothing currenty
-	return true;
+        // sending announce messages is not expected for a Control Plane Producer
+	return false;
     }
 
     @Override
     public boolean dennounce() {
-        // do nothing currenty
-	return true;
+        // sending deannounce messages is not expected for a Control Plane Producer
+	return false;
     }
 
     @Override
@@ -88,7 +88,7 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
     
     // this overrides both receivedReply from TransmittingAndReceiving and ReceivingAnnounce
     @Override
-    public abstract Object receivedReply(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException;
+    public abstract Object receivedReply(ByteArrayInputStream bis, MetaData metaData, int seqNo) throws IOException, TypeException, ClassNotFoundException;
     
     
     @Override

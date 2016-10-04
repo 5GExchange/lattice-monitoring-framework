@@ -394,8 +394,25 @@ public class Controller extends AbstractPlaneInteracter {
         result.put("operation", "getDataSources");
         
         try {
-            JSONObject dataSources = this.informationManager.getDataSourceAsJSON();
+            JSONObject dataSources = this.informationManager.getDataSourcesAsJSON();
             result.put("datasources", dataSources);
+            result.put("success", true);
+        } catch (Exception ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+          }
+        return result;  
+    }
+    
+    
+    JSONObject getDataConsumers() throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        result.put("operation", "getDataConsumers");
+        
+        try {
+            JSONObject dataConsumers = this.informationManager.getDataConsumersAsJSON();
+            result.put("dataconsumers", dataConsumers);
             result.put("success", true);
         } catch (Exception ex) {
             result.put("success", false);
@@ -407,7 +424,7 @@ public class Controller extends AbstractPlaneInteracter {
     
     
     
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         Properties prop = new Properties();
 	InputStream input = null;
         String propertiesFile = null;
@@ -461,14 +478,9 @@ public class Controller extends AbstractPlaneInteracter {
             currentHost = InetAddress.getLocalHost().getHostName();   
             System.out.println(currentHost);
         } catch (Exception e) {
+            System.out.println("Error while starting the Controller " + e.getMessage());
         }
          
         myController.init(currentHost, infoPlaneLocalPort, restConsolePort, probePackage, probeSuffix, prop);
-        System.in.read();
-        
-        try { 
-            System.out.println(myController.getDataSources());
-        } catch (JSONException e) {}
-        
     }
 }

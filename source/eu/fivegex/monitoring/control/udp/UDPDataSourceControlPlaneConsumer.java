@@ -13,6 +13,7 @@ import eu.reservoir.monitoring.core.plane.ControlOperation;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
 import eu.reservoir.monitoring.core.plane.MessageType;
 import eu.reservoir.monitoring.core.plane.DataSourceControlPlane;
+import eu.reservoir.monitoring.core.plane.DeannounceMessage;
 import eu.reservoir.monitoring.distribution.MetaData;
 import eu.reservoir.monitoring.distribution.XDRDataInputStream;
 import eu.reservoir.monitoring.distribution.XDRDataOutputStream;
@@ -39,14 +40,11 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
 
     @Override
     public void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException {
-        
         ControlOperation ctrlOperationName=null;
-        ID sourceMessageID=null;
-                
+        int seqNo = -1;
+        
 	try {
 	    DataInput dataIn = new XDRDataInputStream(bis);
-
-	    //System.err.println("DC: datainputstream available = " + dataIn.available());
 
 	    // check message type
 	    int type = dataIn.readInt();            
@@ -54,37 +52,21 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
 
 	    // delegate read to right object
 	    if (mType == null) {
-		//System.err.println("type = " + type);
-		return;
+		throw new IOException("Message type is null");
 	    }
 
-	    // get seq no
-	    //int seq = dataIn.readInt();
-            
-	    // Message meta data
-	    //MessageMetaData msgMetaData = new MessageMetaData(ControlEntityID, seq, mType);
-
-	    // read object and check it's type
-	    switch (mType) {
-
-	    case ANNOUNCE:
-		System.err.println("ANNOUNCE not implemented yet!");
-		break;
-       
-            case CONTROL:
+            else if (mType == MessageType.CONTROL) {
                 System.out.println("-------- Control Message Received ---------");
                 
                 String ctrlOperationMethod = dataIn.readUTF();
                 ctrlOperationName = ControlOperation.lookup(ctrlOperationMethod);
-
-                // get the Message ID
-                long messageIDMSB = dataIn.readLong();
-                long messageIDLSB = dataIn.readLong();
-                sourceMessageID = new ID(messageIDMSB, messageIDLSB);
+                
+                // get source message sequence number
+                seqNo = dataIn.readInt();
                 
                 System.out.println("Operation String: " + ctrlOperationName);
                 System.out.println("Operation Method: " + ctrlOperationMethod);
-                System.out.println("Source Message ID: " + sourceMessageID);
+                System.out.println("Source Message ID: " + seqNo);
                 
                 byte [] args = new byte[4096];
                 dataIn.readFully(args);
@@ -116,12 +98,12 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
                 */
                 
                 Object result = methodToInvoke.invoke(this, methodArgs.toArray());
-                ControlPlaneReplyMessage message = new ControlPlaneReplyMessage(result, ctrlOperationName, sourceMessageID);
+                ControlPlaneReplyMessage message = new ControlPlaneReplyMessage(result, ctrlOperationName, seqNo);
                 transmitReply(message, metaData);
 	    }
 
         } catch (Exception ex) {
-                ControlPlaneReplyMessage errorMessage = new ControlPlaneReplyMessage(ex.getCause(), ctrlOperationName, sourceMessageID);
+                ControlPlaneReplyMessage errorMessage = new ControlPlaneReplyMessage(ex.getCause(), ctrlOperationName, seqNo);
                 try {
                     transmitReply(errorMessage, metaData);
                 } catch (Exception ex1) {
@@ -148,9 +130,8 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
         dataOutput.writeInt(answer.getType().getValue());
         
         // writing message ID
-        ID sourceMessageID = answer.getReplyToMessageID();
-        dataOutput.writeLong(sourceMessageID.getMostSignificantBits());
-	dataOutput.writeLong(sourceMessageID.getLeastSignificantBits());
+        int sourceMessageSeqNo = answer.getReplyToMessageID();
+        dataOutput.writeInt(sourceMessageSeqNo);
         
         // write method operation this is an answer for
         dataOutput.writeUTF(answer.getControlOperation().getValue());
@@ -166,33 +147,31 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
     @Override
     public boolean announce() {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        // creating a message to announce the ID and IP localAddress of the DS control endpoint
         System.out.println("UDP Control Plane Consumer - Announcing Data Source");
         
         AnnounceMessage message = new AnnounceMessage(dataSource.getID(), EntityType.DATASOURCE);
         
         try {
-            // convert the object to a byte []
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            DataOutput dataOutput = new XDRDataOutputStream(byteStream);
-
-            // write type
-            dataOutput.writeInt(message.getMessageType().getValue());      
-
-            
-            System.out.println("Entity " + message.getEntity());
-            // write entity type value as int
-            dataOutput.writeInt(message.getEntity().getValue());
-            
-            // write entity ID 
-            dataOutput.writeLong(dataSource.getID().getMostSignificantBits());
-            dataOutput.writeLong(dataSource.getID().getLeastSignificantBits());
-            
-            udpAt.transmit(byteStream, 0);
+            announceSerializer(message);
             return true;
-        
         } catch (IOException e) {
-            System.out.println("Error while announcing " + e.getMessage());
+            System.out.println("Error while announcing Data Source" + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean dennounce() {
+        DataSource dataSource = dataSourceDelegate.getDataSource();
+        System.out.println("UDP Control Plane Consumer - Deannouncing Data Source");
+        
+        DeannounceMessage message = new DeannounceMessage(dataSource.getID(), EntityType.DATASOURCE);
+        
+        try {
+            announceSerializer(message);
+            return true;
+        } catch (IOException e) {
+            System.out.println("Error while deannouncing Data Source" + e.getMessage());
             return false;
         }
     }

@@ -14,13 +14,19 @@ import java.net.InetSocketAddress;
  *
  * @author uceeftu
  */
-public class UDPControlTransmissionMetaData implements MetaData, Serializable{
+public class UDPControlMetaData implements MetaData, Serializable{
     private InetAddress address;
     private int port;
+    private int length=0;
 
-    public UDPControlTransmissionMetaData(InetAddress srcAddress, int port) {
+    public UDPControlMetaData(InetAddress srcAddress, int port) {
         this.address = srcAddress;
         this.port = port;
+    }
+    
+    public UDPControlMetaData(InetAddress srcAddress, int port, int length) {
+        this(srcAddress, port);
+        this.length = length;
     }
 
     public InetSocketAddress getInetSocketAddress() {
@@ -37,7 +43,7 @@ public class UDPControlTransmissionMetaData implements MetaData, Serializable{
     
     @Override
     public String toString() {
-        return "UDPControlTransmissionMetaData{" + "Address=" + address + ", port=" + port + '}';
+        return address + ":" + port + " => " + length;
     }
     
     

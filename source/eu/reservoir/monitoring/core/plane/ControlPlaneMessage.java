@@ -5,30 +5,30 @@
  */
 package eu.reservoir.monitoring.core.plane;
 
-//import java.util.ArrayList;
-import eu.reservoir.monitoring.core.ID;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 
 public class ControlPlaneMessage {
     private final ControlOperation methodName;
     private final List<Object> methodArgs;
-    private final ID messageID;
+    private final int messageSeqNo;
     private final MessageType type;
+    private final static AtomicInteger sequenceNumberCounter = new AtomicInteger(0);
     
     public ControlPlaneMessage(ControlOperation m, List<Object> args) {
         type = MessageType.CONTROL;
         methodName = m;
         methodArgs = args;
-        messageID = ID.generate();
+        messageSeqNo = sequenceNumberCounter.getAndAdd(1);
     } 
 
-    public ID getMessageID() {
-        return messageID;
+    public int getSequenceNumber() {
+        return messageSeqNo;
     }
     
     public ControlOperation getControlOperation() {

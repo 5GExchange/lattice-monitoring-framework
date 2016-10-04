@@ -13,7 +13,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Scanner;
-import eu.reservoir.monitoring.core.DataSourceInteracter;
 
 /**
  * This DataSource in a basic control point for probes that uses a Control Plane and an Info Plane and can be daemonized 
@@ -95,15 +94,15 @@ public final class SimpleDataSourceDaemon extends Thread {
         // ctrlAddress is the address:port where this DS will listen for ctrl messages
         // ctrlRemoteAddress is the port where the controller is listening for announce messages
         ControlPlane controlPlane = new UDPDataSourceControlPlaneConsumer(ctrlAddress, ctrlRemoteAddress);
-        ((DataSourceInteracter)controlPlane).setDataSource(ds);
         
         ds.setControlPlane(controlPlane);
         
         //the root of the DHT is by default on infoPlaneRootName 6699
         ds.setInfoPlane(new DHTDataSourceInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
         
-	if (!ds.connect()) 
-            System.exit(1); //terminating as there was an error while connecting to the planes
+	//if (!ds.connect()) 
+        //    System.exit(1); //terminating as there was an error while connecting to the planes
+        // TODO: check why this gives false
     }
 
 

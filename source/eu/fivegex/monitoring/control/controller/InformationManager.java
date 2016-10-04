@@ -36,14 +36,27 @@ public class InformationManager {
     
     
     public void addNewAnnouncedEntity(ID id, EntityType type) {
-        // we add to the list only if that entity information is also in the info Plane
-        if (type == EntityType.DATASOURCE && info.lookupDataSourceInfo(id, "inetSocketAddress") != null) {
+        // we add the entity to the list only if that entity information is also in the info Plane
+        if (type == EntityType.DATASOURCE && info.lookupDataSourceInfo(id, "inetSocketAddress") != null) { 
             System.out.println("InfoResolver: adding Data Source " + id.toString());
             addDataSource(id);
         }
         else if (type == EntityType.DATACONSUMER && info.lookupDataConsumerInfo(id, "inetSocketAddress") != null) {
             System.out.println("InfoResolver: adding Data Consumer " + id.toString());
             addDataConsumer(id);
+        }
+    }
+    
+    public void removeNewDeannouncedEntity(ID id, EntityType type) {
+        // we remove the entity to the list if we do not have related information in the infoPlane 
+        // this may not work if information is not removed immediately (TODO: find a better way)
+        if (type == EntityType.DATASOURCE && info.lookupDataSourceInfo(id, "inetSocketAddress") == null) {
+            System.out.println("InfoResolver: removing Data Source " + id.toString());
+            deleteDataSource(id);
+        }
+        else if (type == EntityType.DATACONSUMER && info.lookupDataConsumerInfo(id, "inetSocketAddress") == null) {
+            System.out.println("InfoResolver: removing Data Consumer " + id.toString());
+            deleteDataConsumer(id);
         }
     }
     
@@ -59,7 +72,7 @@ public class InformationManager {
         }
     }
     
-    public JSONObject getDataSourceAsJSON() throws DSNotFoundException, JSONException {
+    public JSONObject getDataSourcesAsJSON() throws DSNotFoundException, JSONException {
         JSONObject obj = new JSONObject();
         for (ID id: getDataSourcesList()) {
             JSONObject dsAddr = new JSONObject();
@@ -67,6 +80,18 @@ public class InformationManager {
             dsAddr.put("host", dsInfo.getAddress().getHostAddress());
             dsAddr.put("port", dsInfo.getPort());
             obj.put(id.toString(), dsAddr);
+        }
+        return obj;
+    }
+    
+    public JSONObject getDataConsumersAsJSON() throws DCNotFoundException, JSONException {
+        JSONObject obj = new JSONObject();
+        for (ID id: getDataConsumersList()) {
+            JSONObject dcAddr = new JSONObject();
+            InetSocketAddress dcInfo = getDCAddressFromID(id);
+            dcAddr.put("host", dcInfo.getAddress().getHostAddress());
+            dcAddr.put("port", dcInfo.getPort());
+            obj.put(id.toString(), dcAddr);
         }
         return obj;
     }
@@ -80,6 +105,13 @@ public class InformationManager {
         dataConsumers.add(id);
     }
     
+    void deleteDataSource(ID id) {
+        dataSources.remove(id);
+    }
+    
+    void deleteDataConsumer(ID id) {
+        dataConsumers.remove(id);
+    }
     
     public InetSocketAddress getDSAddressFromProbeID(ID probe) throws ProbeNotFoundException, DSNotFoundException {
         String dsID = (String)info.lookupProbeInfo(probe, "datasource");

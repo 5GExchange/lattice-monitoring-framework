@@ -77,11 +77,14 @@ class DataConsumerRestHandler extends BasicRequestHandler {
             }
             
             else if (method.equals("GET")) {
-                    if (name == null && segments.length == 3) {
-                        getDCMeasurementRate(request, response);
-                    }
+                    if (name == null && segments.length == 1)
+                        getDataConsumers(request, response);
                     else
-                        notFound(response, "GET bad request");
+                        if (name == null && segments.length == 3) {
+                            getDCMeasurementRate(request, response);
+                        }
+                        else
+                            notFound(response, "GET bad request");
             } 
             
             return true;
@@ -212,5 +215,31 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         }
 
     }
+    
+    private void getDataConsumers(Request request, Response response) throws JSONException, IOException {
+        boolean success = true;
+        String failMessage = null;
+        JSONObject jsobj = null;
+        
+        jsobj = controller_.getDataConsumers();
+
+        if (jsobj.get("success").equals("false")) {
+            failMessage = (String)jsobj.get("msg");
+            System.out.println("getDataConsumers: failure detected: " + failMessage);
+            success = false;   
+        }
+
+        if (success) {
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+    }
+    
     
 }

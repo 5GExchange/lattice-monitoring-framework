@@ -7,13 +7,17 @@ package eu.fivegex.monitoring.control.udp;
 
 
 import eu.reservoir.monitoring.core.TypeException;
+import eu.reservoir.monitoring.core.plane.AnnounceMessage;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
 import eu.reservoir.monitoring.distribution.MetaData;
 import eu.reservoir.monitoring.distribution.ReceivingAndReplying;
+import eu.reservoir.monitoring.distribution.XDRDataOutputStream;
 import eu.reservoir.monitoring.distribution.udp.UDPReceiver;
 import eu.reservoir.monitoring.distribution.udp.UDPTransmitter;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
@@ -79,15 +83,31 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, R
 	}
     }
 
+    protected void announceSerializer(AnnounceMessage message) throws IOException {
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        DataOutput dataOutput = new XDRDataOutputStream(byteStream);
+
+        // write type
+        dataOutput.writeInt(message.getMessageType().getValue());      
+
+        System.out.println("Entity " + message.getEntity());
+        // write entity type value as int
+        dataOutput.writeInt(message.getEntity().getValue());
+
+        // write entity ID 
+        dataOutput.writeLong(message.getEntityID().getMostSignificantBits());
+        dataOutput.writeLong(message.getEntityID().getLeastSignificantBits());
+
+        udpAt.transmit(byteStream, 0);
+    }
+    
+    
     @Override
     public abstract boolean announce();
     
 
     @Override
-    public boolean dennounce() {
-        // do nothing currenty
-	return true;
-    }
+    public abstract boolean dennounce();
 
     
     @Override

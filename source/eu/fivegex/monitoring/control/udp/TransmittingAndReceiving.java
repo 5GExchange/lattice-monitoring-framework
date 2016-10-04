@@ -23,5 +23,5 @@ public interface TransmittingAndReceiving extends Transmitting {
     A Class implementing this interface is basically a transmitter of control messages 
     that also needs to receive replies related to the control messages it sends 
     */
-    public Object receivedReply(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException;
+    public Object receivedReply(ByteArrayInputStream bis, MetaData metaData, int seqNo) throws IOException, TypeException, ClassNotFoundException;
 }

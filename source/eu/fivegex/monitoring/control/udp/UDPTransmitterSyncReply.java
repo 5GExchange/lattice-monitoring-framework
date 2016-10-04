@@ -36,14 +36,14 @@ public final class UDPTransmitterSyncReply {
     DatagramPacket replyPacket;
     
     /*
-     * The destination IP dstAddress
+     * The destination IP address
      */
     InetAddress dstAddress;
 
     /*
-     * The destination dsPort
+     * The destination port
      */
-    int dsPort;
+    int dstPort;
 
     
     static int PACKET_SIZE = 65535; // was 1500;
@@ -55,10 +55,10 @@ public final class UDPTransmitterSyncReply {
         this(transmitting);
         
 	this.dstAddress = dstAddr.getAddress();
-	this.dsPort = dstAddr.getPort();
+	this.dstPort = dstAddr.getPort();
         
 	packet.setAddress(dstAddress);
-	packet.setPort(dsPort);
+	packet.setPort(dstPort);
         
         //check
         //connect();
@@ -84,7 +84,7 @@ public final class UDPTransmitterSyncReply {
      */
     public void connect()  throws IOException {
 	// connect to the remote UDP socket
-        socket.connect(dstAddress, dsPort);
+        socket.connect(dstAddress, dstPort);
 
     }
 
@@ -117,7 +117,7 @@ public final class UDPTransmitterSyncReply {
     }
     
     
-    public Object transmitAndWaitReply(ByteArrayOutputStream byteStream) throws IOException, TypeException {
+    public Object transmitAndWaitReply(ByteArrayOutputStream byteStream, int seqNo) throws IOException, TypeException, ClassNotFoundException {
         packet.setData(byteStream.toByteArray());
 	packet.setLength(byteStream.size());
 
@@ -126,19 +126,18 @@ public final class UDPTransmitterSyncReply {
 
 	// notify the transmitting object
 	if (transmitting != null) {
-            //DatagramPacket replyPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
+            transmitting.transmitted(seqNo);
 
             //this sets the timeout to 5 secs
             socket.setSoTimeout(5000);
             
             // we block this thread until a reply message is received
             socket.receive(replyPacket);
-            //System.out.println("Received reply from Src address: " + replyPacket.getAddress() + " Src port: " + replyPacket.getPort());
             
             if (transmitting instanceof TransmittingAndReceiving) {
                 ByteArrayInputStream theBytes = new ExposedByteArrayInputStream(replyPacket.getData(), 0, replyPacket.getLength());
-                UDPTransmissionMetaData metaData = new UDPTransmissionMetaData(replyPacket.getLength(), replyPacket.getAddress(), this.dstAddress, replyPacket.getPort());
-                return ((TransmittingAndReceiving)transmitting).receivedReply(theBytes, metaData);
+                UDPControlMetaData metaData = new UDPControlMetaData(replyPacket.getAddress(), replyPacket.getPort(), replyPacket.getLength());
+                return ((TransmittingAndReceiving)transmitting).receivedReply(theBytes, metaData, seqNo);
             }
            
         }
@@ -147,11 +146,11 @@ public final class UDPTransmitterSyncReply {
     }
     
     
-    public Object transmitAndWaitReply(ByteArrayOutputStream byteStream, UDPControlTransmissionMetaData MessageMetaData, int id) throws IOException, TypeException {
+    public Object transmitAndWaitReply(ByteArrayOutputStream byteStream, UDPControlMetaData MessageMetaData, int seqNo) throws IOException, TypeException, ClassNotFoundException {
         // setting destination parameters in the packet now        
         packet.setAddress(MessageMetaData.getAddress());
 	packet.setPort(MessageMetaData.getPort());
         
-        return transmitAndWaitReply(byteStream);
+        return transmitAndWaitReply(byteStream, seqNo);
     }    
 }

@@ -24,7 +24,7 @@ import java.util.Scanner;
 /**
  * This receives measurements from a UDP Data Plane.
  */
-public class SimpleControllableDataConsumer {
+public final class SimpleControllableDataConsumer extends Thread {
     ControllableDataConsumer consumer;
 
     /*
@@ -38,6 +38,8 @@ public class SimpleControllableDataConsumer {
                                           String controlAddr,
                                           int controlPort,
                                           int controlRemotePort) throws UnknownHostException {
+        
+        this.attachShutDownHook();
         
 	// set up a ControllableDataConsumer
 	consumer = new ControllableDataConsumer("controllable-DC");
@@ -64,6 +66,23 @@ public class SimpleControllableDataConsumer {
 	consumer.connect();
     }
 
+    
+    @Override
+    public void run() {
+        System.out.println("Disconnecting from the planes before shutting down");
+        try {
+            // first performs deannounce and then disconnect for each of the planes
+            consumer.disconnect(); 
+        } catch (Exception e) {
+            System.out.println("Something went wrong while Disconnecting from the planes " + e.getMessage());
+          }
+    }
+    
+    public void attachShutDownHook() {
+        Runtime.getRuntime().addShutdownHook(this);
+    }
+    
+    
     public static void main(String [] args) {
         try {
             String dcAddr = null;

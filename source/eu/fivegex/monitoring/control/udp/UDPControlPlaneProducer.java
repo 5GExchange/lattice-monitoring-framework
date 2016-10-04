@@ -38,7 +38,6 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
 
     @Override
     public Object transmit(ControlPlaneMessage cpMessage, MetaData metadata) throws Exception {
-        System.out.println("UDPControlPlaneProducer.transmit " + cpMessage.toString() + " to " + metadata);
         Object result=null;
         
         // convert the object to a byte []
@@ -52,20 +51,18 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         // write object
         dataOutput.writeUTF(cpMessage.getControlOperation().getValue());            
 
-        // writing message ID
-        ID messageID = cpMessage.getMessageID();
-        dataOutput.writeLong(messageID.getMostSignificantBits());
-        dataOutput.writeLong(messageID.getLeastSignificantBits());
+        // writing message seqNo
+        int seqNo = cpMessage.getSequenceNumber();
+        dataOutput.writeInt(seqNo);
 
         // convert args to byte          
         dataOutput.write(cpMessage.getMethodArgsAsByte());
         
-        System.out.println("\n--------- Type Control ----------");
-        System.out.println("Message ID: " + messageID);
+        System.out.println("\n--------- Sending Control Message with seqNo: " + seqNo + " ----------");
 
         // getting a Transmitter from the Pool
         UDPTransmitterSyncReply connection = controlTransmittersPool.getConnection();
-        result = connection.transmitAndWaitReply(byteStream, (UDPControlTransmissionMetaData)metadata, 0); // TODO use actual ID
+        result = connection.transmitAndWaitReply(byteStream, (UDPControlMetaData)metadata, seqNo);
         
         // putting the Transmitter back to the Pool
         controlTransmittersPool.releaseConnection(connection);
@@ -77,42 +74,40 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
 
     // called when a control reply message is received
     @Override
-    public Object receivedReply(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException {
+    public Object receivedReply(ByteArrayInputStream bis, MetaData metaData, int seqNo) throws IOException, TypeException, ClassNotFoundException {
         Object result=null;
         
-        try {
-	    DataInput dataIn = new XDRDataInputStream(bis);
-            
-	    // check message type
-	    int type = dataIn.readInt();            
-	    MessageType mType = MessageType.lookup(type);
-            
-	    if (mType == null) {
-		throw new Exception("Message type is null");
-	    }
-            
-            else if (mType == MessageType.CONTROL_REPLY) {
-                    System.out.println("\n-------- Control Reply Message Received ---------");
+        DataInput dataIn = new XDRDataInputStream(bis);
 
-                    long messageIDMSB = dataIn.readLong();
-                    long messageIDLSB = dataIn.readLong();
-                    ID sourceMessageID = new ID(messageIDMSB, messageIDLSB);
+        // check message type
+        int type = dataIn.readInt();            
+        MessageType mType = MessageType.lookup(type);
 
-                    String ctrlOperation = dataIn.readUTF();
-                    ControlOperation ctrlOperationName = ControlOperation.lookup(ctrlOperation);
-
-                    byte [] args = new byte[4096];
-                    dataIn.readFully(args);
-
-                    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(args));
-                    result = (Object) ois.readObject();
-                    ois.close();
-
-                    System.out.println("Received REPLY message for request ID " + sourceMessageID + " and Operation code " + ctrlOperationName + ": " + result.toString());
-            }         
+        if (mType == null) {
+            throw new IOException("Message type is null");
         }
-        catch (Exception exception) {
-            System.out.println("Error while reading result from reply message: " + exception.getMessage());
+
+        else if (mType == MessageType.CONTROL_REPLY) {
+                System.out.println("\n-------- Control Reply Message Received ---------");
+                System.out.println("From: " + metaData);
+                
+                int replyMessageSeqNo = dataIn.readInt();
+
+                String ctrlOperation = dataIn.readUTF();
+                ControlOperation ctrlOperationName = ControlOperation.lookup(ctrlOperation);
+
+                byte [] args = new byte[4096];
+                dataIn.readFully(args);
+
+                ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(args));
+                result = (Object) ois.readObject();
+                ois.close();
+
+                if (replyMessageSeqNo == seqNo)
+                    System.out.println("Request seqNo: " + replyMessageSeqNo + "\nOperation: " + ctrlOperationName + "\nResult: " + result.toString());
+                else
+                    // we should not likely arrive here
+                    throw new IOException("Message Sequence number mismatch! " + replyMessageSeqNo + " not equal to " + seqNo);
         }
         return result;
     }
@@ -120,7 +115,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
     
     
     @Override
-    // called when an Announce Message is received
+    // called when an Announce/Deannounce Message is received
     public void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException {
         try {
 	    DataInput dataIn = new XDRDataInputStream(bis);
@@ -133,19 +128,26 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
                 throw new Exception("Message type is null");
 	    }
             
-            else if (mType == MessageType.ANNOUNCE) {
-                    System.out.println("\n-------- Announce Message Received ---------");
+            else if (mType == MessageType.ANNOUNCE || mType == MessageType.DEANNOUNCE) {
                     Integer e = dataIn.readInt();
                     EntityType entity = EntityType.lookup(e);
 
                     long entityIDMSB = dataIn.readLong();
                     long entityIDLSB = dataIn.readLong();
                     ID entityID = new ID(entityIDMSB, entityIDLSB);
-                    addNewAnnouncedEntity(entityID, entity);
+                    if (mType == MessageType.ANNOUNCE) {
+                        System.out.println("\n-------- Announce Message Received ---------");
+                        addNewAnnouncedEntity(entityID, entity);
+                    }
+                    else {
+                        System.out.println("\n-------- Dennounce Message Received ---------");
+                        removeNewDeannouncedEntity(entityID, entity);
+                    }
+                        
                 }         
         }
         catch (Exception exception) {
-            System.out.println("Error while reading Announce message: " + exception.getMessage());
+            System.out.println("Error while reading Announce/Deannounce message: " + exception.getMessage());
         }
         
     }
@@ -162,6 +164,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
     
     @Override
     public boolean transmitted(int id) {
+        System.out.println("Transmitted Control Message with seqNo: " + id);
         return true;
     }
     
@@ -170,9 +173,25 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         System.out.println("New " + type + " with ID " + entityID);
         try {
             Thread.sleep(1000); //needed to wait for the DHT to be updated
-        } catch (InterruptedException ex) {}
+        } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+        }
         resolver.addNewAnnouncedEntity(entityID, type);
     }
+
+    @Override
+    public void removeNewDeannouncedEntity(ID entityID, EntityType type) {
+        System.out.println(type + " with ID " + entityID + " is being shutdown");
+        try {
+            Thread.sleep(1000); //needed to wait for the DHT to be updated
+        } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+        }
+        resolver.removeNewDeannouncedEntity(entityID, type);
+    }
+    
+    
+    
     
     /* DS Control Service methods */
 
@@ -189,7 +208,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         
         try {
             InetSocketAddress dstAddr = resolver.getDSAddressFromID(dataSourceID);
-            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             //we return the ID of the new created probe as result
             probeID = (ID) transmit(m, mData);
         } catch (Exception ex) {
@@ -208,7 +227,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.UNLOAD_PROBE, args);
         try {
             InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
-            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) transmit(m, mData);
         } catch (Exception ex) {
             System.out.println("Error while sending unload probe command " + ex.getMessage());
@@ -243,7 +262,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.SET_PROBE_SERVICE_ID, args);
         try {
             InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
-            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) transmit(m, mData);
         } catch (Exception ex) {
             System.out.println("Error while sending set probe service ID command " + ex.getMessage());
@@ -269,7 +288,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.SET_PROBE_GROUP_ID, args);
         try {
             InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
-            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) transmit(m, mData);
         } catch (Exception ex) {
             System.out.println("Error while sending set probe group ID command " + ex.getMessage());
@@ -295,7 +314,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         
         try {
             InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
-            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) transmit(m, mData);
         } 
           catch (Exception ex) {
@@ -325,7 +344,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.TURN_ON_PROBE, args);
         try {
             InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
-            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) transmit(m, mData);
         } catch (Exception ex) {
             System.out.println("Error while sending turn on probe command " + ex.getMessage());
@@ -344,7 +363,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.TURN_OFF_PROBE, args);
         try {
             InetSocketAddress dstAddr = resolver.getDSAddressFromProbeID(probeID);
-            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) transmit(m, mData);
             return result;
         } catch (Exception ex) {
@@ -398,7 +417,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         
         try {
             InetSocketAddress dstAddr = resolver.getDCAddressFromID(dcId);
-            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());            
+            MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());            
             rate = (Float) transmit(m, mData);
         } catch (Exception ex) {
             System.out.println("Error while sending getDCMeasurementsRate command " + ex.getMessage());
@@ -420,7 +439,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         
         try {
             InetSocketAddress dstAddr = resolver.getDCAddressFromID(dataConsumerID);
-            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             //we return the ID of the new created reporter as result
             reporterID = (ID) transmit(m, mData);
         } catch (Exception ex) {
@@ -440,7 +459,7 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.UNLOAD_REPORTER, args);
         try {
             InetSocketAddress dstAddr = resolver.getDCAddressFromReporterID(reporterID);
-            MetaData mData = new UDPControlTransmissionMetaData(dstAddr.getAddress(), dstAddr.getPort());
+            MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) transmit(m, mData);
         } catch (Exception ex) {
             System.out.println("Error while sending unload reporter command " + ex.getMessage());

@@ -66,19 +66,31 @@ class DataSourceRestHandler extends BasicRequestHandler {
         */
         
         try {
-            if (method.equals("POST")) {
-                if (name == null && segments.length == 3)
-                    createProbe(request, response);
-                else if (name == null && segments.length == 1) {
-                    deployDS(request,response);
-                }
-                else
-                    notFound(response, "POST bad request");
-            } else if (method.equals("DELETE")) {
+            switch (method) {
+                case "POST":
+                    if (name == null && segments.length == 3)
+                        createProbe(request, response);
+                    else if (name == null && segments.length == 1) {
+                        deployDS(request,response);
+                    }
+                    else
+                        notFound(response, "POST bad request");
+                    break;
+                case "DELETE":
                     if (name == null && segments.length == 1) {
                         stopDS(request,response);
                     }
-              }
+                    break;
+                case "GET":
+                    if (name == null && segments.length == 1)
+                        getDataSources(request, response);
+                    else
+                        notFound(response, "GET bad request");
+                    break;   
+                default:
+                    break;
+            }
+            
             
             return true;
             
@@ -264,5 +276,31 @@ class DataSourceRestHandler extends BasicRequestHandler {
         }
         
     }
+    
+    private void getDataSources(Request request, Response response) throws JSONException, IOException {
+        boolean success = true;
+        String failMessage = null;
+        JSONObject jsobj = null;
+        
+        jsobj = controller_.getDataSources();
+
+        if (jsobj.get("success").equals("false")) {
+            failMessage = (String)jsobj.get("msg");
+            System.out.println("getDataSources: failure detected: " + failMessage);
+            success = false;   
+        }
+
+        if (success) {
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+    }
+    
     
 }

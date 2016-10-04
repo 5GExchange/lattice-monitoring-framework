@@ -66,30 +66,30 @@ class ProbeRestHandler extends BasicRequestHandler {
         */
         
         try {
-            if (method.equals("PUT")) {
-                if (name == null && segments.length == 2)
-                    probeOperation(request, response);   
-                else
-                    notFound(response, "PUT bad request");
-            }
-            
-            else if (method.equals("DELETE")) {
+            switch (method) {
+                case "PUT":
+                    if (name == null && segments.length == 2)
+                        probeOperation(request, response);
+                    else
+                        notFound(response, "PUT bad request");
+                    break;
+                case "DELETE":
                     if (name != null && segments.length == 2) {
                         // looks like a delete
                         deleteProbe(request, response);
                     } else
-                        notFound(response, "DELETE bad request");  
-            }
-            
-            else if (method.equals("GET")) {
+                        notFound(response, "DELETE bad request");
+                    break;
+                case "GET":
                     if (name == null && segments.length == 2)
                         getProbesCatalogue(request, response);
-                    else 
+                    else
                         notFound(response, "GET bad request");  
+                    break;
+                default:
+                    badRequest(response, "Unknown method" + method);
+                    break;
             }
-            
-            else 
-                badRequest(response, "Unknown method" + method);
             
             return true;
             

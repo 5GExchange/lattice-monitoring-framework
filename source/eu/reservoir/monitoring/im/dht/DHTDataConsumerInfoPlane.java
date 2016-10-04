@@ -84,9 +84,13 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
      * Un-announce that the plane is up and running
      */
     public boolean dennounce() {
-	// DataSource dataSource = dataSourceDelegate.getDataSource();
-	// return imNode.removeDataSource(dataSource);
-	return true;
+        try {
+	    imNode.removeDataConsumer(dataConsumer);
+	    System.err.println("DHTInfoPlane: just deannounced DataConsumer " + dataConsumer);
+	    return true;
+	} catch (IOException ioe) {
+	    return false;
+	}        
     }
 
     @Override
