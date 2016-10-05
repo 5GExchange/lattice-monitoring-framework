@@ -5,19 +5,15 @@
  */
 package eu.fivegex.monitoring.control.udp;
 
-import eu.fivegex.monitoring.control.ReporterLoader;
-import eu.reservoir.monitoring.core.DataConsumer;
-import eu.reservoir.monitoring.core.DataConsumerInteracter;
-import eu.reservoir.monitoring.core.ID;
+
 import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
-import eu.reservoir.monitoring.core.plane.AnnounceMessage;
 import eu.reservoir.monitoring.core.plane.ControlOperation;
+import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
-import eu.reservoir.monitoring.core.plane.DataConsumerControlPlane;
-import eu.reservoir.monitoring.core.plane.DeannounceMessage;
 import eu.reservoir.monitoring.core.plane.MessageType;
 import eu.reservoir.monitoring.distribution.MetaData;
+import eu.reservoir.monitoring.distribution.ReceivingAndReplying;
 import eu.reservoir.monitoring.distribution.XDRDataInputStream;
 import eu.reservoir.monitoring.distribution.XDRDataOutputStream;
 import java.io.ByteArrayInputStream;
@@ -26,25 +22,52 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.lang.reflect.Method;
 
+/**
+ *
+ * @author uceeftu
+ */
+public abstract class AbstractUDPControlPlaneXDRConsumer extends AbstractUDPControlPlaneConsumer implements ControlPlane, ReceivingAndReplying, TransmittingAnnounce {
 
-
-public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlaneConsumer implements DataConsumerControlPlane, DataConsumerInteracter {
-    DataConsumer dataConsumer;
-    
-    public UDPDataConsumerControlPlaneConsumer(InetSocketAddress localAddress, InetSocketAddress controllerAddress) {
+    public AbstractUDPControlPlaneXDRConsumer(InetSocketAddress localAddress, InetSocketAddress controllerAddress) {
         super(localAddress, controllerAddress);
     }
+   
+    @Override
+    public abstract boolean announce();
+    
 
+    @Override
+    public abstract boolean dennounce();
+    
+
+    protected void announceSerializer(AbstractAnnounceMessage message) throws IOException {
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        DataOutput dataOutput = new XDRDataOutputStream(byteStream);
+
+        // write type
+        dataOutput.writeInt(message.getMessageType().getValue());      
+
+        // write entity type value as int
+        dataOutput.writeInt(message.getEntity().getValue());
+
+        // write entity ID 
+        dataOutput.writeLong(message.getEntityID().getMostSignificantBits());
+        dataOutput.writeLong(message.getEntityID().getLeastSignificantBits());
+
+        udpAt.transmit(byteStream, 0);
+    }
+
+    
     @Override
     public void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException {
         ControlOperation ctrlOperationName=null;
         int seqNo = -1;
-                
+        
 	try {
 	    DataInput dataIn = new XDRDataInputStream(bis);
 
@@ -56,19 +79,19 @@ public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlane
 	    if (mType == null) {
 		throw new IOException("Message type is null");
 	    }
-            
-	    else if (mType == MessageType.CONTROL) {
+
+            else if (mType == MessageType.CONTROL) {
                 System.out.println("-------- Control Message Received ---------");
                 
                 String ctrlOperationMethod = dataIn.readUTF();
                 ctrlOperationName = ControlOperation.lookup(ctrlOperationMethod);
-
-                // get the Message seqNo
+                
+                // get source message sequence number
                 seqNo = dataIn.readInt();
                 
                 System.out.println("Operation String: " + ctrlOperationName);
                 System.out.println("Operation Method: " + ctrlOperationMethod);
-                System.out.println("Source Message seq No: " + seqNo);
+                System.out.println("Source Message ID: " + seqNo);
                 
                 byte [] args = new byte[4096];
                 dataIn.readFully(args);
@@ -90,7 +113,7 @@ public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlane
                     }
                 }
                      
-                /* Some Debug output 
+                /* Some Debug output
                 System.out.println(methodToInvoke.getName());
                 
                 for (Class c : methodToInvoke.getParameterTypes())
@@ -112,12 +135,13 @@ public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlane
                     System.out.println("ControPlaneConsumer error - failed to transmit control error message: " + ex1.getMessage());
                 }
                 
-                System.out.println("ControPlaneConsumer error - " + ex.getCause().getMessage());
+                System.out.println("ControPlaneConsumer error: " + ex.getCause().getMessage());
                 throw new IOException(ex.getCause().getMessage());
                 
             
         }
     }
+
     
     @Override
     public int transmitReply(ControlPlaneReplyMessage answer, MetaData metadata) throws Exception {
@@ -141,80 +165,5 @@ public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlane
         int sendReply = udpReceiver.sendMessage(byteStream);
         
         return sendReply;
-    }
-
-    @Override
-    public boolean announce() {
-        System.out.println("UDP Control Plane Consumer: announcing Data Consumer");
-        AbstractAnnounceMessage message = new AnnounceMessage(dataConsumer.getID(), AbstractAnnounceMessage.EntityType.DATACONSUMER);
-        
-        try {
-            announceSerializer(message);
-            return true;
-        } catch (IOException e) {
-            System.out.println("Error while announcing Data Consumer" + e.getMessage());
-            return false;
-        }
-    }
-
-    @Override
-    public boolean dennounce() {
-        System.out.println("UDP Control Plane Consumer: deannouncing Data Consumer");
-        AbstractAnnounceMessage message = new DeannounceMessage(dataConsumer.getID(), AbstractAnnounceMessage.EntityType.DATACONSUMER);
-        
-        try {
-            announceSerializer(message);
-            return true;
-        } catch (IOException e) {
-            System.out.println("Error while deannouncing Data Consumer" + e.getMessage());
-            return false;
-        }
-    }
-    
-    
-    @Override
-    public void error(Exception e) {
-        System.err.println("ControPlaneConsumer - invoked error method : failed to process control message: " + e.getMessage());
-    }
-    
-    
-    @Override
-    public boolean transmitted(int id) {
-        System.out.println("UDP Control Plane Consumer: Announced/Deannounce message sent");
-        return true;
-    }
-    
-    
-
-    @Override
-    public DataConsumer getDataConsumer() {
-        return this.dataConsumer;
-    }
-
-    @Override
-    public DataConsumer setDataConsumer(DataConsumer dc) {
-        this.dataConsumer = dc;
-        return this.dataConsumer;
-    }  
-    
-    @Override
-    public float getDCMeasurementsRate(ID dcID) {
-        System.out.println("******* UDPControlPlaneConsumer -> getDCMeasurementsRate");
-        return dataConsumer.getMeasurementsRate();
-    }
-
-    @Override
-    public ID loadReporter(ID dataConsumerID, String reporterClassName, Object... reporterArgs) throws Exception {
-        System.out.println("******* UDPControlPlaneConsumer -> loadReporter");
-        ReporterLoader r = new ReporterLoader(reporterClassName, reporterArgs);
-        dataConsumer.addReporter(r.getReporter());
-        return r.getReporter().getId();
-    }
-
-    @Override
-    public boolean unloadReporter(ID reporterID) throws Exception {
-        System.out.println("******* UDPControlPlaneConsumer -> loadReporter");
-        dataConsumer.removeReporter(dataConsumer.getReporterById(reporterID));
-        return true;
     }
 }

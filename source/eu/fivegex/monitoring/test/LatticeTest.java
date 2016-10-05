@@ -82,22 +82,12 @@ public class LatticeTest {
         dockerContainerName = (String)configuration.get("dockerContainerName");        
     }
 
-    /**
-     * Constructor for a VimClient
-     * to the ManagementConsole of a Lattice Controller.
-     * @param addr the name of the host
-     * @param port the port the server is listening on
-     */
+ 
     public LatticeTest(String addr, int port) throws UnknownHostException, IOException  {
         initialize(InetAddress.getByName(addr), port);
     }
 
-    /**
-     * Constructor for a VimClient
-     * to the ManagementConsole of a Lattice Controller.
-     * @param addr the InetAddress of the host
-     * @param port the port the server is listening on
-     */
+
     public LatticeTest(InetAddress addr, int port) throws UnknownHostException, IOException  {
         initialize(addr, port);
     }
@@ -449,7 +439,7 @@ public class LatticeTest {
             client.testMemoryInfoProbe(probeName, dsID, serviceID, sliceID);
             //client.testDockerProbe("testDockerProbe", dsID, serviceID, sliceID);
 
-            Document mongoDBEntry = m.getMongoDBEntry(serviceID);
+            Document mongoDBEntry = m.getMongoDBEntry(serviceID); // TODO: incorrect this should also check id the ProbeName element is not empty
             System.out.println("Reading data (1 measurement) from the DB related to the previous service " + serviceID);
             if (mongoDBEntry != null)
                 System.out.println(mongoDBEntry.toJson(new JsonWriterSettings(true)));

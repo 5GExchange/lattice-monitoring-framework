@@ -10,7 +10,7 @@ import eu.fivegex.monitoring.control.probescatalogue.CatalogueException;
 import eu.fivegex.monitoring.control.probescatalogue.JSONProbeCatalogue;
 import eu.fivegex.monitoring.control.deployment.SSHDataSourcesDeploymentManager;
 import eu.reservoir.monitoring.appl.datarate.EveryNSeconds;
-import eu.fivegex.monitoring.control.udp.UDPControlPlaneProducer;
+import eu.fivegex.monitoring.control.udp.UDPControlPlaneXDRProducer;
 import eu.reservoir.monitoring.core.AbstractPlaneInteracter;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.plane.ControllerControlPlane;
@@ -52,7 +52,7 @@ public class Controller extends AbstractPlaneInteracter {
         // we create a control plane producer 
         // announcePort to listen for announce Messages from DSs/DCs
         // maxPoolSize to instantiate a pool of UDP Transmitters (each tranmistter is not connected to any specific DS)
-        setControlPlane(new UDPControlPlaneProducer(informationManager, 8888, 8)); // TODO: Use parameters to specify both port and maxPoolSize 
+        setControlPlane(new UDPControlPlaneXDRProducer(informationManager, 8888, 8)); // TODO: Use parameters to specify both port and maxPoolSize 
         
         connect();
         

@@ -5,7 +5,7 @@
 
 package eu.fivegex.demo;
 
-import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneConsumer;
+import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneXDRConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
@@ -59,7 +59,7 @@ public class SimpleDataSource {
 	ds.setDataPlane(new UDPDataPlaneProducer(DataAddress));
         
         // set up control plane: a data source is a consumer of Control Messages
-        ControlPlane controlPlane = new UDPDataSourceControlPlaneConsumer(ctrlAddress, ctrlRemoteAddress);
+        ControlPlane controlPlane = new UDPDataSourceControlPlaneXDRConsumer(ctrlAddress, ctrlRemoteAddress);
         
         ds.setControlPlane(controlPlane);
         

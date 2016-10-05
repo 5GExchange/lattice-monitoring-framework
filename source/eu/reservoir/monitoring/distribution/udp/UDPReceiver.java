@@ -77,6 +77,8 @@ public class UDPReceiver implements Runnable {
      * The last exception received.
      */
     Exception lastException;
+    
+    private String threadName="UDPReceiver";
 
 
     /**
@@ -88,7 +90,7 @@ public class UDPReceiver implements Runnable {
 	this.receiver = receiver;
 	this.dstAddr = ipAddr.getAddress();
 	this.port = ipAddr.getPort();
-
+        
 	setUpSocket();
     }
     
@@ -100,8 +102,15 @@ public class UDPReceiver implements Runnable {
 
 	this.receiver = receiver;
 	this.port = port;
-
+     
+        
 	setUpSocket();
+    }
+    
+    
+    public UDPReceiver(Receiving receiver, int port, String name) throws IOException {
+	this(receiver, port);
+        this.threadName = name;
     }
     
 
@@ -125,7 +134,7 @@ public class UDPReceiver implements Runnable {
 	//socket.bind(address);
         
 	// start the thread
-	myThread = new Thread(this, "UDPReceiver-" + Integer.toString(port));
+	myThread = new Thread(this, this.threadName + "-" + Integer.toString(port));
 
 	myThread.start();
     }

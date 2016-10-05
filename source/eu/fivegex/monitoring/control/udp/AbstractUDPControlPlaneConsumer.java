@@ -7,17 +7,13 @@ package eu.fivegex.monitoring.control.udp;
 
 
 import eu.reservoir.monitoring.core.TypeException;
-import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
 import eu.reservoir.monitoring.distribution.MetaData;
 import eu.reservoir.monitoring.distribution.ReceivingAndReplying;
-import eu.reservoir.monitoring.distribution.XDRDataOutputStream;
 import eu.reservoir.monitoring.distribution.udp.UDPReceiver;
 import eu.reservoir.monitoring.distribution.udp.UDPTransmitter;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
@@ -37,10 +33,23 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, R
         this.localAddress = localAddress;
         this.controllerAddress = controllerAddress;
     }
-    
-    
+   
+    @Override
+    public abstract boolean announce();
     
 
+    @Override
+    public abstract boolean dennounce();
+
+    
+    @Override
+    public abstract void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException;
+
+    
+    @Override
+    public abstract int transmitReply(ControlPlaneReplyMessage answer, MetaData metadata) throws Exception;
+    
+    
     @Override
     public boolean connect() {
 	try {
@@ -77,50 +86,25 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, R
 	    return false;
 	}
     }
-
-    protected void announceSerializer(AbstractAnnounceMessage message) throws IOException {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        DataOutput dataOutput = new XDRDataOutputStream(byteStream);
-
-        // write type
-        dataOutput.writeInt(message.getMessageType().getValue());      
-
-        // write entity type value as int
-        dataOutput.writeInt(message.getEntity().getValue());
-
-        // write entity ID 
-        dataOutput.writeLong(message.getEntityID().getMostSignificantBits());
-        dataOutput.writeLong(message.getEntityID().getLeastSignificantBits());
-
-        udpAt.transmit(byteStream, 0);
-    }
-    
-    
-    @Override
-    public abstract boolean announce();
-    
-
-    @Override
-    public abstract boolean dennounce();
-
-    
-    @Override
-    public abstract void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException;
-
-    
-    @Override
-    public abstract int transmitReply(ControlPlaneReplyMessage answer, MetaData metadata) throws Exception;
-    
     
     @Override
     public void eof() {
         disconnect();
     }
+    
+    @Override
+    public void error(Exception e) {
+        System.err.println("UDP Control Plane Consumer error: " + e.getMessage());
+    }
 
+    @Override
+    public boolean transmitted(int id) {
+        System.out.println("UDP Control Plane Consumer: just sent Announce/Deannounce message");
+        return true;
+    }
+    
     @Override
     public InetSocketAddress getControlEndPoint() {
         return this.localAddress;
     }
-    
-    
 }

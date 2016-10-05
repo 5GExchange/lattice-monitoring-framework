@@ -13,6 +13,7 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 import eu.reservoir.monitoring.core.ID;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author uceeftu
  */
 public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
-    private final String entityFileName;
+    protected final EntityType entityType;
+    protected final String entityFileName;
     protected final String localJarFilePath;
     protected final String remoteJarFilePath;
     protected final String jarFileName;
@@ -36,7 +38,8 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
     protected final Map<String, Boolean> entityDeployedOnEndPoint;
     protected final Map<String, SSHDeploymentInfo> entityRunningOnEndPoint;
 
-    public SSHDeploymentManager(String localJarFilePath, String jarFileName, String remoteJarFilePath, String entityFileName) {
+    public SSHDeploymentManager(String localJarFilePath, String jarFileName, String remoteJarFilePath, String entityFileName, EntityType entityType) {
+        this.entityType = entityType;
         this.entityFileName = entityFileName;
         this.localJarFilePath = localJarFilePath;
         this.remoteJarFilePath = remoteJarFilePath;
@@ -81,7 +84,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
         }
         deploymentMonitor.putIfAbsent(endPointAddress, true);
         synchronized (deploymentMonitor.get(endPointAddress)) {
-            System.out.println(Thread.currentThread().getName() + ": Deploying DS");
+            System.out.println(Thread.currentThread().getName() + ": Deploying "+ entityType);
             if (this.isEntityDeployed(endPointAddress)) {
                 return false;
             }
@@ -102,7 +105,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
                 //adding info to the map
                 entityDeployedOnEndPoint.putIfAbsent(endPointAddress, true);
             } catch (JSchException | SftpException e) {
-                throw new DeploymentException("Error while deploying DS on " + endPointAddress + ", " + e.getMessage());
+                throw new DeploymentException("Error while deploying " + entityType + " on " + endPointAddress + ", " + e.getMessage());
             } finally {
                 if (c != null) {
                     c.disconnect();
@@ -135,7 +138,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
                 }
                 session = this.connectWithKey(endPointAddress, userName);
                 String jvm = "java"; //we assume the executable is in the PATH
-                //args is a String object containing the args to be passed to the main of the DS being deployed
+                //args is a String object containing the args to be passed to the main of the entity being deployed
                 //we could think of appending additional entries to the classpath to allow loading external probes
                 String command = jvm + " -cp " + this.remoteJarFilePath + "/" + this.jarFileName + " " + this.entityFileName + " " + args + "&";
                 channel = session.openChannel("exec");
@@ -212,7 +215,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
             }
             try {
                 session = this.connectWithKey(endPointAddress, userName);
-                System.out.println(Thread.currentThread().getName() + ": Stopping DS");
+                System.out.println(Thread.currentThread().getName() + ": Stopping " + entityType);
                 String command = "kill " + endPointInfo.getDsPid();
                 channel = session.openChannel("exec");
                 ((ChannelExec) channel).setCommand(command);
@@ -225,13 +228,13 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
                         } else {
                             // the process is likely to be already stopped removing from the map
                             this.entityRunningOnEndPoint.remove(endPointAddress);
-                            throw new DeploymentException("Something went wrong while stopping DS");
+                            throw new DeploymentException("Something went wrong while stopping " + entityType);
                         }
                     }
                     Thread.sleep(500);
                 }
             } catch (JSchException e) {
-                throw new DeploymentException("Error while stopping DS on " + endPointAddress + ", " + e.getMessage());
+                throw new DeploymentException("Error while stopping " + entityType + " on " + endPointAddress + ", " + e.getMessage());
             } catch (InterruptedException ie) {
                 /* we just swallow the exception as the thread shouldn't be interrupted*/
             }

@@ -1,6 +1,6 @@
 package eu.fivegex.demo;
 
-import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneConsumer;
+import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneXDRConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
@@ -93,7 +93,7 @@ public final class SimpleDataSourceDaemon extends Thread {
         // set up control plane: a data source is a consumer of Control Messages 
         // localCtrlAddress is the address:port where this DS will listen for ctrl messages
         // remoteCtrlAddress is the port where the controller is listening for announce messages
-        ControlPlane controlPlane = new UDPDataSourceControlPlaneConsumer(localCtrlAddress, remoteCtrlAddress);
+        ControlPlane controlPlane = new UDPDataSourceControlPlaneXDRConsumer(localCtrlAddress, remoteCtrlAddress);
         
         ds.setControlPlane(controlPlane);
         

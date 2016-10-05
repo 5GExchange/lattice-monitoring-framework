@@ -14,6 +14,7 @@ import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
 import eu.reservoir.monitoring.core.plane.ControlPlaneMessage;
 import eu.reservoir.monitoring.core.plane.ControlOperation;
+import eu.reservoir.monitoring.core.plane.ControllerControlPlane;
 import eu.reservoir.monitoring.core.plane.MessageType;
 import eu.reservoir.monitoring.distribution.MetaData;
 import eu.reservoir.monitoring.distribution.XDRDataInputStream;
@@ -29,9 +30,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
+public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer implements ControllerControlPlane {
     
-    public UDPControlPlaneProducer(InformationManager resolver, int port, int maxPoolSize) {
+    public UDPControlPlaneXDRProducer(InformationManager resolver, int port, int maxPoolSize) {
         super(resolver, port, maxPoolSize);
     }
     
@@ -154,46 +155,25 @@ public class UDPControlPlaneProducer extends AbstractUDPControlPlaneProducer {
 
     @Override
     public void eof() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        disconnect();
     }
     
     @Override
     public void error(Exception e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        System.err.println("UDP Control Plane Producer error: " + e.getMessage());
     }
     
     @Override
     public boolean transmitted(int id) {
-        System.out.println("Transmitted Control Message with seqNo: " + id);
+        System.out.println("UDP Control Plane Producer: just transmitted Control Message with seqNo: " + id);
         return true;
     }
     
-    @Override
-    public void addNewAnnouncedEntity(ID entityID, EntityType type) {
-        System.out.println("New " + type + " with ID " + entityID);
-        try {
-            Thread.sleep(1000); //needed to wait for the DHT to be updated
-        } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-        }
-        resolver.addNewAnnouncedEntity(entityID, type);
-    }
-
-    @Override
-    public void removeNewDeannouncedEntity(ID entityID, EntityType type) {
-        System.out.println(type + " with ID " + entityID + " is being shutdown");
-        try {
-            Thread.sleep(1000); //needed to wait for the DHT to be updated
-        } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-        }
-        resolver.removeNewDeannouncedEntity(entityID, type);
-    }
     
     
-    
-    
-    /* DS Control Service methods */
+   /* The methods below may be moved to the abstract super class as they are not XDR related
+    * DS Control Service methods 
+    */
 
     @Override
     public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception { //we also need the DS id on which the probe will be loaded

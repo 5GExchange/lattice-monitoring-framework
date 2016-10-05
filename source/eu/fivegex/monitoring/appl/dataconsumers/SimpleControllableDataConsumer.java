@@ -10,7 +10,7 @@ package eu.fivegex.monitoring.appl.dataconsumers;
  * @author uceeftu
  */
 
-import eu.fivegex.monitoring.control.udp.UDPDataConsumerControlPlaneConsumer;
+import eu.fivegex.monitoring.control.udp.UDPDataConsumerControlPlaneXDRConsumer;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
@@ -55,7 +55,7 @@ public final class SimpleControllableDataConsumer extends Thread {
 	// set up data plane
 	consumer.setDataPlane(new UDPDataPlaneConsumer(address));
         
-        ControlPlane controlPlane = new UDPDataConsumerControlPlaneConsumer(ctrlAddress, ctrlRemoteAddress);
+        ControlPlane controlPlane = new UDPDataConsumerControlPlaneXDRConsumer(ctrlAddress, ctrlRemoteAddress);
         ((DataConsumerInteracter)controlPlane).setDataConsumer(consumer);
         consumer.setControlPlane(controlPlane);
         

@@ -9,7 +9,7 @@ import eu.fivegex.demo.probes.MemoryInfoProbe;
 import eu.fivegex.demo.probes.RandomProbe;
 import eu.fivegex.demo.probes.docker.DockerProbe;
 import eu.fivegex.demo.probes.openstack.OpenstackProbe;
-import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneConsumer;
+import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneXDRConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
@@ -67,7 +67,7 @@ public final class SimpleDataSourceTest extends Thread {
         // set up control plane: a data source is a consumer of Control Messages 
         // ctrlAddress is the address:port where this DS will listen for ctrl messages
         // ctrlRemoteAddress is the port where the controller is listening for announce messages
-        ControlPlane controlPlane = new UDPDataSourceControlPlaneConsumer(ctrlAddress, ctrlRemoteAddress);
+        ControlPlane controlPlane = new UDPDataSourceControlPlaneXDRConsumer(ctrlAddress, ctrlRemoteAddress);
         
         ds.setControlPlane(controlPlane);
         

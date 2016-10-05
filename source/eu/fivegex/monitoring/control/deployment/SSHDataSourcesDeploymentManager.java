@@ -6,6 +6,7 @@
 package eu.fivegex.monitoring.control.deployment;
 
 import eu.reservoir.monitoring.core.ID;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
 
 /**
  *
@@ -15,7 +16,7 @@ public class SSHDataSourcesDeploymentManager extends SSHDeploymentManager {
     
     
     public SSHDataSourcesDeploymentManager (String localJarFilePath, String jarFileName, String remoteJarFilePath, String dsFileName) {
-        super(localJarFilePath, jarFileName, remoteJarFilePath, dsFileName);
+        super(localJarFilePath, jarFileName, remoteJarFilePath, dsFileName, EntityType.DATASOURCE);
     }
     
     

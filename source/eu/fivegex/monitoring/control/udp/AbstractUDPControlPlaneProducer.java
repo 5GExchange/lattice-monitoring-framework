@@ -6,7 +6,9 @@
 package eu.fivegex.monitoring.control.udp;
 
 import eu.fivegex.monitoring.control.controller.InformationManager;
+import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.TypeException;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.ControllerControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneMessage;
 import eu.reservoir.monitoring.distribution.MetaData;
@@ -39,7 +41,7 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
 	try {
 	    // Creating listener for Announce Messages - only connect if we're not already connected
 	    if (AnnounceListener == null) {
-                AnnounceListener = new UDPReceiver(this, announceListenerPort);
+                AnnounceListener = new UDPReceiver(this, announceListenerPort, "AnnounceListener");
                 AnnounceListener.listen();
             }
             
@@ -70,6 +72,32 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
 	}
     }
 
+    
+    @Override
+    public void addNewAnnouncedEntity(ID entityID, AbstractAnnounceMessage.EntityType type) {
+        System.out.println("New " + type + " with ID " + entityID);
+        try {
+            Thread.sleep(1000); //needed to wait for the DHT to be updated
+        } catch (InterruptedException ex) {
+                System.out.println("Thread interrupted: " + ex.getMessage());
+                Thread.currentThread().interrupt();
+        }
+        resolver.addNewAnnouncedEntity(entityID, type);
+    }
+
+    @Override
+    public void removeNewDeannouncedEntity(ID entityID, AbstractAnnounceMessage.EntityType type) {
+        System.out.println(type + " with ID " + entityID + " is being shutdown");
+        try {
+            Thread.sleep(1000); //needed to wait for the DHT to be updated
+        } catch (InterruptedException ex) {
+                System.out.println("Thread interrupted: " + ex.getMessage());
+                Thread.currentThread().interrupt();
+        }
+        resolver.removeNewDeannouncedEntity(entityID, type);
+    }
+    
+    
     @Override
     public boolean announce() {
         // sending announce messages is not expected for a Control Plane Producer
@@ -86,13 +114,12 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
     public abstract Object transmit(ControlPlaneMessage dpm, MetaData metaData) throws Exception;
 
     
-    // this overrides both receivedReply from TransmittingAndReceiving and ReceivingAnnounce
     @Override
     public abstract Object receivedReply(ByteArrayInputStream bis, MetaData metaData, int seqNo) throws IOException, TypeException, ClassNotFoundException;
     
     
     @Override
     public InetSocketAddress getControlEndPoint() {
-        return null;
+        throw new UnsupportedOperationException("Abstract UDP Control Plane Producer: getting control endpoint is not supported");
     }  
 }
