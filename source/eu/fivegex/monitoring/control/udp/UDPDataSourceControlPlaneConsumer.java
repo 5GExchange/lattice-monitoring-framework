@@ -7,8 +7,8 @@ package eu.fivegex.monitoring.control.udp;
 
 import eu.reservoir.monitoring.core.*;
 import eu.fivegex.monitoring.control.ProbeLoader;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.AnnounceMessage;
-import eu.reservoir.monitoring.core.plane.AnnounceMessage.EntityType;
 import eu.reservoir.monitoring.core.plane.ControlOperation;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
 import eu.reservoir.monitoring.core.plane.MessageType;
@@ -147,9 +147,9 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
     @Override
     public boolean announce() {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        System.out.println("UDP Control Plane Consumer - Announcing Data Source");
+        System.out.println("UDP Control Plane Consumer: announcing Data Source " + dataSource.getID());
         
-        AnnounceMessage message = new AnnounceMessage(dataSource.getID(), EntityType.DATASOURCE);
+        AbstractAnnounceMessage message = new AnnounceMessage(dataSource.getID(), AbstractAnnounceMessage.EntityType.DATASOURCE);
         
         try {
             announceSerializer(message);
@@ -163,9 +163,9 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
     @Override
     public boolean dennounce() {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        System.out.println("UDP Control Plane Consumer - Deannouncing Data Source");
+        System.out.println("UDP Control Plane Consumer: deannouncing Data Source " + dataSource.getID());
         
-        DeannounceMessage message = new DeannounceMessage(dataSource.getID(), EntityType.DATASOURCE);
+        AbstractAnnounceMessage message = new DeannounceMessage(dataSource.getID(), AbstractAnnounceMessage.EntityType.DATASOURCE);
         
         try {
             announceSerializer(message);
@@ -184,7 +184,7 @@ public class UDPDataSourceControlPlaneConsumer extends AbstractUDPControlPlaneCo
 
     @Override
     public boolean transmitted(int id) {
-        System.out.println("Just announced DS");
+        System.out.println("UDP Control Plane Consumer: Announced/Deannounce message sent");
         return true;
     }
     

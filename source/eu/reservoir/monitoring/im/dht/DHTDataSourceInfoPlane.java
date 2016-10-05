@@ -11,6 +11,7 @@ import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
 import eu.reservoir.monitoring.core.DataSourceDelegate;
 import eu.reservoir.monitoring.core.DataSourceDelegateInteracter;
+import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Reporter;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 
@@ -274,6 +275,18 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
     public boolean removeReporterInfo(Reporter r) {
         return false;
     }
+
+    @Override
+    public boolean containsDataSource(ID dataSourceID) {
+        throw new UnsupportedOperationException("Not supported on a Data Source");
+    }
+
+    @Override
+    public boolean containsDataConsumer(ID dataConsumerID) {
+        throw new UnsupportedOperationException("Not supported on a Data Source");
+    }
+    
+    
     
     
 }

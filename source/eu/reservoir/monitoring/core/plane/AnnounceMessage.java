@@ -5,61 +5,12 @@
  */
 package eu.reservoir.monitoring.core.plane;
 
-//import java.util.ArrayList;
 import eu.reservoir.monitoring.core.ID;
-import java.util.EnumSet;
-import java.util.HashMap;
 
 
 
-public class AnnounceMessage {
-    private final ID entityID;
-    protected MessageType messageType; // subclass Deannounce will set this to Deannounce
-    private final EntityType entity;
-    //time?
-    
+public class AnnounceMessage extends AbstractAnnounceMessage {
     public AnnounceMessage(ID id, EntityType e) {
-        this.messageType=MessageType.ANNOUNCE;
-        this.entity=e;
-        this.entityID = id;
-    } 
-
-    public ID getEntityID() {
-        return entityID;
+        super(id, e, MessageType.ANNOUNCE);
     }
-
-    public MessageType getMessageType() {
-        return messageType;
-    }
-
-    public EntityType getEntity() {
-        return entity;
-    }
-    
-    public enum EntityType {
-        DATASOURCE(1),
-        DATACONSUMER(2);
-        
-        private static final HashMap<Integer, EntityType> lookup = new HashMap<>();
-        private Integer entityValue;
-        
-        public static final EntityType lookup(Integer mt) {
-            return lookup.get(mt);
-        }
-        
-        static {
-	for(EntityType t : EnumSet.allOf(EntityType.class)) { 
-            lookup.put(t.getValue(), t);
-            }
-        }
-        
-        private EntityType(Integer value) {
-            entityValue = value;
-        }
-        public Integer getValue() {
-            return entityValue;   
-        }
-        
-    }
-    
-    }
+}

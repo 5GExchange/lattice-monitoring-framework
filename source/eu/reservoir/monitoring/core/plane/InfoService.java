@@ -144,6 +144,14 @@ public interface InfoService {
     
 
     /*
+     * Check if entities are in the Info Plane
+     */
+    public boolean containsDataSource(ID dataSourceID);
+    
+    public boolean containsDataConsumer(ID dataConsumerID);
+    
+    
+    /*
      * General .
      */
 

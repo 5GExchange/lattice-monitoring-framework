@@ -10,6 +10,7 @@ import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.TypeException;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.AnnounceMessage;
 import eu.reservoir.monitoring.core.plane.ControlOperation;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
@@ -144,8 +145,8 @@ public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlane
 
     @Override
     public boolean announce() {
-        System.out.println("UDP Control Plane Consumer - Announcing Data Consumer");
-        AnnounceMessage message = new AnnounceMessage(dataConsumer.getID(), AnnounceMessage.EntityType.DATACONSUMER);
+        System.out.println("UDP Control Plane Consumer: announcing Data Consumer");
+        AbstractAnnounceMessage message = new AnnounceMessage(dataConsumer.getID(), AbstractAnnounceMessage.EntityType.DATACONSUMER);
         
         try {
             announceSerializer(message);
@@ -154,38 +155,12 @@ public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlane
             System.out.println("Error while announcing Data Consumer" + e.getMessage());
             return false;
         }
-        /*
-        try {
-            // convert the object to a byte []
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            DataOutput dataOutput = new XDRDataOutputStream(byteStream);
-
-            // write type
-            dataOutput.writeInt(message.getMessageType().getValue());      
-
-            
-            System.out.println("Entity " + message.getEntity());
-            // write entity type value as int
-            dataOutput.writeInt(message.getEntity().getValue());
-            
-            // write entity ID 
-            dataOutput.writeLong(dataConsumer.getID().getMostSignificantBits());
-            dataOutput.writeLong(dataConsumer.getID().getLeastSignificantBits());
-            
-            udpAt.transmit(byteStream, 0); // not waiting for a reply
-            return true;
-        
-        } catch (IOException e) {
-            System.out.println("Error while announcing " + e.getMessage());
-            return false;
-        }
-        */
-        }
+    }
 
     @Override
     public boolean dennounce() {
-        System.out.println("UDP Control Plane Consumer - Deannouncing Data Consumer");
-        DeannounceMessage message = new DeannounceMessage(dataConsumer.getID(), AnnounceMessage.EntityType.DATACONSUMER);
+        System.out.println("UDP Control Plane Consumer: deannouncing Data Consumer");
+        AbstractAnnounceMessage message = new DeannounceMessage(dataConsumer.getID(), AbstractAnnounceMessage.EntityType.DATACONSUMER);
         
         try {
             announceSerializer(message);
@@ -205,7 +180,7 @@ public class UDPDataConsumerControlPlaneConsumer extends AbstractUDPControlPlane
     
     @Override
     public boolean transmitted(int id) {
-        System.out.println("Just announced DC");
+        System.out.println("UDP Control Plane Consumer: Announced/Deannounce message sent");
         return true;
     }
     

@@ -113,8 +113,8 @@ public class DistributedHashTable {
      * Does the DHT contain a particular Identifier.
      * Returns true if the map contains the specified key and false otherwise.
      */
-    public boolean contains(String aKey) throws IOException {
-	Identifier key = new Identifier(new String(aKey).getBytes());
+    public boolean contains(BigInteger aKey) throws IOException {
+	Identifier key = new Identifier(aKey);
 
 	return kademlia.contains(key);
     }

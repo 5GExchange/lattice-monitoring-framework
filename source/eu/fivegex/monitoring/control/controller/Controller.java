@@ -6,10 +6,9 @@
 package eu.fivegex.monitoring.control.controller;
 
 import eu.fivegex.monitoring.control.deployment.DeploymentException;
-import eu.fivegex.monitoring.control.deployment.DeploymentDelegate;
 import eu.fivegex.monitoring.control.probescatalogue.CatalogueException;
 import eu.fivegex.monitoring.control.probescatalogue.JSONProbeCatalogue;
-import eu.fivegex.monitoring.control.deployment.SSHDeploymentManager;
+import eu.fivegex.monitoring.control.deployment.SSHDataSourcesDeploymentManager;
 import eu.reservoir.monitoring.appl.datarate.EveryNSeconds;
 import eu.fivegex.monitoring.control.udp.UDPControlPlaneProducer;
 import eu.reservoir.monitoring.core.AbstractPlaneInteracter;
@@ -24,6 +23,7 @@ import java.net.InetAddress;
 import java.util.Properties;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
+import eu.fivegex.monitoring.control.deployment.EntityDeploymentDelegate;
 
 /**
  *
@@ -35,9 +35,9 @@ public class Controller extends AbstractPlaneInteracter {
     private InformationManager informationManager;
     
     private ControllerManagementConsole console = null;
-    private DeploymentDelegate deploymentManager; 
+    private EntityDeploymentDelegate DSDeploymentManager; 
+    private Boolean usingDSDeploymentManager;
     private JSONProbeCatalogue probeCatalogue;
-    private Boolean usingDeploymentManager;
     
     private Controller() {}
      
@@ -56,20 +56,20 @@ public class Controller extends AbstractPlaneInteracter {
         
         connect();
         
-        this.usingDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.enabled", "false"));
+        this.usingDSDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.enabled", "false"));
         
         String localJarPath = pr.getProperty("deployment.localJarPath");
         String jarFileName = pr.getProperty("deployment.jarFileName");
         String remoteJarPath = pr.getProperty("deployment.remoteJarPath");
         String dsClassName = pr.getProperty("deployment.dsClassName");
         
-        if (this.usingDeploymentManager && localJarPath != null && jarFileName != null && remoteJarPath != null && dsClassName != null) {
-            deploymentManager = new SSHDeploymentManager(localJarPath, jarFileName, remoteJarPath, dsClassName);
+        if (this.usingDSDeploymentManager && localJarPath != null && jarFileName != null && remoteJarPath != null && dsClassName != null) {
+            DSDeploymentManager = new SSHDataSourcesDeploymentManager(localJarPath, jarFileName, remoteJarPath, dsClassName);
             System.out.println("Deployment Manager was started");
         }
         else {
             System.out.println("Deployment Manager was not started");
-            this.usingDeploymentManager = false;
+            this.usingDSDeploymentManager = false;
         }
         
         probeCatalogue = new JSONProbeCatalogue(probesPackage, probesSuffix);
@@ -233,10 +233,10 @@ public class Controller extends AbstractPlaneInteracter {
         result.put("operation", "startDS");
         result.put("endpoint",endPoint);
 
-        if (this.usingDeploymentManager) {
+        if (this.usingDSDeploymentManager) {
             try {
-                this.deploymentManager.deployDS(endPoint, userName);
-                startedDsID = this.deploymentManager.startDS(endPoint, userName, args);
+                this.DSDeploymentManager.deployEntity(endPoint, userName);
+                startedDsID = this.DSDeploymentManager.startEntity(endPoint, userName, args);
 
                 if (startedDsID == null) {
                     result.put("msg", "en error occured while starting the DS on the specified endpoint");
@@ -267,9 +267,9 @@ public class Controller extends AbstractPlaneInteracter {
         result.put("operation", "stopDS");
         result.put("endpoint",endPoint);
         
-        if (this.usingDeploymentManager) {
+        if (this.usingDSDeploymentManager) {
             try {
-                Boolean returnValue = this.deploymentManager.stopDS(endPoint, userName);
+                Boolean returnValue = this.DSDeploymentManager.stopEntity(endPoint, userName);
                 result.put("success", returnValue);
             } catch (DeploymentException ex) {
                 result.put("success", false);

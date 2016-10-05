@@ -11,7 +11,7 @@ import eu.reservoir.monitoring.core.Measurement;
 import eu.reservoir.monitoring.core.Rational;
 import eu.reservoir.monitoring.core.Timestamp;
 import eu.reservoir.monitoring.core.TypeException;
-import eu.reservoir.monitoring.core.plane.AnnounceMessage.EntityType;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
 import eu.reservoir.monitoring.core.plane.ControlPlaneMessage;
 import eu.reservoir.monitoring.core.plane.ControlOperation;
 import eu.reservoir.monitoring.core.plane.MessageType;

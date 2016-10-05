@@ -9,6 +9,7 @@ import eu.reservoir.monitoring.core.ControllableReporter;
 import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.DataSource;
+import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
 import eu.reservoir.monitoring.core.Reporter;
@@ -185,6 +186,16 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     public boolean removeProbeAttributeInfo(Probe p, ProbeAttribute pa) {
         return false;
     }
+
+    @Override
+    public boolean containsDataSource(ID dataSourceID) {
+        throw new UnsupportedOperationException("Not supported on a Data Consumer"); 
+    }
+
+    @Override
+    public boolean containsDataConsumer(ID dataConsumerID) {
+        throw new UnsupportedOperationException("Not supported on a Data Consumer");
+    } 
 
     @Override
     public DataConsumer getDataConsumer() {

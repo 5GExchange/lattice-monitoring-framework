@@ -7,7 +7,7 @@ package eu.fivegex.monitoring.control.udp;
 
 
 import eu.reservoir.monitoring.core.TypeException;
-import eu.reservoir.monitoring.core.plane.AnnounceMessage;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
 import eu.reservoir.monitoring.distribution.MetaData;
@@ -46,13 +46,8 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, R
 	try {
 	    // only connect if we're not already connected
 	    if (udpReceiver == null) {
-                
-                //System.out.println("FT: -------- AbstractUDPControPlaneConsumer.connect - Connecting to the Control Plane ----------");
-                
 		UDPReceiver rr = new UDPReceiver(this, localAddress);
-
 		rr.listen();
-		
 		udpReceiver = rr;
 
                 udpAt = new UDPTransmitter(this, controllerAddress);
@@ -83,14 +78,13 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, R
 	}
     }
 
-    protected void announceSerializer(AnnounceMessage message) throws IOException {
+    protected void announceSerializer(AbstractAnnounceMessage message) throws IOException {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         DataOutput dataOutput = new XDRDataOutputStream(byteStream);
 
         // write type
         dataOutput.writeInt(message.getMessageType().getValue());      
 
-        System.out.println("Entity " + message.getEntity());
         // write entity type value as int
         dataOutput.writeInt(message.getEntity().getValue());
 

@@ -10,7 +10,7 @@ import eu.fivegex.monitoring.control.ReporterNotFoundException;
 import eu.fivegex.monitoring.control.DSNotFoundException;
 import eu.fivegex.monitoring.control.DCNotFoundException;
 import eu.reservoir.monitoring.core.ID;
-import eu.reservoir.monitoring.core.plane.AnnounceMessage.EntityType;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -37,12 +37,12 @@ public class InformationManager {
     
     public void addNewAnnouncedEntity(ID id, EntityType type) {
         // we add the entity to the list only if that entity information is also in the info Plane
-        if (type == EntityType.DATASOURCE && info.lookupDataSourceInfo(id, "inetSocketAddress") != null) { 
-            System.out.println("InfoResolver: adding Data Source " + id.toString());
+        if (type == EntityType.DATASOURCE && info.containsDataSource(id)) { 
+            System.out.println("InformationManager: adding Data Source " + id.toString());
             addDataSource(id);
         }
-        else if (type == EntityType.DATACONSUMER && info.lookupDataConsumerInfo(id, "inetSocketAddress") != null) {
-            System.out.println("InfoResolver: adding Data Consumer " + id.toString());
+        else if (type == EntityType.DATACONSUMER && info.containsDataConsumer(id)) {
+            System.out.println("InformationManager: adding Data Consumer " + id.toString());
             addDataConsumer(id);
         }
     }
@@ -50,12 +50,12 @@ public class InformationManager {
     public void removeNewDeannouncedEntity(ID id, EntityType type) {
         // we remove the entity to the list if we do not have related information in the infoPlane 
         // this may not work if information is not removed immediately (TODO: find a better way)
-        if (type == EntityType.DATASOURCE && info.lookupDataSourceInfo(id, "inetSocketAddress") == null) {
-            System.out.println("InfoResolver: removing Data Source " + id.toString());
+        if (type == EntityType.DATASOURCE && !info.containsDataSource(id)) {
+            System.out.println("InformationManager: removing Data Source " + id.toString());
             deleteDataSource(id);
         }
-        else if (type == EntityType.DATACONSUMER && info.lookupDataConsumerInfo(id, "inetSocketAddress") == null) {
-            System.out.println("InfoResolver: removing Data Consumer " + id.toString());
+        else if (type == EntityType.DATACONSUMER && !info.containsDataConsumer(id)) {
+            System.out.println("InformationManager: removing Data Consumer " + id.toString());
             deleteDataConsumer(id);
         }
     }
@@ -169,7 +169,4 @@ public class InformationManager {
         else
             throw new ReporterNotFoundException("probe with ID " + reporter.toString() + " not found in the infoplane");
     }
-    
-    
-    
 }

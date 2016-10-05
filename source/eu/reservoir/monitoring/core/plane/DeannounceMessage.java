@@ -9,9 +9,8 @@ import eu.reservoir.monitoring.core.ID;
 
 
 
-public class DeannounceMessage extends AnnounceMessage {
+public class DeannounceMessage extends AbstractAnnounceMessage {
     public DeannounceMessage(ID id, EntityType e) {
-        super(id, e);
-        this.messageType = MessageType.DEANNOUNCE;
+        super(id, e, MessageType.DEANNOUNCE);
     }
 }

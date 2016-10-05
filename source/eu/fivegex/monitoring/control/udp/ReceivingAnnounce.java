@@ -6,7 +6,7 @@
 package eu.fivegex.monitoring.control.udp;
 
 import eu.reservoir.monitoring.core.ID;
-import eu.reservoir.monitoring.core.plane.AnnounceMessage.EntityType;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
 import eu.reservoir.monitoring.distribution.Receiving;
 
 /**

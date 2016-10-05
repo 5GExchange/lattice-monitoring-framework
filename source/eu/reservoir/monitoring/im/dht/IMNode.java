@@ -320,6 +320,28 @@ public class IMNode {
     }
     
     
+    public boolean containsDataSource(ID dataSourceID) {
+        try {
+            BigInteger newKey = keyToBigInteger("/datasource/" + dataSourceID + "/name");
+            return dht.contains(newKey);
+        } 
+        catch (IOException ioe) {
+            System.err.println("IMNode: containsDataSource failed for DS " + dataSourceID);
+            return false;
+        }
+    }
+    
+    public boolean containsDataConsumer(ID dataConsumerID) {
+        try {
+            BigInteger newKey = keyToBigInteger("/dataconsumer/" + dataConsumerID + "/name");
+            return dht.contains(newKey);
+        } 
+        catch (IOException ioe) {
+            System.err.println("IMNode: containsDataConsumer failed for DS " + dataConsumerID);
+            return false;
+        }
+    }
+    
 
 
     /**
