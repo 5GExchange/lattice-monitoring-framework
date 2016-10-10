@@ -233,8 +233,7 @@ public class UDPReceiver implements Runnable {
 		    receiver.error(ioe);
 		} catch (TypeException te) {
 		    receiver.error(te);
-		}
-                  catch (Exception e) {
+		} catch (Exception e) {
                       receiver.error(e);
                 }
                   

@@ -33,7 +33,7 @@ class ProbeRestHandler extends BasicRequestHandler {
         // get Controller
         controller_ = (Controller) getManagementConsole().getAssociated();
         
-        System.out.println("REQUEST: " + request.getMethod() + " " +  request.getTarget());
+        System.out.println("\n-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
         
         long time = System.currentTimeMillis();
@@ -124,11 +124,10 @@ class ProbeRestHandler extends BasicRequestHandler {
         scanner = new Scanner (segments[1]);
         if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
             probeID = scanner.next();
-            System.out.println("probeID " + probeID);
             scanner.close();
         }
         else {
-            System.out.println("probeID is not valid");
+            System.err.println("probeID is not valid");
             scanner.close();
             complain(response, "probe ID is not a valid UUID: " + segments[1]);
             return;
@@ -218,7 +217,7 @@ class ProbeRestHandler extends BasicRequestHandler {
             complain(response, "no args have been specified");
         }
 
-        if (jsobj.get("success").equals("false")) {
+        if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("ProbeRestHandler: failure detected: " + failMessage);
             success = false;
@@ -253,7 +252,7 @@ class ProbeRestHandler extends BasicRequestHandler {
 
             jsobj = controller_.unloadProbe(probeID);
 
-            if (jsobj.get("success").equals("false")) {
+            if (!jsobj.getBoolean("success")) {
                 failMessage = (String)jsobj.get("msg");
                 System.out.println("ProbeRestHandler: failure detected: " + failMessage);
                 success = false;   
@@ -294,7 +293,7 @@ class ProbeRestHandler extends BasicRequestHandler {
         
         jsobj = controller_.getProbesCatalogue();
 
-        if (jsobj.get("success").equals("false")) {
+        if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("getProbesCatalogue: failure detected: " + failMessage);
             success = false;   

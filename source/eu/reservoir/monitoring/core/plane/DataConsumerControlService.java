@@ -5,6 +5,7 @@
  */
 package eu.reservoir.monitoring.core.plane;
 
+import eu.fivegex.monitoring.control.ControlServiceException;
 import eu.reservoir.monitoring.core.ID;
 
 /**
@@ -12,9 +13,9 @@ import eu.reservoir.monitoring.core.ID;
  * @author uceeftu
  */
 public interface DataConsumerControlService {
-    public float getDCMeasurementsRate(ID dcID) throws Exception; 
+    public float getDCMeasurementsRate(ID dcID) throws ControlServiceException; 
     
-    public ID loadReporter(ID dataConsumerID, String reporterClassName, Object ... reporterArgs) throws Exception;
+    public ID loadReporter(ID dataConsumerID, String reporterClassName, Object ... reporterArgs) throws ControlServiceException;
     
-    public boolean unloadReporter(ID reporterID) throws Exception;
+    public boolean unloadReporter(ID reporterID) throws ControlServiceException;
 }

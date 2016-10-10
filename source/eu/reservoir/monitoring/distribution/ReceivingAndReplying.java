@@ -6,11 +6,12 @@
 package eu.reservoir.monitoring.distribution;
 
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
+import java.io.IOException;
 
 /**
  *
  * @author uceeftu
  */
 public interface ReceivingAndReplying extends Receiving {
-    public int transmitReply(ControlPlaneReplyMessage answer, MetaData metadata) throws Exception;
+    public int transmitReply(ControlPlaneReplyMessage answer, MetaData metadata) throws IOException;
 }

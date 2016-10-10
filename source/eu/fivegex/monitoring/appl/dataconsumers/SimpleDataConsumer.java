@@ -3,7 +3,7 @@
 // Email: sclayman@ee.ucl.ac.uk
 // Date: Oct 2009
 
-package eu.fivegex.demo;
+package eu.fivegex.monitoring.appl.dataconsumers;
 
 import eu.reservoir.monitoring.appl.BasicConsumer;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneConsumer;

@@ -1,9 +1,14 @@
-package eu.fivegex.demo.mongodb;
+package eu.fivegex.monitoring.appl.reporters;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.MongoException;
+import com.mongodb.ReadConcern;
+import com.mongodb.ServerAddress;
+import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import eu.reservoir.monitoring.core.AbstractReporter;
@@ -14,24 +19,48 @@ import eu.reservoir.monitoring.core.ProbeValueWithName;
 import eu.reservoir.monitoring.core.Reporter;
 import eu.reservoir.monitoring.core.Timestamp;
 import eu.reservoir.monitoring.distribution.ConsumerMeasurementWithMetadataAndProbeName;
+import java.util.concurrent.TimeUnit;
 
-public class MongodbReporter extends AbstractReporter implements Reporter {
-    private final MongoDatabase db;
-    private final MongoClient mongoClient;
+public class MongoDBReporter extends AbstractReporter implements Reporter {
     private final String mongoDBAddress;
     private final int mongoDBPort;
-    private final MongoCollection<Document> collection;
+    private final String mongoDBName;
+    private final String mongoDBCollectionName;
+    
+    private MongoDatabase db;
+    private MongoClient mongoClient;
+    private MongoCollection<Document> collection;
 
     
-    public MongodbReporter(String address, int port, String dbName, String collectionName) {
+    
+    public MongoDBReporter(String address, String port, String dbName, String collectionName) throws ReporterException {
+        this(address, Integer.valueOf(port), dbName, collectionName);
+    }
+    
+    public MongoDBReporter(String address, int port, String dbName, String collectionName) throws ReporterException {
         super("mongoDB-reporter");
         this.mongoDBAddress = address;
         this.mongoDBPort = port;
-        System.out.println("connecting to MongoDB Server...");
-        this.mongoClient = new MongoClient(mongoDBAddress, mongoDBPort);
-        System.out.println("connected!");
-        this.db=mongoClient.getDatabase(dbName);
-        this.collection = db.getCollection(collectionName);
+        this.mongoDBName = dbName;
+        this.mongoDBCollectionName = collectionName;
+        
+        this.MongoDBConnect();
+    }
+    
+    private void MongoDBConnect() throws ReporterException { 
+        System.out.println("Connecting to MongoDB Server...");
+
+        this.mongoClient = new MongoClient(new ServerAddress(mongoDBAddress, mongoDBPort), MongoClientOptions.builder().serverSelectionTimeout(4000).build());
+        try {
+            this.db=mongoClient.getDatabase(mongoDBName);
+            this.collection = db.getCollection(mongoDBCollectionName);
+            // this should raise an exception if the above connection failed
+            collection.count();
+        } catch (Exception e) {
+            throw new ReporterException(e);
+        }
+            
+        System.out.println("Connected!");
     }
     
     @Override

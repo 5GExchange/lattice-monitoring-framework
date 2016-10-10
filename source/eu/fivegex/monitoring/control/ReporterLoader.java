@@ -8,6 +8,7 @@ package eu.fivegex.monitoring.control;
 import eu.reservoir.monitoring.core.ControllableReporter;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  *
@@ -26,7 +27,7 @@ public final class ReporterLoader implements Serializable { // to be refactored 
     
     
     
-    public ReporterLoader(String reporterClassName, Object ... params) throws Exception {
+    public ReporterLoader(String reporterClassName, Object ... params) throws ReporterLoaderException {
         this.reporterClassName = reporterClassName;
         constructorParameters = params;
         
@@ -34,7 +35,7 @@ public final class ReporterLoader implements Serializable { // to be refactored 
     }
     
     
-    public void initReporter() throws Exception {
+    public void initReporter() throws ReporterLoaderException {
         try {
             System.out.println("Loading Class: " + reporterClassName);
             clazz = Class.forName(reporterClassName);
@@ -49,13 +50,14 @@ public final class ReporterLoader implements Serializable { // to be refactored 
             
             cons0 = reporterClazz.getConstructor(paramsTypes);
             
-            // create an instance of the Probe
+            // create an instance of the Reporter
             reporter = cons0.newInstance(constructorParameters);
             
-            }  catch (Exception ex) {
-                System.out.println("Exception in ReporterLoader " + ex.getCause().getMessage());
-                throw new Exception(ex);
-            }   
+            }  catch (ClassNotFoundException | InstantiationException | NoSuchMethodException | IllegalAccessException ex) {
+                    throw new ReporterLoaderException(ex);
+            }  catch (InvocationTargetException itex) {
+                    throw new ReporterLoaderException(itex.getCause());
+            }
     }
 
     public ControllableReporter getReporter() {

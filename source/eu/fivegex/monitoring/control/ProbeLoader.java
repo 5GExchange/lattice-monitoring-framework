@@ -8,6 +8,7 @@ package eu.fivegex.monitoring.control;
 import eu.reservoir.monitoring.core.Probe;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  *
@@ -26,7 +27,7 @@ public final class ProbeLoader implements Serializable {
     
     
     
-    public ProbeLoader(String probeClassName, Object ... params) throws Exception {
+    public ProbeLoader(String probeClassName, Object ... params) throws ProbeLoaderException {
         this.probeClassName = probeClassName;
         constructorParameters = params;
         
@@ -34,7 +35,7 @@ public final class ProbeLoader implements Serializable {
     }
     
     
-    public void initProbe() throws Exception {
+    public void initProbe() throws ProbeLoaderException {
         try {
             System.out.println("Loading Class: " + probeClassName);
             clazz = Class.forName(probeClassName);
@@ -52,10 +53,11 @@ public final class ProbeLoader implements Serializable {
             // create an instance of the Probe
             probe = cons0.newInstance(constructorParameters);
             
-            }  catch ( Exception ex /*ClassNotFoundException | InstantiationException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex*/) {
-                System.out.println("Exception in ProbeLoader: " + ex.getMessage());
-                throw new Exception(ex);
-            }   
+            } catch (ClassNotFoundException | InstantiationException | NoSuchMethodException | IllegalAccessException ex) {
+                throw new ProbeLoaderException(ex);
+            } catch (InvocationTargetException itex) {
+                    throw new ProbeLoaderException(itex.getCause());
+            }
     }
 
     public Probe getProbe() {

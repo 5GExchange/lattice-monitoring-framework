@@ -3,12 +3,13 @@
 // Email: sclayman@ee.ucl.ac.uk
 // Date: Sept 2009
 
-package eu.fivegex.demo;
+package eu.fivegex.monitoring.appl.datasources;
 
-import eu.fivegex.demo.probes.MemoryInfoProbe;
-import eu.fivegex.demo.probes.RandomProbe;
-import eu.fivegex.demo.probes.docker.DockerProbe;
-import eu.fivegex.demo.probes.openstack.OpenstackProbe;
+import eu.reservoir.monitoring.core.DefaultControllableDataSource;
+import eu.fivegex.monitoring.appl.probes.MemoryInfoProbe;
+import eu.fivegex.monitoring.appl.probes.RandomProbe;
+import eu.fivegex.monitoring.appl.probes.docker.DockerProbe;
+import eu.fivegex.monitoring.appl.probes.openstack.OpenstackProbe;
 import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneXDRConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.Probe;
@@ -42,7 +43,7 @@ public final class SimpleDataSourceTest extends Thread {
         this.attachShutDownHook();
         
 	// set up data source
-	ds = new ControllableBasicDataSource(myDsName);
+	ds = new DefaultControllableDataSource(myDsName);
         
         System.out.println("Sending data to: " + dataConsumerName + ":" + dataConsumerPort);
         

@@ -251,7 +251,7 @@ public class LatticeTest {
     
     
     private String instantiateDS() throws Exception {
-        JSONObject out;
+        JSONObject out = new JSONObject();
         
         System.out.println("Deploying DS on endpoint: " + endPointName);
         
@@ -267,7 +267,7 @@ public class LatticeTest {
             return out.getString("ID");
         }
         catch (JSONException e) {
-            throw new Exception("Error while instantiating DS: " + e.getMessage());
+            throw new Exception("Error while instantiating DS\n" + out.getString("msg"));
         }
     }
     
@@ -278,8 +278,8 @@ public class LatticeTest {
         try {
             out = stopDS(endPointAddress, endPointUserName);  
 
-            if (!out.getString("success").equals("true"))
-                throw new Exception("Error while stopping DS: " + dsID); 
+            if (!out.getBoolean("success"))
+                throw new Exception("Error while stopping DS: " + dsID + out.getString("msg")); 
         }
         catch (JSONException e) {
             throw new Exception("Error while unloading DS: " + e.getMessage());
@@ -287,8 +287,8 @@ public class LatticeTest {
     }
     
     private void testMemoryInfoProbe(String probeName, String dsID, String serviceID, String sliceID) throws Exception {
-        String probeClassName = "eu.fivegex.demo.probes.MemoryInfoProbe";
-        JSONObject out;
+        String probeClassName = "eu.fivegex.monitoring.appl.probes.MemoryInfoProbe";
+        JSONObject out = new JSONObject();
         
         try {
             System.out.println("Creating probe on endpoint: " + endPointName + " - DS id: " + dsID);
@@ -299,29 +299,29 @@ public class LatticeTest {
             String probeID = out.getString("createdProbeID");
 
             System.out.println("Setting serviceID " + serviceID + " on probe " + probeID + " on endpoint " + endPointName  + " - DS id: " + dsID);
-            setProbeServiceID(probeID, serviceID);
+            out = setProbeServiceID(probeID, serviceID);
 
             System.out.println("Setting sliceID " + sliceID + " on probe " + probeID + " on endpoint " + endPointName  + " - DS id: " + dsID);
-            setProbeSliceID(probeID, sliceID);
+            out = setProbeSliceID(probeID, sliceID);
             
             System.out.println("Turning on probe " + probeID + " on endpoint " + endPointName  + " - DS id: " + dsID);
-            turnProbeOn(probeID);
+            out = turnProbeOn(probeID);
             
             Thread.sleep(5000);
             
             System.out.println("Turning off probe " + probeID + " on endpoint " + endPointName + " - DS id: " + dsID);
-            turnProbeOff(probeID);
+            out = turnProbeOff(probeID);
         }
         catch (InterruptedException ex) {
             return;
         } 
         catch (JSONException ex) {
-            throw new Exception("Test Case MemoryInfoProbe Failed! " + "\nReason: " + ex.getMessage());
+            throw new Exception("Test Case MemoryInfoProbe Failed! " + "\nReason: " + out.getString("msg"));
         }  
     }
     
     private void testDockerProbe(String probeName, String dsID, String serviceID, String sliceID) throws Exception { 
-        String probeClassName = "eu.fivegex.demo.probes.docker.DockerProbe";
+        String probeClassName = "eu.fivegex.monitoring.appl.probes.docker.DockerProbe";
         JSONObject out;
         
         try {
@@ -439,12 +439,13 @@ public class LatticeTest {
             client.testMemoryInfoProbe(probeName, dsID, serviceID, sliceID);
             //client.testDockerProbe("testDockerProbe", dsID, serviceID, sliceID);
 
-            Document mongoDBEntry = m.getMongoDBEntry(serviceID); // TODO: incorrect this should also check id the ProbeName element is not empty
-            System.out.println("Reading data (1 measurement) from the DB related to the previous service " + serviceID);
+            Document mongoDBEntry = m.getMongoDBEntry(serviceID, probeName); // TODO: incorrect this should also check id the ProbeName element is not empty
+            System.out.println("Reading data (1 measurement) from the DB related to the previous service " + serviceID + " and " + probeName);
             if (mongoDBEntry != null)
                 System.out.println(mongoDBEntry.toJson(new JsonWriterSettings(true)));
             else
                 throw new Exception("Cannot find any entries with service ID " + serviceID + " in the DB");
+            
         }
         catch (Exception e) {
             System.out.println("\n************************************************** TEST FAILED **************************************************\n" + 
@@ -453,9 +454,10 @@ public class LatticeTest {
             errorStatus = true;
         }
         finally {
-            // stopping the previous instantiated DS anyway
+            // trying to stop the previous instantiated DS anyway
             try {
-                client.unloadDS(dsID);
+                if (client != null && dsID != null)
+                   client.unloadDS(dsID);
             }
             catch (Exception e) { // the DS was either already stopped or not running
             }

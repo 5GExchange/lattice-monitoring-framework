@@ -6,7 +6,6 @@
 package eu.fivegex.monitoring.control.udp;
 
 
-import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
 import eu.reservoir.monitoring.distribution.MetaData;
@@ -43,11 +42,11 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, R
 
     
     @Override
-    public abstract void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException;
+    public abstract void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, ReflectiveOperationException;
 
     
     @Override
-    public abstract int transmitReply(ControlPlaneReplyMessage answer, MetaData metadata) throws Exception;
+    public abstract int transmitReply(ControlPlaneReplyMessage answer, MetaData metadata) throws IOException;
     
     
     @Override

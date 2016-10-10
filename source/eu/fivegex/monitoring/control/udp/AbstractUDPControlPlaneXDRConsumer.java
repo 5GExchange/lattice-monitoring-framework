@@ -6,7 +6,8 @@
 package eu.fivegex.monitoring.control.udp;
 
 
-import eu.reservoir.monitoring.core.TypeException;
+import eu.fivegex.monitoring.control.ControlPlaneConsumerException;
+import eu.fivegex.monitoring.control.ControlServiceException;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.ControlOperation;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
@@ -22,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -64,14 +66,16 @@ public abstract class AbstractUDPControlPlaneXDRConsumer extends AbstractUDPCont
 
     
     @Override
-    public void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException {
+    public void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, ReflectiveOperationException {
         ControlOperation ctrlOperationName=null;
+        ControlPlaneReplyMessage replyMessage = null;
+        
         int seqNo = -1;
         
 	try {
 	    DataInput dataIn = new XDRDataInputStream(bis);
 
-	    // check message type
+	    // check replyMessage type
 	    int type = dataIn.readInt();            
 	    MessageType mType = MessageType.lookup(type);
 
@@ -81,19 +85,19 @@ public abstract class AbstractUDPControlPlaneXDRConsumer extends AbstractUDPCont
 	    }
 
             else if (mType == MessageType.CONTROL) {
-                System.out.println("-------- Control Message Received ---------");
+                System.out.println("\n-------- Control Message Received ---------");
                 
                 String ctrlOperationMethod = dataIn.readUTF();
                 ctrlOperationName = ControlOperation.lookup(ctrlOperationMethod);
                 
-                // get source message sequence number
+                // get source replyMessage sequence number
                 seqNo = dataIn.readInt();
                 
                 System.out.println("Operation String: " + ctrlOperationName);
                 System.out.println("Operation Method: " + ctrlOperationMethod);
                 System.out.println("Source Message ID: " + seqNo);
                 
-                byte [] args = new byte[4096];
+                byte [] args = new byte[8192];
                 dataIn.readFully(args);
 
                 List<Object> methodArgs;
@@ -102,57 +106,55 @@ public abstract class AbstractUDPControlPlaneXDRConsumer extends AbstractUDPCont
                 methodArgs = (ArrayList<Object>) ois.readObject();
                 ois.close();
                 
-                /* possible implementation based on reflections */
-                
                 Method methodToInvoke = null;
                 for (Method method: this.getClass().getMethods()) {
-                    //System.out.println(method.getName());
                     if (method.getName().equals(ctrlOperationMethod)) {
                         methodToInvoke = method;
                         break;
                     }
                 }
-                     
-                /* Some Debug output
-                System.out.println(methodToInvoke.getName());
                 
-                for (Class c : methodToInvoke.getParameterTypes())
-                    System.out.println(c);
-                
-                for (Object o: methodArgs) System.out.println(methodArgs);
-                */
-                
-                Object result = methodToInvoke.invoke(this, methodArgs.toArray());
-                ControlPlaneReplyMessage message = new ControlPlaneReplyMessage(result, ctrlOperationName, seqNo);
-                transmitReply(message, metaData);
-	    }
-
-        } catch (Exception ex) {
-                ControlPlaneReplyMessage errorMessage = new ControlPlaneReplyMessage(ex.getCause(), ctrlOperationName, seqNo);
-                try {
-                    transmitReply(errorMessage, metaData);
-                } catch (Exception ex1) {
-                    System.out.println("ControPlaneConsumer error - failed to transmit control error message: " + ex1.getMessage());
+                if (methodToInvoke != null) {
+                    Object result = methodToInvoke.invoke(this, methodArgs.toArray());
+                    replyMessage = new ControlPlaneReplyMessage(result, ctrlOperationName, seqNo);
+                    //transmitReply(replyMessage, metaData);
                 }
-                
-                System.out.println("ControPlaneConsumer error: " + ex.getCause().getMessage());
-                throw new IOException(ex.getCause().getMessage());
-                
+                else
+                    throw new NoSuchMethodException("A suitable Control Service method to invoke has not been found");
+	    }
             
-        }
+
+        } catch (IllegalAccessException | InvocationTargetException | ClassNotFoundException | NoSuchMethodException ex) {
+                Exception exceptionToSend = new ControlPlaneConsumerException(ex);
+                Throwable wrappedException = ex.getCause();
+                
+                // a ControlServiceException may be wrapped within InvocationTargetException coming from the 
+                // reflection invocation 
+                if (wrappedException instanceof ControlServiceException) 
+                    // we further unwrap the cause from the ControlServiceException
+                    exceptionToSend = new ControlPlaneConsumerException(wrappedException.getCause());
+                
+                replyMessage = new ControlPlaneReplyMessage(exceptionToSend, ctrlOperationName, seqNo);
+                throw new ReflectiveOperationException(exceptionToSend.getCause()); // we also throw the Exception locally unwrapping it from ControlPlaneException 
+        } finally {
+            if (replyMessage != null)
+                transmitReply(replyMessage, metaData);
+            else
+                System.out.println("UDP Control Plane Consumer: the received message was not a Control Message"); 
+          }
     }
 
     
     @Override
-    public int transmitReply(ControlPlaneReplyMessage answer, MetaData metadata) throws Exception {
+    public int transmitReply(ControlPlaneReplyMessage answer, MetaData metadata) throws IOException {
         // convert the object to a byte []
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         DataOutput dataOutput = new XDRDataOutputStream(byteStream);
         
-        //write the message type (i.e. ControlReply)
+        //write the replyMessage type (i.e. ControlReply)
         dataOutput.writeInt(answer.getType().getValue());
         
-        // writing message ID
+        // writing replyMessage ID
         int sourceMessageSeqNo = answer.getReplyToMessageID();
         dataOutput.writeInt(sourceMessageSeqNo);
         

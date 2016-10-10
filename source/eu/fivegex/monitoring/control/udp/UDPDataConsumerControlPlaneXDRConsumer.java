@@ -5,7 +5,9 @@
  */
 package eu.fivegex.monitoring.control.udp;
 
+import eu.fivegex.monitoring.control.ControlServiceException;
 import eu.fivegex.monitoring.control.ReporterLoader;
+import eu.fivegex.monitoring.control.ReporterLoaderException;
 import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.ID;
@@ -72,18 +74,22 @@ public class UDPDataConsumerControlPlaneXDRConsumer extends AbstractUDPControlPl
         System.out.println("******* UDPControlPlaneConsumer -> getDCMeasurementsRate");
         return dataConsumer.getMeasurementsRate();
     }
-
+    
     @Override
-    public ID loadReporter(ID dataConsumerID, String reporterClassName, Object... reporterArgs) throws Exception {
-        System.out.println("******* UDPControlPlaneConsumer -> loadReporter");
-        ReporterLoader r = new ReporterLoader(reporterClassName, reporterArgs);
-        dataConsumer.addReporter(r.getReporter());
-        return r.getReporter().getId();
+    public ID loadReporter(ID dataConsumerID, String reporterClassName, Object... reporterArgs) throws ControlServiceException {
+        try {
+            System.out.println("******* UDPControlPlaneConsumer -> loadReporter");
+            ReporterLoader r = new ReporterLoader(reporterClassName, reporterArgs);
+            dataConsumer.addReporter(r.getReporter());
+            return r.getReporter().getId();
+        } catch (ReporterLoaderException e) {
+            throw new ControlServiceException(e);
+        }
     }
 
     @Override
-    public boolean unloadReporter(ID reporterID) throws Exception {
-        System.out.println("******* UDPControlPlaneConsumer -> loadReporter");
+    public boolean unloadReporter(ID reporterID) throws ControlServiceException {
+        System.out.println("******* UDPControlPlaneConsumer -> unloadReporter");
         dataConsumer.removeReporter(dataConsumer.getReporterById(reporterID));
         return true;
     }

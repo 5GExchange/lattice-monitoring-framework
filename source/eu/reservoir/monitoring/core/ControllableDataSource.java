@@ -13,4 +13,8 @@ import eu.fivegex.monitoring.control.ProbeLoader;
  */
 public interface ControllableDataSource extends DataSource, DataSourceDelegateInteracter {
     public ID addProbe(ProbeLoader p);
+    
+    public int getMyPID();
+      
+    public void setMyPID(int myPID);
 }

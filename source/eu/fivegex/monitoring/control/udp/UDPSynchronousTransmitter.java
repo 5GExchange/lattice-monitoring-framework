@@ -5,16 +5,14 @@
 
 package eu.fivegex.monitoring.control.udp;
 
-import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.distribution.*;
-import eu.reservoir.monitoring.distribution.udp.UDPTransmissionMetaData;
 import java.net.*;
 import java.io.*;
 
 /**
  * This is a UDP transmitter for monitoring messages
  */
-public final class UDPTransmitterSyncReply {
+public final class UDPSynchronousTransmitter {
     /*
      * The transmitting that interacts with a DataSourceDelegate.
      */
@@ -51,7 +49,7 @@ public final class UDPTransmitterSyncReply {
     /**
      * Construct a transmitter for a particular IP destination Address
      */
-    public UDPTransmitterSyncReply(Transmitting transmitting, InetSocketAddress dstAddr) throws IOException {
+    public UDPSynchronousTransmitter(Transmitting transmitting, InetSocketAddress dstAddr) throws IOException {
         this(transmitting);
         
 	this.dstAddress = dstAddr.getAddress();
@@ -67,7 +65,7 @@ public final class UDPTransmitterSyncReply {
      /**
      * Construct a transmitter without a particular IP dstAddress
      */
-    public UDPTransmitterSyncReply(Transmitting transmitting) throws IOException {
+    public UDPSynchronousTransmitter(Transmitting transmitting) throws IOException {
         this.transmitting=transmitting;
 	socket = new DatagramSocket();
         
@@ -117,7 +115,7 @@ public final class UDPTransmitterSyncReply {
     }
     
     
-    public Object transmitAndWaitReply(ByteArrayOutputStream byteStream, int seqNo) throws IOException, TypeException, ClassNotFoundException {
+    public Object transmitAndWaitReply(ByteArrayOutputStream byteStream, int seqNo) throws IOException {
         packet.setData(byteStream.toByteArray());
 	packet.setLength(byteStream.size());
 
@@ -146,7 +144,7 @@ public final class UDPTransmitterSyncReply {
     }
     
     
-    public Object transmitAndWaitReply(ByteArrayOutputStream byteStream, UDPControlMetaData MessageMetaData, int seqNo) throws IOException, TypeException, ClassNotFoundException {
+    public Object transmitAndWaitReply(ByteArrayOutputStream byteStream, UDPControlMetaData MessageMetaData, int seqNo) throws IOException {
         // setting destination parameters in the packet now        
         packet.setAddress(MessageMetaData.getAddress());
 	packet.setPort(MessageMetaData.getPort());

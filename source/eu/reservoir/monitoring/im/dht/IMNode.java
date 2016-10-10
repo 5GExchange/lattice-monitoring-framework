@@ -5,6 +5,7 @@
 
 package eu.reservoir.monitoring.im.dht;
 
+import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.Probe;
@@ -62,7 +63,7 @@ public class IMNode {
 		dht = new DistributedHashTable(localPort);
 		dht.connect(remoteHost, remotePort);
 
-		System.err.println("IMNode: connect: " + localPort + " to " + remoteHost + "/" + remotePort);
+		System.out.println("IMNode: connect: " + localPort + " to " + remoteHost + "/" + remotePort);
 
 		return true;
 	    } else {
@@ -85,14 +86,18 @@ public class IMNode {
      * Disconnect from the DHT peers.
      */
     public boolean disconnect() {
-	try {
-	    dht.close();
-	    dht = null;
-	    return true;
-	} catch (IOException e) {
-	    dht = null;
-	    return false;
-	}
+        if (dht != null) {
+            try {
+                dht.close();
+                dht = null;
+                return true;
+            } catch (IOException e) {
+                dht = null;
+                return false;
+            }
+        }
+        // was already disconnected so returning true anyway
+        return true;
     }
 
     public IMNode addDataConsumer(DataConsumer dc) throws IOException {
@@ -145,8 +150,12 @@ public class IMNode {
 	return this;
     }
     
-    public IMNode addDataSourceName(DataSource ds) throws IOException {
-	putDHT("/datasource/name/" + ds.getName(), ds.getID().toString());    
+    public IMNode addDataSourceInfo(DataSource ds) throws IOException {
+        // this maps the name to the ID
+	putDHT("/datasource/name/" + ds.getName(), ds.getID().toString()); 
+        
+        if (ds instanceof ControllableDataSource)
+            putDHT("/datasource/" + ds.getID() + "/pid", ((ControllableDataSource) ds).getMyPID());       
 	return this;
     }
     
@@ -350,12 +359,11 @@ public class IMNode {
     public boolean putDHT(String aKey, Serializable aValue) {
 	try {
 	    BigInteger newKey = keyToBigInteger(aKey);
-	    System.err.println("IMNode: put " + aKey + " K(" + newKey + ") => " + aValue);
+	    //System.out.println("IMNode: put " + aKey + " K(" + newKey + ") => " + aValue);
 	    dht.put(newKey, aValue);
 	    return true;
 	} catch (IOException ioe) {
 	    System.err.println("IMNode: putDHT failed for key: '" + aKey + "' value: '" + aValue + "'");
-	    ioe.printStackTrace();
 	    return false;
 	}
     }
@@ -368,7 +376,7 @@ public class IMNode {
 	try {
 	    BigInteger newKey = keyToBigInteger(aKey);
 	    Object aValue = dht.get(newKey);
-	    //System.err.println("IMNode: get " + aKey + " = " + newKey + " => " + aValue);
+	    //System.out.println("IMNode: get " + aKey + " = " + newKey + " => " + aValue);
 	    return aValue;
 	} catch (IOException ioe) {
 	    System.err.println("IMNode: getDHT failed for key: '" + aKey + "'");
@@ -385,11 +393,10 @@ public class IMNode {
 	try {
 	    BigInteger newKey = keyToBigInteger(aKey);
 	    dht.remove(newKey);
-	    //System.err.println("IMNode: get " + aKey + " = " + newKey + " => " + aValue);
+	    //System.out.println("IMNode: get " + aKey + " = " + newKey + " => " + aValue);
 	    return true;
 	} catch (IOException ioe) {
 	    System.err.println("IMNode: remDHT failed for key: '" + aKey + "'");
-	    ioe.printStackTrace();
 	    return false;
 	}
     }

@@ -32,7 +32,7 @@ class ReporterRestHandler extends BasicRequestHandler {
         // get Controller
         controller_ = (Controller) getManagementConsole().getAssociated();
         
-        System.out.println("REQUEST: " + request.getMethod() + " " +  request.getTarget());
+        System.out.println("\n-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
         
         long time = System.currentTimeMillis();
@@ -152,7 +152,7 @@ class ReporterRestHandler extends BasicRequestHandler {
 
             jsobj = controller_.unloadReporter(reporterID);
 
-            if (jsobj.get("success").equals("false")) {
+            if (!jsobj.getBoolean("success")) {
                 failMessage = (String)jsobj.get("msg");
                 System.out.println("ReporterRestHandler: failure detected: " + failMessage);
                 success = false;   

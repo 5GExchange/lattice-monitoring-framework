@@ -56,11 +56,11 @@ public final class SimpleControllableDataConsumer extends Thread {
 	consumer.setDataPlane(new UDPDataPlaneConsumer(address));
         
         ControlPlane controlPlane = new UDPDataConsumerControlPlaneXDRConsumer(ctrlAddress, ctrlRemoteAddress);
-        ((DataConsumerInteracter)controlPlane).setDataConsumer(consumer);
+        ((DataConsumerInteracter) controlPlane).setDataConsumer(consumer);
         consumer.setControlPlane(controlPlane);
         
         InfoPlane infoPlane = new DHTDataConsumerInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort);
-        ((DataConsumerInteracter)infoPlane).setDataConsumer(consumer);
+        ((DataConsumerInteracter) infoPlane).setDataConsumer(consumer);
         consumer.setInfoPlane(infoPlane);
 
 	consumer.connect();

@@ -1,4 +1,4 @@
-package eu.fivegex.demo;
+package eu.fivegex.monitoring.test;
 
 import java.io.IOException;
 import java.net.InetAddress;

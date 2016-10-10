@@ -33,7 +33,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         // get Controller
         controller_ = (Controller) getManagementConsole().getAssociated();
         
-        System.out.println("REQUEST: " + request.getMethod() + " " +  request.getTarget());
+        System.out.println("\n-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
         
         long time = System.currentTimeMillis();
@@ -145,9 +145,9 @@ class DataConsumerRestHandler extends BasicRequestHandler {
             return;
         }
         
-        if (jsobj.get("success").equals("false")) {
-            failMessage = (String)jsobj.get("msg");
-            System.out.println("loadReporter: failure detected: " + failMessage);
+        if (!jsobj.getBoolean("success")) {
+            failMessage =(String)jsobj.get("msg");
+            System.err.println("DataConsumerRestHandler: loadReporter failure: " + failMessage);
             success = false;   
         }   
     
@@ -197,7 +197,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         
         jsobj = controller_.getDataConsumerMeasurementRate(dcID);
 
-        if (jsobj.get("success").equals("false")) {
+        if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("getDataConsumerMeasurementRate: failure detected: " + failMessage);
             success = false;   
@@ -223,7 +223,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         
         jsobj = controller_.getDataConsumers();
 
-        if (jsobj.get("success").equals("false")) {
+        if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("getDataConsumers: failure detected: " + failMessage);
             success = false;   

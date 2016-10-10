@@ -5,8 +5,10 @@
  */
 package eu.fivegex.monitoring.control.udp;
 
+import eu.fivegex.monitoring.control.ControlServiceException;
 import eu.reservoir.monitoring.core.*;
 import eu.fivegex.monitoring.control.ProbeLoader;
+import eu.fivegex.monitoring.control.ProbeLoaderException;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.AnnounceMessage;
 import eu.reservoir.monitoring.core.plane.DataSourceControlPlane;
@@ -64,14 +66,14 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
 
     @Override
     public DataSourceDelegate setDataSourceDelegate(DataSourceDelegate ds) {
-	System.err.println("DataSource Control Plane Consumer: setDataSource: " + ds);
+	//System.out.println("DataSource Control Plane Consumer: setDataSource: " + ds);
 	dataSourceDelegate = ds;
 	return ds;
     }
     
     
     @Override
-    public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception {
+    public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws ControlServiceException {
         DataSource dataSource = dataSourceDelegate.getDataSource();
         try {
             System.out.println("******* UDPControlPlaneConsumer -> loadProbe");
@@ -79,14 +81,14 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
             if (dataSource instanceof ControllableDataSource)
                 return ((ControllableDataSource)dataSource).addProbe(p);
             else
-                throw new Exception("Probe cannot be loaded on the DS");
-        } catch (Exception ex) {
-            throw new Exception(ex.getMessage());
+                throw new ControlServiceException("Probe cannot be loaded on the DS");
+        } catch (ProbeLoaderException ex) {
+            throw new ControlServiceException(ex);
         }
     }
 
     @Override
-    public boolean unloadProbe(ID probeID) throws Exception {
+    public boolean unloadProbe(ID probeID) throws ControlServiceException {
         DataSource dataSource = dataSourceDelegate.getDataSource();
         System.out.println("******* UDPControlPlaneConsumer -> unloadProbe");
         Probe p = dataSource.getProbeByID(probeID);
@@ -199,8 +201,10 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
     }
 
     @Override
-    public String getDataSourceName() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public String getDataSourceInfo(ID id) {
+        DataSource dataSource = dataSourceDelegate.getDataSource();
+        System.out.println("******* UDPControlPlaneConsumer -> getDataSourceInfo");
+        return dataSource.getName();
     }
 
     @Override

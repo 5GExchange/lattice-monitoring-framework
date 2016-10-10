@@ -2,9 +2,10 @@
 // Author: Poe
 // Date: Sept 2016
 
-package eu.fivegex.demo.mongodb;
+package eu.fivegex.monitoring.appl.dataconsumers;
 
 
+import eu.fivegex.monitoring.appl.reporters.ReporterException;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneConsumer;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -20,7 +21,7 @@ public class DataConsumerWithMongoDBReporter {
     /*
      * Construct a SimpleConsumerUDP
      */
-    public DataConsumerWithMongoDBReporter(String addr, int dataPort, String dbAddr, int dbPort, String dbName, String collectionName) {
+    public DataConsumerWithMongoDBReporter(String addr, int dataPort, String dbAddr, int dbPort, String dbName, String collectionName) throws ReporterException {
         // set up a BasicConsumer
         //consumer = new BasicConsumer();
 
@@ -46,26 +47,26 @@ public class DataConsumerWithMongoDBReporter {
         int port = 22997;
         try {
             currentHost = InetAddress.getLocalHost().getHostName();
-        } catch (Exception e) {
-        }
+            
+            if (args.length == 0) {
+                new DataConsumerWithMongoDBReporter(currentHost, port, mongoDBAddress, mongoDBPort, mongDBName, collectionName);
+                System.err.println("DataConsumerWithMongoDBReporter listening on " + currentHost + "/" + port);
+            } else if (args.length == 2) {
+                String addr = args[0];
 
-        if (args.length == 0) {
-            new DataConsumerWithMongoDBReporter(currentHost, port, mongoDBAddress, mongoDBPort, mongDBName, collectionName);
-            System.err.println("DataConsumerWithMongoDBReporter listening on " + currentHost + "/" + port);
-        } else if (args.length == 2) {
-            String addr = args[0];
+                Scanner sc = new Scanner(args[1]);
+                port = sc.nextInt();
 
-            Scanner sc = new Scanner(args[1]);
-            port = sc.nextInt();
-
-            new DataConsumerWithMongoDBReporter(addr, port, mongoDBAddress, mongoDBPort, mongDBName, collectionName);
-            System.err.println("DataConsumerWithMongoDBReporter listening on " + addr + "/" + port);
-        } else {
-            System.err.println("usage: DataConsumerWithMongoDBReporter localhost port");
-            System.exit(1);
+                new DataConsumerWithMongoDBReporter(addr, port, mongoDBAddress, mongoDBPort, mongDBName, collectionName);
+                System.err.println("DataConsumerWithMongoDBReporter listening on " + addr + "/" + port);
+            } else {
+                System.err.println("usage: DataConsumerWithMongoDBReporter localhost port");
+                System.exit(1);
+            }
+    } catch (Exception e) {
+        System.out.println("Error while Starting the DataConsumerWithMongoDBReporter" + e.getMessage());
         }
     }
-
 }
     
 

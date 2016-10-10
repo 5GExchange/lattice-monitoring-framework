@@ -5,9 +5,9 @@
  */
 package eu.fivegex.monitoring.control.udp;
 
+import eu.fivegex.monitoring.control.ControlPlaneConsumerException;
 import eu.fivegex.monitoring.control.controller.InformationManager;
 import eu.reservoir.monitoring.core.ID;
-import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.ControllerControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneMessage;
@@ -111,11 +111,11 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
     }
 
     @Override
-    public abstract Object transmit(ControlPlaneMessage dpm, MetaData metaData) throws Exception;
+    public abstract Object synchronousTransmit(ControlPlaneMessage dpm, MetaData metaData) throws IOException, ControlPlaneConsumerException;
 
     
     @Override
-    public abstract Object receivedReply(ByteArrayInputStream bis, MetaData metaData, int seqNo) throws IOException, TypeException, ClassNotFoundException;
+    public abstract Object receivedReply(ByteArrayInputStream bis, MetaData metaData, int seqNo) throws IOException;
     
     
     @Override

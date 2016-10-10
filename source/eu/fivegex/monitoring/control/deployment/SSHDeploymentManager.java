@@ -12,11 +12,9 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
-import eu.reservoir.monitoring.core.ID;
+import eu.fivegex.monitoring.control.controller.InformationManager;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
@@ -37,8 +35,10 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
     protected final Map<String, Boolean> runMonitor;
     protected final Map<String, Boolean> entityDeployedOnEndPoint;
     protected final Map<String, SSHDeploymentInfo> entityRunningOnEndPoint;
+    
+    protected final InformationManager informationManager;
 
-    public SSHDeploymentManager(String localJarFilePath, String jarFileName, String remoteJarFilePath, String entityFileName, EntityType entityType) {
+    public SSHDeploymentManager(String localJarFilePath, String jarFileName, String remoteJarFilePath, String entityFileName, EntityType entityType, InformationManager info) {
         this.entityType = entityType;
         this.entityFileName = entityFileName;
         this.localJarFilePath = localJarFilePath;
@@ -50,10 +50,12 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
         this.runMonitor = new ConcurrentHashMap<>();
         
         this.entityDeployedOnEndPoint = new ConcurrentHashMap<>();
-        this.entityRunningOnEndPoint = new ConcurrentHashMap<>();  
+        this.entityRunningOnEndPoint = new ConcurrentHashMap<>(); 
+        
+        this.informationManager = info;
     }
 
-    // if we do not use pkey authentication, we may use the same credentials for all the endpoints
+    /*
     protected Session connect(String endPoint, String userName) throws JSchException {
         Session session = this.jsch.getSession(userName, endPoint, 22);
         //this is just for testing: using the same password here regardless of the actual userName
@@ -62,6 +64,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
         session.connect(3000);
         return session;
     }
+    */
 
     protected Session connectWithKey(String endPoint, String userName) throws JSchException {
         String privateKeyFile = System.getProperty("user.home") + "/.ssh/id_rsa";
@@ -107,7 +110,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
             } catch (JSchException | SftpException e) {
                 throw new DeploymentException("Error while deploying " + entityType + " on " + endPointAddress + ", " + e.getMessage());
             } finally {
-                if (c != null) {
+                if (session != null && c != null) {
                     c.disconnect();
                     session.disconnect();
                 }
@@ -117,86 +120,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
         return true;
     }
 
-    @Override
-    public ID startEntity(String endPoint, String userName, String args) throws DeploymentException {
-        String dsID = null;
-        Integer pID = null;
-        Session session = null;
-        Channel channel = null;
-        String endPointAddress;
-        try {
-            endPointAddress = InetAddress.getByName(endPoint).getHostAddress();
-        } catch (UnknownHostException e) {
-            throw new DeploymentException("Error while resolving endPoint address " + e.getMessage());
-        }
-        runMonitor.putIfAbsent(endPointAddress, true);
-        synchronized (runMonitor.get(endPointAddress)) {
-            try {
-                if (this.isEntityRunning(endPointAddress)) {
-                    // if a DS is already running on the endpoint we just return its ID
-                    return this.entityRunningOnEndPoint.get(endPointAddress).getDsId();
-                }
-                session = this.connectWithKey(endPointAddress, userName);
-                String jvm = "java"; //we assume the executable is in the PATH
-                //args is a String object containing the args to be passed to the main of the entity being deployed
-                //we could think of appending additional entries to the classpath to allow loading external probes
-                String command = jvm + " -cp " + this.remoteJarFilePath + "/" + this.jarFileName + " " + this.entityFileName + " " + args + "&";
-                channel = session.openChannel("exec");
-                ((ChannelExec) channel).setCommand(command);
-                InputStream in = channel.getInputStream();
-                byte[] tmp = new byte[1024];
-                channel.connect(3000);
-                while (true) {
-                    while (in.available() > 0) {
-                        int i = in.read(tmp, 0, 1024);
-                        if (i < 0) {
-                            break;
-                        }
-                        String[] output = (new String(tmp, 0, i)).split("\\r?\\n"); // split the output in different lines
-                        // looking for the DS id (UUID) and PID
-                        for (String line : output) {
-                            if (line.matches("DataSource ID: [0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
-                                dsID = line.substring("DataSource ID: ".length()); // getting the dsID as string removing "DataSource ID: "
-                            } else if (line.matches("Process ID: [0-9]+")) {
-                                pID = Integer.parseInt(line.substring("Process ID: ".length())); // getting the PID"
-                            }
-                        }
-                    }
-                    if (channel.isClosed()) {
-                        if (in.available() > 0) {
-                            continue;
-                        }
-                        //TODO: it does not seem to be != 0 if the command is unsuccessful as the command is in background
-                        //we should consider starting the process in foreground and then using signal such as SIGSTOP and SIGCONT
-                        if (channel.getExitStatus() != 0) {
-                            throw new DeploymentException("Error while starting DS on " + endPointAddress + " exit-status: " + channel.getExitStatus());
-                        }
-                        break;
-                    }
-                    Thread.sleep(2000); //this should also allow the DS to connect to the infoPlane before returning the associated ID
-                }
-            } catch (JSchException | IOException e) {
-                throw new DeploymentException("Error while starting DS on " + endPointAddress + ", " + e.getMessage());
-            } catch (InterruptedException ie) {
-                /* we just swallow the exception as the thread shouldn't be interrupted */
-            } finally {
-                if (channel != null) {
-                    channel.disconnect();
-                    session.disconnect();
-                }
-            }
-            if (dsID != null && pID != null) {
-                SSHDeploymentInfo dsInfo = new SSHDeploymentInfo();
-                dsInfo.setDsId(ID.fromString(dsID));
-                dsInfo.setDsPid(pID);
-                this.entityRunningOnEndPoint.putIfAbsent(endPointAddress, dsInfo);
-                runMonitor.remove(endPointAddress);
-                return ID.fromString(dsID);
-            } else {
-                throw new DeploymentException("Error: cannot get the DS ID, the endpoint " + endPointAddress + " may be unreachable");
-            }
-        }
-    }
+    
 
     @Override
     public boolean stopEntity(String endPoint, String userName) throws DeploymentException {
@@ -216,7 +140,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
             try {
                 session = this.connectWithKey(endPointAddress, userName);
                 System.out.println(Thread.currentThread().getName() + ": Stopping " + entityType);
-                String command = "kill " + endPointInfo.getDsPid();
+                String command = "kill " + endPointInfo.getEntityPID();
                 channel = session.openChannel("exec");
                 ((ChannelExec) channel).setCommand(command);
                 channel.connect(3000);
@@ -231,7 +155,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
                             throw new DeploymentException("Something went wrong while stopping " + entityType);
                         }
                     }
-                    Thread.sleep(500);
+                    Thread.sleep(100);
                 }
             } catch (JSchException e) {
                 throw new DeploymentException("Error while stopping " + entityType + " on " + endPointAddress + ", " + e.getMessage());

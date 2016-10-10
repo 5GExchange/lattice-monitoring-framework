@@ -6,7 +6,6 @@
 package eu.reservoir.monitoring.core;
 
 import eu.reservoir.monitoring.core.plane.*;
-import java.io.IOException;
 
 /**
  * A DataSourceDelegate is responsible interacting with

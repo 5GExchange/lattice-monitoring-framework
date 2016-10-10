@@ -1,8 +1,10 @@
 // MongodbConsumer.java
 // 
 
-package eu.fivegex.demo.mongodb;
+package eu.fivegex.monitoring.appl.dataconsumers;
 
+import eu.fivegex.monitoring.appl.reporters.MongoDBReporter;
+import eu.fivegex.monitoring.appl.reporters.ReporterException;
 import eu.reservoir.monitoring.core.*;
 import eu.reservoir.monitoring.appl.*;
 
@@ -18,9 +20,9 @@ public class MongodbConsumer extends AbstractDataConsumer implements Measurement
     /**
      * Construct a BasicConsumer.
      */
-    public MongodbConsumer(String dbAddr, int dbPort, String dbName, String collectionName) {
+    public MongodbConsumer(String dbAddr, int dbPort, String dbName, String collectionName) throws ReporterException {
         Reporter printReporter =  new PrintReporter();
-        Reporter mongoReporter = new MongodbReporter(dbAddr, dbPort, dbName, collectionName);
+        Reporter mongoReporter = new MongoDBReporter(dbAddr, dbPort, dbName, collectionName);
         
         addReporter(printReporter);
         addReporter(mongoReporter);

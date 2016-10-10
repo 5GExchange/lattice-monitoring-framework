@@ -5,7 +5,7 @@
  */
 package eu.fivegex.monitoring.control.udp;
 
-import eu.reservoir.monitoring.core.TypeException;
+import eu.fivegex.monitoring.control.ControlPlaneConsumerException;
 import eu.reservoir.monitoring.core.plane.ControlPlaneMessage;
 import eu.reservoir.monitoring.distribution.MetaData;
 import eu.reservoir.monitoring.distribution.Transmitting;
@@ -15,13 +15,11 @@ import java.io.IOException;
 /**
  * An interface for distribution components that need
  * to do transmitting of ControlPlaneMessage objects.
+ * A Class implementing this interface is basically a transmitter of control messages 
+   and receiver of control message replies 
  */
 public interface TransmittingAndReceiving extends Transmitting {
-    public Object transmit(ControlPlaneMessage dpm, MetaData metaData) throws Exception;
+    public Object synchronousTransmit(ControlPlaneMessage dpm, MetaData metaData) throws IOException, ControlPlaneConsumerException;
     
-    /*
-    A Class implementing this interface is basically a transmitter of control messages 
-    that also needs to receive replies related to the control messages it sends 
-    */
-    public Object receivedReply(ByteArrayInputStream bis, MetaData metaData, int seqNo) throws IOException, TypeException, ClassNotFoundException;
+    public Object receivedReply(ByteArrayInputStream bis, MetaData metaData, int seqNo) throws IOException;
 }

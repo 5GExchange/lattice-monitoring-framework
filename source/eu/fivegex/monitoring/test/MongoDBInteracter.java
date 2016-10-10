@@ -101,7 +101,9 @@ public class MongoDBInteracter {
 	}
         
         
-        public Document getMongoDBEntry(String serviceID) {
-            return collection.findOneAndDelete(new Document("_id", serviceID));
+        public Document getMongoDBEntry(String serviceID, String probeName) {
+            Document doc = collection.findOneAndDelete(new Document("_id", serviceID));
+            //doc.get
+            return doc;
         }	
 }

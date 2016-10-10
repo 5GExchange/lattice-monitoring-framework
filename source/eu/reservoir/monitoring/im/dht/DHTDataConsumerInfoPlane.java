@@ -87,7 +87,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     public boolean dennounce() {
         try {
 	    imNode.removeDataConsumer(dataConsumer);
-	    System.err.println("DHTInfoPlane: just deannounced DataConsumer " + dataConsumer);
+	    System.out.println("DHTInfoPlane: just deannounced DataConsumer " + dataConsumer);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -98,7 +98,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     public boolean addDataConsumerInfo(DataConsumer dc) {
         try {
 	    imNode.addDataConsumer(dataConsumer);
-	    System.err.println("DHTInfoPlane: just announced DataConsumer " + dataConsumer);
+	    System.out.println("DHTInfoPlane: just announced DataConsumer " + dataConsumer);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -109,7 +109,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     public boolean addReporterInfo(Reporter r) {
         try {
 	    imNode.addReporter((ControllableReporter)r);
-	    System.err.println("DHTInfoPlane: just added reporter " + ((ControllableReporter)r).getName());
+	    System.out.println("DHTInfoPlane: just added reporter " + ((ControllableReporter)r).getName());
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -120,7 +120,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     public boolean removeDataConsumerInfo(DataConsumer dc) {
         try {
 	    imNode.removeDataConsumer(dc);
-	    System.err.println("DHTInfoPlane: just removed Data Consumer " + dc);
+	    System.out.println("DHTInfoPlane: just removed Data Consumer " + dc);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -131,7 +131,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     public boolean removeReporterInfo(Reporter r) {
         try {
 	    imNode.addReporter((ControllableReporter)r);
-	    System.err.println("DHTInfoPlane: just removed reporter " + r);
+	    System.out.println("DHTInfoPlane: just removed reporter " + r);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;

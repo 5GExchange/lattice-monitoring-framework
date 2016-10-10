@@ -46,6 +46,21 @@ public class BasicDataSource extends AbstractDataSource {
 	DataSourceDelegate delegate = new DefaultDataSourceDelegate(this);
 	setDataSourceDelegate(delegate);
     }
+    
+    
+    /**
+     * Construct a BasicDataSource with a name and an ID.
+     * This uses the DefaultDataSourceDelegate to interact with the planes.
+     */
+    public BasicDataSource(String name, ID id) {
+	super(id);
+	setName(name);
+
+	// The DataSourceDelegate for interacting with the planes.
+	DataSourceDelegate delegate = new DefaultDataSourceDelegate(this);
+	setDataSourceDelegate(delegate);
+    }
+    
 
     /**
      * Construct a BasicDataSource with a name and a DataSourceDelegate.

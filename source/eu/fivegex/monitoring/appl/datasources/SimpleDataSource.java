@@ -3,8 +3,9 @@
 // Email: sclayman@ee.ucl.ac.uk
 // Date: Sept 2009
 
-package eu.fivegex.demo;
+package eu.fivegex.monitoring.appl.datasources;
 
+import eu.reservoir.monitoring.core.DefaultControllableDataSource;
 import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneXDRConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
@@ -36,7 +37,7 @@ public class SimpleDataSource {
         
         
 	// set up data source
-	ds = new ControllableBasicDataSource(myDsName);
+	ds = new DefaultControllableDataSource(myDsName);
         
         System.out.println("Sending data to: " + dataConsumerName + ":" + dataConsumerPort);
         

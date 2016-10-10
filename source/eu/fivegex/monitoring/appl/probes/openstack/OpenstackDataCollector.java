@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.demo.probes.openstack;
+package eu.fivegex.monitoring.appl.probes.openstack;
 
 import java.io.IOException;
 import java.net.InetAddress;

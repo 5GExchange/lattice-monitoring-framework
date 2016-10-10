@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.demo.probes.docker;
+package eu.fivegex.monitoring.appl.probes.docker;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

@@ -9,6 +9,7 @@ import eu.fivegex.monitoring.control.DSNotFoundException;
 import cc.clayman.console.BasicRequestHandler;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Scanner;
 import org.simpleframework.http.Path;
 import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
@@ -33,7 +34,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         // get Controller
         controller_ = (Controller) getManagementConsole().getAssociated();
         
-        System.out.println("REQUEST: " + request.getMethod() + " " +  request.getTarget());
+        System.out.println("\n-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
         
         long time = System.currentTimeMillis();
@@ -85,7 +86,10 @@ class DataSourceRestHandler extends BasicRequestHandler {
                     if (name == null && segments.length == 1)
                         getDataSources(request, response);
                     else
-                        notFound(response, "GET bad request");
+                        if (segments.length == 2 && name != null)
+                            getDataSourceInfo(request, response);
+                        else
+                            notFound(response, "GET bad request");
                     break;   
                 default:
                     break;
@@ -152,7 +156,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
             jsobj = controller_.loadProbe(dsID, className, rawArgs);  
         }
         
-        if (jsobj.get("success").equals("false")) {
+        if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("createProbe: failure detected: " + failMessage);
             success = false;   
@@ -209,7 +213,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         
         jsobj = controller_.startDS(endPoint, userName, rawArgs);
         
-        if (jsobj.get("success").equals("false")) {
+        if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("startDS: failure detected: " + failMessage);
             success = false;   
@@ -258,7 +262,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         
         jsobj = controller_.stopDS(endPoint, userName);
         
-        if (jsobj.get("success").equals("false")) {
+        if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("stopDS: failure detected: " + failMessage);
             success = false;   
@@ -284,9 +288,51 @@ class DataSourceRestHandler extends BasicRequestHandler {
         
         jsobj = controller_.getDataSources();
 
-        if (jsobj.get("success").equals("false")) {
+        if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
             System.out.println("getDataSources: failure detected: " + failMessage);
+            success = false;   
+        }
+
+        if (success) {
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+    }
+
+    private void getDataSourceInfo(Request request, Response response) throws IOException, JSONException {
+        Path path = request.getPath();
+        
+        boolean success = true;
+        String failMessage;
+        JSONObject jsobj;
+        
+        String dsID;
+        
+        Scanner scanner = new Scanner(path.getName());
+        
+        if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
+            dsID = scanner.next();
+            scanner.close();
+        }
+        else {
+            System.out.println("dsID is not valid");
+            scanner.close();
+            complain(response, "data source ID is not a valid UUID: " + path.getName());
+            return;
+        }
+        
+        jsobj = controller_.getDataSourceInfo(dsID);
+
+        if (!jsobj.getBoolean("success")) {
+            failMessage = (String)jsobj.get("msg");
+            System.err.println("DataSourceRestHandler: getDataSourceName failure: " + failMessage);
             success = false;   
         }
 

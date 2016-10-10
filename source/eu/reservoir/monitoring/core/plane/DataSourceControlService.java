@@ -6,6 +6,7 @@
 package eu.reservoir.monitoring.core.plane;
 
 import eu.reservoir.monitoring.core.*;
+import eu.fivegex.monitoring.control.ControlServiceException;
 
 /**
  * An interface for control.
@@ -33,13 +34,13 @@ public interface DataSourceControlService {
     /**
      * Load a probe given its description as a ProbeLoader object 
      */
-    public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception;
+    public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws ControlServiceException;
     
     
     /**
      * unload a probe given its probeID 
      */
-    public boolean unloadProbe(ID probeID) throws Exception;
+    public boolean unloadProbe(ID probeID) throws ControlServiceException;
     
     
     /**
@@ -60,7 +61,7 @@ public interface DataSourceControlService {
     /**
      * Set the Service ID for a Probe
      */
-    public boolean setProbeServiceID(ID probeID, ID id) throws Exception;
+    public boolean setProbeServiceID(ID probeID, ID id) throws ControlServiceException;
 
     /**
      * Get the Group ID of the Probe.
@@ -70,7 +71,7 @@ public interface DataSourceControlService {
     /**
      * Set the Group ID for a Probe
      */
-    public boolean setProbeGroupID(ID probeID, ID id) throws Exception;
+    public boolean setProbeGroupID(ID probeID, ID id) throws ControlServiceException;
 
 
     /**
@@ -85,7 +86,7 @@ public interface DataSourceControlService {
      * The data rate is a Rational.
      * Specified in measurements per hour
      */
-    public boolean setProbeDataRate(ID probeID, Rational dataRate) throws Exception;
+    public boolean setProbeDataRate(ID probeID, Rational dataRate) throws ControlServiceException;
 
     /**
      * Get the last measurement that was collected.
@@ -105,12 +106,12 @@ public interface DataSourceControlService {
     /**
      * Turn on a Probe
      */
-    public boolean turnOnProbe(ID probeID) throws Exception;
+    public boolean turnOnProbe(ID probeID) throws ControlServiceException;
 
     /**
      * Turn off a Probe
      */
-    public boolean turnOffProbe(ID probeID) throws Exception;
+    public boolean turnOffProbe(ID probeID) throws ControlServiceException;
 
     /**
      * Is this Probe turned on.
@@ -130,7 +131,7 @@ public interface DataSourceControlService {
 
     /**
      * Has this probe been activated.
-     * Is the thread associated with a Probe acutally running. 
+     * Is the thread associated with a Probe actually running. 
      */
     public boolean isProbeActive(ID probeID);
 
@@ -140,7 +141,7 @@ public interface DataSourceControlService {
     /**
      * Get the name of the DataSource
      */
-    public String getDataSourceName();
+    public String getDataSourceInfo(ID dataSourceID) throws ControlServiceException;
 
     /**
      * Set the name of the DataSource

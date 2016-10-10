@@ -16,7 +16,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public final class UDPTransmitterPool {
     volatile Integer usedObjects;
     int maxSize;
-    LinkedBlockingQueue<UDPTransmitterSyncReply> socketQueue;
+    LinkedBlockingQueue<UDPSynchronousTransmitter> socketQueue;
     Transmitting transmitting;
 
     public UDPTransmitterPool(Transmitting transmitting, int size) throws IOException {
@@ -27,25 +27,25 @@ public final class UDPTransmitterPool {
     }
     
     public void disconnect() throws IOException {
-        for (UDPTransmitterSyncReply t: socketQueue)
+        for (UDPSynchronousTransmitter t: socketQueue)
             t.end();
     }
     
-    public UDPTransmitterSyncReply getConnection() throws IOException, InterruptedException {
+    public UDPSynchronousTransmitter getConnection() throws IOException, InterruptedException {
         synchronized (usedObjects) {
             if (socketQueue.isEmpty() && usedObjects < maxSize) {
                 usedObjects++;
-                return new UDPTransmitterSyncReply(transmitting);
+                return new UDPSynchronousTransmitter(transmitting);
             }
         }
-        UDPTransmitterSyncReply t = socketQueue.take();
+        UDPSynchronousTransmitter t = socketQueue.take();
         synchronized (usedObjects) {
             usedObjects++;
         }
         return t;
     }
     
-    public void releaseConnection(UDPTransmitterSyncReply conn) throws InterruptedException {
+    public void releaseConnection(UDPSynchronousTransmitter conn) throws InterruptedException {
         socketQueue.put(conn);
         synchronized (usedObjects) {
             usedObjects--;

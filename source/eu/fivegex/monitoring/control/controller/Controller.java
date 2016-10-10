@@ -5,6 +5,7 @@
  */
 package eu.fivegex.monitoring.control.controller;
 
+import eu.fivegex.monitoring.control.ControlServiceException;
 import eu.fivegex.monitoring.control.deployment.DeploymentException;
 import eu.fivegex.monitoring.control.probescatalogue.CatalogueException;
 import eu.fivegex.monitoring.control.probescatalogue.JSONProbeCatalogue;
@@ -19,7 +20,6 @@ import eu.reservoir.monitoring.im.dht.DHTInfoPlaneRoot;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
 import java.util.Properties;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
@@ -29,7 +29,7 @@ import eu.fivegex.monitoring.control.deployment.EntityDeploymentDelegate;
  *
  * @author uceeftu
  */
-public class Controller extends AbstractPlaneInteracter {
+public class Controller extends AbstractPlaneInteracter implements JSONControlInterface {
 	
     private static final Controller controller = new Controller();
     private InformationManager informationManager;
@@ -64,11 +64,11 @@ public class Controller extends AbstractPlaneInteracter {
         String dsClassName = pr.getProperty("deployment.dsClassName");
         
         if (this.usingDSDeploymentManager && localJarPath != null && jarFileName != null && remoteJarPath != null && dsClassName != null) {
-            DSDeploymentManager = new SSHDataSourcesDeploymentManager(localJarPath, jarFileName, remoteJarPath, dsClassName);
-            System.out.println("Deployment Manager was started");
+            DSDeploymentManager = new SSHDataSourcesDeploymentManager(localJarPath, jarFileName, remoteJarPath, dsClassName, informationManager);
+            System.out.println("Controller main: Data Source Deployment Manager was started");
         }
         else {
-            System.out.println("Deployment Manager was not started");
+            System.out.println("Controller main: Data Source Deployment Manager was not started");
             this.usingDSDeploymentManager = false;
         }
         
@@ -94,7 +94,8 @@ public class Controller extends AbstractPlaneInteracter {
     }
     
     
-    JSONObject turnOffProbe(String id) throws JSONException {
+    @Override
+    public JSONObject turnOffProbe(String id) throws JSONException {
         JSONObject result = new JSONObject();
         Boolean invocationResult;
         
@@ -104,7 +105,7 @@ public class Controller extends AbstractPlaneInteracter {
         try {
             invocationResult = this.getControlHandle().turnOffProbe(ID.fromString(id));
             result.put("success", invocationResult);
-        } catch (Exception ex) {
+        } catch (ControlServiceException ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());
         }
@@ -113,7 +114,8 @@ public class Controller extends AbstractPlaneInteracter {
     }
     
     
-    JSONObject turnOnProbe(String id) throws JSONException {
+    @Override
+    public JSONObject turnOnProbe(String id) throws JSONException {
         JSONObject result = new JSONObject();
         
         Boolean invocationResult;
@@ -124,7 +126,7 @@ public class Controller extends AbstractPlaneInteracter {
         try {
             invocationResult = this.getControlHandle().turnOnProbe(ID.fromString(id));
             result.put("success", invocationResult);
-        } catch (Exception ex) {
+        } catch (ControlServiceException ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());
         }
@@ -133,7 +135,8 @@ public class Controller extends AbstractPlaneInteracter {
         }
     
     
-    JSONObject loadProbe(String id, String probeClassName, String probeArgs) throws JSONException {
+    @Override
+    public JSONObject loadProbe(String id, String probeClassName, String probeArgs) throws JSONException {
         JSONObject result = new JSONObject();
         
         ID createdProbeID;
@@ -147,24 +150,19 @@ public class Controller extends AbstractPlaneInteracter {
             probeArgsAsObjects = (Object[])probeArgs.split(" ");
         }
         
-        /*
-        System.out.println("Received " + reporterArgsAsObjects.length + " arguments:");
-        for (Object o : reporterArgsAsObjects)
-            System.out.println((String)o);
-        */
-        
         try {
             createdProbeID = this.getControlHandle().loadProbe(ID.fromString(id), probeClassName, probeArgsAsObjects);
             result.put("createdProbeID", createdProbeID.toString());
             result.put("success", true);
-        } catch (Exception ex) {
+        } catch (ControlServiceException ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());
         }
         return result;
         }
     
-    JSONObject unloadProbe(String id) throws JSONException {
+    @Override
+    public JSONObject unloadProbe(String id) throws JSONException {
         JSONObject result = new JSONObject();
         
         Boolean invocationResult;
@@ -175,15 +173,16 @@ public class Controller extends AbstractPlaneInteracter {
         try {
             invocationResult = this.getControlHandle().unloadProbe(ID.fromString(id));
             result.put("success", invocationResult);
-        } catch (Exception ex) {
+        } catch (ControlServiceException ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());
         }
         
         return result;
         }
-    
-    JSONObject setProbeServiceID(String probeID, String serviceID) throws JSONException {
+     
+    @Override
+    public JSONObject setProbeServiceID(String probeID, String serviceID) throws JSONException {
         JSONObject result = new JSONObject();
         
         Boolean invocationResult;
@@ -195,7 +194,7 @@ public class Controller extends AbstractPlaneInteracter {
         try {
             invocationResult = this.getControlHandle().setProbeServiceID(ID.fromString(probeID), ID.fromString(serviceID));
             result.put("success", invocationResult);
-        } catch (Exception ex) {
+        } catch (ControlServiceException ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());
         }
@@ -204,7 +203,8 @@ public class Controller extends AbstractPlaneInteracter {
     }
     
     
-    JSONObject setProbeGroupID(String probeID, String groupID) throws JSONException {
+    @Override
+    public JSONObject setProbeGroupID(String probeID, String groupID) throws JSONException {
         JSONObject result = new JSONObject();
         
         Boolean invocationResult;
@@ -216,7 +216,7 @@ public class Controller extends AbstractPlaneInteracter {
         try {
             invocationResult = this.getControlHandle().setProbeGroupID(ID.fromString(probeID), ID.fromString(groupID));
             result.put("success", invocationResult);
-        } catch (Exception ex) {
+        } catch (ControlServiceException ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());
         }
@@ -225,7 +225,8 @@ public class Controller extends AbstractPlaneInteracter {
     }
 
     
-    JSONObject startDS(String endPoint, String userName, String args) throws JSONException {
+    @Override
+    public JSONObject startDS(String endPoint, String userName, String args) throws JSONException {
         JSONObject result = new JSONObject();
         
         ID startedDsID;
@@ -261,7 +262,8 @@ public class Controller extends AbstractPlaneInteracter {
     }
     
     
-    JSONObject stopDS(String endPoint, String userName) throws JSONException {
+    @Override
+    public JSONObject stopDS(String endPoint, String userName) throws JSONException {
         JSONObject result = new JSONObject();
         
         result.put("operation", "stopDS");
@@ -283,7 +285,28 @@ public class Controller extends AbstractPlaneInteracter {
         return result;
     }
     
-    JSONObject getProbesCatalogue() throws JSONException {
+    @Override
+    public JSONObject getDataSourceInfo(String dsID) throws JSONException {
+        JSONObject result = new JSONObject();
+         
+        String dsName;
+        
+        result.put("operation", "getDataSourceInfo");
+        result.put("ID", dsID);
+        try {
+            dsName = (String) this.getControlHandle().getDataSourceInfo(ID.fromString(dsID));
+            result.put("name", dsName);
+            result.put("success", true);
+        } catch (ControlServiceException ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+        } 
+        return result;
+     }
+    
+    
+    @Override
+    public JSONObject getProbesCatalogue() throws JSONException {
         JSONObject result = new JSONObject();
         
         result.put("operation", "getProbesCatalogue");
@@ -301,7 +324,8 @@ public class Controller extends AbstractPlaneInteracter {
     }
     
     
-    JSONObject setProbeDataRate(String probeID, String dataRate) throws JSONException {
+    @Override
+    public JSONObject setProbeDataRate(String probeID, String dataRate) throws JSONException {
         JSONObject result = new JSONObject();
         Boolean invocationResult;
         
@@ -313,7 +337,7 @@ public class Controller extends AbstractPlaneInteracter {
         try {
             invocationResult = this.getControlHandle().setProbeDataRate(ID.fromString(probeID), new EveryNSeconds(Integer.valueOf(dataRate)));
             result.put("success", invocationResult);
-        } catch (Exception ex) {
+        } catch (ControlServiceException ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());
         }
@@ -322,7 +346,8 @@ public class Controller extends AbstractPlaneInteracter {
     }
     
     
-    JSONObject getDataConsumerMeasurementRate(String dcID) throws JSONException {
+    @Override
+    public JSONObject getDataConsumerMeasurementRate(String dcID) throws JSONException {
         JSONObject result = new JSONObject();
         Float rate;
         
@@ -335,16 +360,17 @@ public class Controller extends AbstractPlaneInteracter {
             rate = this.getControlHandle().getDCMeasurementsRate(ID.fromString(dcID));
             result.put("rate", rate.toString());
             result.put("success", true);
-        } catch (Exception ex) {
+        } catch (ControlServiceException ex) {
             result.put("success", false);
-            result.put("msg", ex.getMessage());
+            result.put("msg", "ControlServiceException while performing getDataConsumerMeasurementRate opertaion: " + ex.getMessage());
         }
         
         return result;
     }
     
     
-    JSONObject loadReporter(String id, String reporterClassName, String reporterArgs) throws JSONException {
+    @Override
+    public JSONObject loadReporter(String id, String reporterClassName, String reporterArgs) throws JSONException {
         JSONObject result = new JSONObject();
         
         ID createdReporterID;
@@ -362,15 +388,16 @@ public class Controller extends AbstractPlaneInteracter {
             createdReporterID = this.getControlHandle().loadReporter(ID.fromString(id), reporterClassName, reporterArgsAsObjects);
             result.put("createdReporterID", createdReporterID.toString());
             result.put("success", true);
-        } catch (Exception ex) {
+        } catch (ControlServiceException ex) {
             result.put("success", false);
-            result.put("msg", ex.getMessage());
+            result.put("msg", "ControlServiceException while performing loadReporter operation: " + ex.getMessage());
         }
         return result;
         }
     
     
-    JSONObject unloadReporter(String id) throws JSONException {
+    @Override
+    public JSONObject unloadReporter(String id) throws JSONException {
         JSONObject result = new JSONObject();
         
         Boolean invocationResult;
@@ -381,14 +408,15 @@ public class Controller extends AbstractPlaneInteracter {
         try {
             invocationResult = this.getControlHandle().unloadReporter(ID.fromString(id));
             result.put("success", invocationResult);
-        } catch (Exception ex) {
+        } catch (ControlServiceException ex) {
             result.put("success", false);
-            result.put("msg", ex.getMessage());
+            result.put("msg", "ControlServiceException while performing unloadReporter operation: " + ex.getMessage());
         }
         return result;
         }
     
-    JSONObject getDataSources() throws JSONException {
+    @Override
+    public JSONObject getDataSources() throws JSONException {
         JSONObject result = new JSONObject();
         
         result.put("operation", "getDataSources");
@@ -397,15 +425,16 @@ public class Controller extends AbstractPlaneInteracter {
             JSONObject dataSources = this.informationManager.getDataSourcesAsJSON();
             result.put("datasources", dataSources);
             result.put("success", true);
-        } catch (Exception ex) {
+        } catch (JSONException ex) {
             result.put("success", false);
-            result.put("msg", ex.getMessage());
+            result.put("msg", "JSONException while performing getDataSources operation: " + ex.getMessage());
           }
         return result;  
     }
     
     
-    JSONObject getDataConsumers() throws JSONException {
+    @Override
+    public JSONObject getDataConsumers() throws JSONException {
         JSONObject result = new JSONObject();
         
         result.put("operation", "getDataConsumers");
@@ -414,9 +443,9 @@ public class Controller extends AbstractPlaneInteracter {
             JSONObject dataConsumers = this.informationManager.getDataConsumersAsJSON();
             result.put("dataconsumers", dataConsumers);
             result.put("success", true);
-        } catch (Exception ex) {
+        } catch (JSONException ex) {
             result.put("success", false);
-            result.put("msg", ex.getMessage());
+            result.put("msg", "JSONException while performing getDataConsumers operation: " + ex.getMessage());
           }
         return result;  
     }
@@ -430,9 +459,10 @@ public class Controller extends AbstractPlaneInteracter {
         String propertiesFile = null;
         
         // setting some default values
-        int infoPlaneLocalPort = 6699;
+        String remoteInfoHost="localhost"; // controller is the DHT root: connecting locally
+        int infoPlanePort = 6699; // the same port is used as remote and local by DHTInfoPlaneRoot
         int restConsolePort = 6666;
-        String probePackage = "eu.fivegex.demo.probes";
+        String probePackage = "eu.fivegex.monitoring.appl.probes";
         String probeSuffix = "Probe";
         
         if (args.length == 0)
@@ -440,7 +470,7 @@ public class Controller extends AbstractPlaneInteracter {
         else if (args.length == 1)
             propertiesFile = args[0];
         else {
-            System.out.println("Please use: java Controller [file.properties]");
+            System.err.println("Controller main: please use: java Controller [file.properties]");
             System.exit(1);
         }
         
@@ -451,17 +481,17 @@ public class Controller extends AbstractPlaneInteracter {
             prop.load(input);
 
             // get the property value and print it out
-            infoPlaneLocalPort = Integer.parseInt(prop.getProperty("info.localport"));
+            infoPlanePort = Integer.parseInt(prop.getProperty("info.localport"));
             restConsolePort = Integer.parseInt(prop.getProperty("restconsole.localport"));
             probePackage = prop.getProperty("probes.package");
             probeSuffix = prop.getProperty("probes.suffix");
             
 	} catch (IOException ex) {
-		System.out.println("Error while opening the property file: " + ex.getMessage());
-                System.out.println("Falling back to default configuration values");
+		System.err.println("Controller main: error while opening the property file: " + ex.getMessage());
+                System.err.println("Controller main: falling back to default configuration values");
 	} catch (NumberFormatException ex) {
-                System.out.println("Error while parsing property file: " + propertiesFile + ", " + ex.getMessage());
-                System.out.println("Falling back to default configuration values");
+                System.err.println("Controller main: error while parsing property file: " + propertiesFile + ", " + ex.getMessage());
+                System.err.println("Controller main: falling back to default configuration values");
         } finally {        
             if (input != null) {
                 try {
@@ -472,15 +502,6 @@ public class Controller extends AbstractPlaneInteracter {
         }
         
         Controller myController = Controller.getInstance();
-        String currentHost="localhost";
-        
-         try {
-            currentHost = InetAddress.getLocalHost().getHostName();   
-            System.out.println(currentHost);
-        } catch (Exception e) {
-            System.out.println("Error while starting the Controller " + e.getMessage());
-        }
-         
-        myController.init(currentHost, infoPlaneLocalPort, restConsolePort, probePackage, probeSuffix, prop);
+        myController.init(remoteInfoHost, infoPlanePort, restConsolePort, probePackage, probeSuffix, prop);
     }
 }

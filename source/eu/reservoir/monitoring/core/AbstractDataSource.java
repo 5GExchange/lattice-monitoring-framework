@@ -87,6 +87,21 @@ public abstract class AbstractDataSource implements DataSource, PlaneInteracter,
 	measurementQueue = new LinkedBlockingQueue();
 
     }
+    
+    
+    /**
+     * Construct a DataSource with a given ID.
+     */
+    public AbstractDataSource(ID id) {
+	// set the ID of this DataSource
+	myID = id;
+	// set up a default DataSourceDelegate
+	setDataSourceDelegate(new DefaultDataSourceDelegate(this));
+
+	// set up queue
+	measurementQueue = new LinkedBlockingQueue();
+
+    }
 
     /**
      * Activate the transmission from the queue to the data plane by starting the thread.

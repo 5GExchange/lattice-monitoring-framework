@@ -86,10 +86,10 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	    DataSource dataSource = dataSourceDelegate.getDataSource();
 	    imNode.addDataSource(dataSource);
             
-            // adding also mapping name -> ID - may be removed in future
+            // adding additional DS information
             addDataSourceInfo(dataSource);
             
-	    System.err.println("DHTInfoPlane: just announced DataSource " + dataSource);
+	    System.out.println("DHTInfoPlane: just announced DataSource " + dataSource);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -121,7 +121,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
      * Set the DataSourceDelegate this is a delegate for.
      */
     public DataSourceDelegate setDataSourceDelegate(DataSourceDelegate ds) {
-	System.err.println("DHTInfoPlane: setDataSource: " + ds);
+	//System.out.println("DHTInfoPlane: setDataSource: " + ds);
 	dataSourceDelegate = ds;
 	return ds;
     }
@@ -131,10 +131,8 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
      */
     public boolean addDataSourceInfo(DataSource ds) {
 	try {
-	    //imNode.addDataSource(ds);
-            // FT announce the hostname -> ID of the DataSource
-            imNode.addDataSourceName(ds);
-	    System.err.println("DHTInfoPlane: just added DataSource " + ds);
+	    // adds further information for the DS
+            imNode.addDataSourceInfo(ds);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -148,7 +146,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.addProbe(p);
 
-	    System.err.println("DHTInfoPlane: just added Probe " + p);
+	    System.out.println("DHTInfoPlane: just added Probe " + p);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -164,7 +162,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.addProbeAttribute(p, pa);
 
-	    System.err.println("DHTInfoPlane: just added ProbeAttribute " + p + "." + pa);
+	    //System.out.println("DHTInfoPlane: just added ProbeAttribute " + p + "." + pa);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -178,7 +176,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.modifyDataSource(ds);
 
-	    System.err.println("DHTInfoPlane: just modified DataSource " + ds);
+	    System.out.println("DHTInfoPlane: just modified DataSource " + ds);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -192,7 +190,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.modifyProbe(p);
 
-	    System.err.println("DHTInfoPlane: just modified Probe " + p);
+	    System.out.println("DHTInfoPlane: just modified Probe " + p);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -206,7 +204,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.modifyProbeAttribute(p, pa);
 
-	    System.err.println("DHTInfoPlane: just modified ProbeAttribute " + p + "." + pa);
+	    System.out.println("DHTInfoPlane: just modified ProbeAttribute " + p + "." + pa);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -221,7 +219,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.removeDataSource(ds);
 
-	    System.err.println("DHTInfoPlane: just removed DataSource " + ds);
+	    System.out.println("DHTInfoPlane: just removed DataSource " + ds);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -235,7 +233,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.removeProbe(p);
 
-	    System.err.println("DHTInfoPlane: just removed Probe " + p);
+	    System.out.println("DHTInfoPlane: just removed Probe " + p);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -249,7 +247,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.removeProbeAttribute(p, pa);
 
-	    System.err.println("DHTInfoPlane: just removed ProbeAttribute " + p + "." + pa);
+	    System.out.println("DHTInfoPlane: just removed ProbeAttribute " + p + "." + pa);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
