@@ -9,7 +9,7 @@ import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
-import eu.fivegex.monitoring.control.DSNotFoundException;
+import eu.fivegex.monitoring.control.DCNotFoundException;
 import eu.fivegex.monitoring.control.controller.InformationManager;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
@@ -20,11 +20,11 @@ import java.net.UnknownHostException;
  *
  * @author uceeftu
  */
-public class SSHDataSourcesDeploymentManager extends SSHDeploymentManager {
+public class SSHDataConsumersDeploymentManager extends SSHDeploymentManager {
     
     
-    public SSHDataSourcesDeploymentManager (String localJarFilePath, String jarFileName, String remoteJarFilePath, String dsFileName, InformationManager info) {
-        super(localJarFilePath, jarFileName, remoteJarFilePath, dsFileName, EntityType.DATASOURCE, info);
+    public SSHDataConsumersDeploymentManager (String localJarFilePath, String jarFileName, String remoteJarFilePath, String dcFileName, InformationManager info) {
+        super(localJarFilePath, jarFileName, remoteJarFilePath, dcFileName, EntityType.DATACONSUMER, info);
     }
     
     // we are supposing that only one DS can be running on a given resource identified by its address (endpoint)
@@ -61,26 +61,28 @@ public class SSHDataSourcesDeploymentManager extends SSHDeploymentManager {
                 entityIDAsString = entityID.toString();
                 System.out.println("Generated entity ID: " + entityIDAsString);
                 
+                // this is only intended for testing the mongoDB reporter
+                String externalJars = this.remoteJarFilePath + "/libs/mongo-java-driver-3.2.2.jar"; 
+                
                 String command = jvm + 
-                                 " -cp " + this.remoteJarFilePath + "/" + this.jarFileName + " " + 
+                                 " -cp " + this.remoteJarFilePath + "/" + this.jarFileName + ":" + externalJars + " " +
                                  this.entityFileName + " " + 
                                  entityIDAsString + " " +   
-                                 args;
-                                 //+ "&";
-               
+                                 args; 
+                                 
                 channel = session.openChannel("exec");
                 ((ChannelExec) channel).setCommand(command);
                 channel.connect(3000);
                 
                 // we are supposed to wait here until the announce message associated to the DS is received from the Announcelistener thread
                 // or the timeout is reached (5 secs)
-                informationManager.waitForDataSource(entityID, 7500);
+                informationManager.waitForDataConsumer(entityID, 7500);
                 
                 // if there is no Exception before we can now try to get the Data Source PID
-                pID = informationManager.getDSPIDFromID(entityID);
+                pID = informationManager.getDCPIDFromID(entityID);
                 
-            } catch (JSchException | DSNotFoundException e) {
-                // we are here if there was an error while starting the remote Data Source
+            } catch (JSchException | DCNotFoundException e) {
+                // we are here if there was an error while starting the remote Data Consumer
                 String errorMessage = "Error while starting " + entityType + " on " + endPointAddress + "\n" + e.getMessage();
                 if (channel != null) {
                     if (!channel.isClosed())
@@ -104,7 +106,7 @@ public class SSHDataSourcesDeploymentManager extends SSHDeploymentManager {
                 }
               }
             
-            // now storing local information for Data Sources deployment/starting management
+            // now storing local information for Data Consumers deployment/starting management
             SSHDeploymentInfo entityInfo = new SSHDeploymentInfo();
             entityInfo.setEntityID(entityID);
             entityInfo.setEntityPID(pID);

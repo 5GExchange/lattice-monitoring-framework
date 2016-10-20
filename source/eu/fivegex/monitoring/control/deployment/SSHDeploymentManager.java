@@ -33,7 +33,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
     protected final JSch jsch;
     protected final Map<String, Boolean> deploymentMonitor;
     protected final Map<String, Boolean> runMonitor;
-    protected final Map<String, Boolean> entityDeployedOnEndPoint;
+    protected final Map<String, Long> entityDeployedOnEndPoint;
     protected final Map<String, SSHDeploymentInfo> entityRunningOnEndPoint;
     
     protected final InformationManager informationManager;
@@ -69,8 +69,8 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
     protected Session connectWithKey(String endPoint, String userName) throws JSchException {
         String privateKeyFile = System.getProperty("user.home") + "/.ssh/id_rsa";
         //System.out.println(privateKeyFile);
-        this.jsch.addIdentity(privateKeyFile);
-        Session session = this.jsch.getSession(userName, endPoint, 22);
+        jsch.addIdentity(privateKeyFile);
+        Session session = jsch.getSession(userName, endPoint, 22); // @TODO: port should be also a parameter
         session.setConfig("PreferredAuthentications", "publickey");
         session.setConfig("StrictHostKeyChecking", "no"); //ignore unknown hosts
         session.connect(3000);
@@ -88,7 +88,12 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
         deploymentMonitor.putIfAbsent(endPointAddress, true);
         synchronized (deploymentMonitor.get(endPointAddress)) {
             System.out.println(Thread.currentThread().getName() + ": Deploying "+ entityType);
-            if (this.isEntityDeployed(endPointAddress)) {
+            File jarFile = new File(this.localJarFilePath + "/" + this.jarFileName);
+                if (!jarFile.exists()) {
+                    throw new DeploymentException("Error: file " + this.localJarFilePath + "/" + this.jarFileName + " does not exist");
+                }
+
+            if (this.isEntityDeployed(endPointAddress) && jarFile.lastModified() <= getJarModificationDate(endPointAddress)) {
                 return false;
             }
             Session session = null;
@@ -98,15 +103,11 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
                 Channel channel = session.openChannel("sftp");
                 channel.connect(3000);
                 c = (ChannelSftp) channel;
-                File jarFile = new File(this.localJarFilePath + "/" + this.jarFileName);
-                if (!jarFile.exists()) {
-                    throw new DeploymentException("Error: file " + this.localJarFilePath + "/" + this.jarFileName + " does not exist");
-                }
                 c.put(this.localJarFilePath + "/" + this.jarFileName, this.remoteJarFilePath + "/" + this.jarFileName, ChannelSftp.OVERWRITE);
                 System.out.println("Copying: " + this.localJarFilePath + "/" + this.jarFileName);
                 System.out.println("to: " + this.remoteJarFilePath + "/" + this.jarFileName);
                 //adding info to the map
-                entityDeployedOnEndPoint.putIfAbsent(endPointAddress, true);
+                entityDeployedOnEndPoint.putIfAbsent(endPointAddress, jarFile.lastModified());
             } catch (JSchException | SftpException e) {
                 throw new DeploymentException("Error while deploying " + entityType + " on " + endPointAddress + ", " + e.getMessage());
             } finally {
@@ -155,7 +156,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
                             throw new DeploymentException("Something went wrong while stopping " + entityType);
                         }
                     }
-                    Thread.sleep(100);
+                    Thread.sleep(500);
                 }
             } catch (JSchException e) {
                 throw new DeploymentException("Error while stopping " + entityType + " on " + endPointAddress + ", " + e.getMessage());
@@ -174,6 +175,10 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
     @Override
     public boolean isEntityRunning(String endPoint) {
         return entityRunningOnEndPoint.containsKey(endPoint);
+    }
+    
+    private Long getJarModificationDate(String endPoint) {
+        return entityDeployedOnEndPoint.get(endPoint);
     }
     
 }

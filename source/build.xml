@@ -6,9 +6,9 @@
     <echo message=""/>
     <property name="sources" value="${basedir}"/>
     <property name="classes" value="../classes"/>
-    <property name="external.core.jars" value="../libs/core/koala-xmlstore-0.5.4.jar:../libs/core/libvirt-0.2.1.jar:../libs/core/dht.jar:../libs/core/resty-0.3.2.jar" /> 
+    <property name="external.core.jars" value="../libs/core/koala-xmlstore-0.5.4.jar:../libs/core/libvirt-0.2.1.jar:../libs/core/resty-0.3.2.jar:../libs/core/TomP2P-4.4.jar:../libs/core/slf4j-api-1.6.4.jar:../libs/core/netty-3.5.3.Patched.jar" /> 
  
-    <property name="external.controller.jars" value="../libs/core/koala-xmlstore-0.5.4.jar:../libs/core/libvirt-0.2.1.jar:../libs/core/dht.jar:../libs/controller/restconsole-0.1.0.jar:../libs/controller/simple-4.1.21.jar:../libs/controller/resty-0.3.2.jar:../libs/controller/Logger-0.1.0.jar:../libs/controller/jsch-0.1.53.jar" />
+    <property name="external.controller.jars" value="${external.core.jars}:../libs/controller/restconsole-0.1.0.jar:../libs/controller/simple-4.1.21.jar:../libs/controller/jsch-0.1.53.jar" />
 
     <property name="external.others.jars" value="../libs/misc/mongo-java-driver-3.2.2.jar" />
 

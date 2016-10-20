@@ -9,29 +9,29 @@ package eu.reservoir.monitoring.core;
  *
  * @author uceeftu
  */
-public interface DataConsumer extends PlaneInteracter {
+public interface ControllableDataConsumer extends PlaneInteracter {
     /**
-     * Get the ID of the DataConsumer.
+     * Get the ID of the ControllableDataConsumer.
      */
     public ID getID();
 
 
     /**
-     * Set the DataConsumer ID
+     * Set the ControllableDataConsumer ID
      */
-    public DataConsumer setID(ID id);
+    public ControllableDataConsumer setID(ID id);
     
     
     /**
-     * Get the DataConsumer ID
+     * Get the ControllableDataConsumer ID
      */
     public String getName();
     
     
     /**
-     * Get the DataConsumer ID
+     * Get the ControllableDataConsumer ID
      */
-    public DataConsumer setName(String dcName);
+    public ControllableDataConsumer setName(String dcName);
     
     
     /**
@@ -57,9 +57,17 @@ public interface DataConsumer extends PlaneInteracter {
      */
     public Object[] getReporters();
     
+    
+    
     /**
      * Return the reporter object given the related ID
      */
     public ControllableReporter getReporterById(ID reporterID);
+    
+    
+    /**
+     * Return the PID of this Data Consumer
+     */
+    public int getMyPID();
     
 }

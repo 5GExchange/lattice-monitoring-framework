@@ -21,7 +21,7 @@ import java.util.Scanner;
  * logs out/err to a file rather than standard streams.
  **/
 public final class DataSourceDaemon extends Thread {
-    ControllableDataSource ds;
+    ControllableDataSource dataSource;
     
     ID dataSourceID;
     
@@ -48,12 +48,12 @@ public final class DataSourceDaemon extends Thread {
         this.attachShutDownHook();
         
         dataSourceID = ID.fromString(myID);
-	ds = new DefaultControllableDataSource(myDsName, dataSourceID);
+	dataSource = new DefaultControllableDataSource(myDsName, dataSourceID);
         
         setStreams();
         
-        System.out.println("DataSource ID: " + ds.getID());
-        System.out.println("Process ID: " + ds.getMyPID());
+        System.out.println("DataSource ID: " + dataSource.getID());
+        System.out.println("Process ID: " + dataSource.getMyPID());
         System.out.println("Using host name: " + myDsName);
         System.out.println("Sending measurements to Data Consumer: " + dataConsumerName + ":" + dataConsumerPort);
         System.out.println("Connecting to the Info Plane using: " + infoPlaneLocalPort + ":" + infoPlaneRootName + ":" + infoPlaneRootPort);
@@ -72,11 +72,11 @@ public final class DataSourceDaemon extends Thread {
         ControlPlane controlPlane = new UDPDataSourceControlPlaneXDRConsumer(localCtrlAddress, remoteCtrlAddress);
         
 	// set up the planes
-	ds.setDataPlane(new UDPDataPlaneProducer(DataAddress));
-        ds.setControlPlane(controlPlane);
-        ds.setInfoPlane(new DHTDataSourceInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
+	dataSource.setDataPlane(new UDPDataPlaneProducer(DataAddress));
+        dataSource.setControlPlane(controlPlane);
+        dataSource.setInfoPlane(new DHTDataSourceInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
         
-	if (!ds.connect()) 
+	if (!dataSource.connect()) 
             System.exit(1); //terminating as there was an error while connecting to the planes
     }
 
@@ -84,6 +84,9 @@ public final class DataSourceDaemon extends Thread {
     void setStreams() throws IOException {
         String outFileName = "data-source-" + dataSourceID + "-out.log";
         String errFileName = "data-source-" + dataSourceID + "-err.log";
+        
+        //String outFileName = "data-source-" + "out.log";
+        //String errFileName = "data-source-" + "err.log";
         
         File outLogFile;
         File errLogFile;
@@ -125,7 +128,7 @@ public final class DataSourceDaemon extends Thread {
         System.out.println("Disconnecting from the planes before shutting down");
         try {
             // will first do deannounce and then disconnect from each of the planes
-            ds.disconnect();
+            dataSource.disconnect();
         } catch (Exception e) {
             System.err.println("Something went wrong while disconnecting from the planes " + e.getMessage());
           }
@@ -153,16 +156,31 @@ public final class DataSourceDaemon extends Thread {
             int controlLocalPort = 1111;
             int controllerRemotePort = 8888;
             
+            Scanner sc;
+                    
             switch (args.length) {
                 case 0:
                     // use existing settings
                     String loopBack = InetAddress.getLoopbackAddress().getHostName();
                     dsName = dataConsumerAddr = infoHost = controlEndPoint = loopBack;
                     break;
+                case 6:
+                    dataConsumerAddr = args[0];
+                    sc = new Scanner(args[1]);
+                    dataConsumerPort = sc.nextInt();
+                    infoHost = args[2];
+                    sc = new Scanner(args[3]);
+                    infoRemotePort = sc.nextInt();
+                    sc= new Scanner(args[4]);
+                    infoLocalPort = sc.nextInt();
+                    sc= new Scanner(args[5]);
+                    controlLocalPort = sc.nextInt();
+                    dsName = controlEndPoint = InetAddress.getLocalHost().getHostName();
+                    break;
                 case 7:
                     dsID = args[0];
                     dataConsumerAddr = args[1];
-                    Scanner sc = new Scanner(args[2]);
+                    sc = new Scanner(args[2]);
                     dataConsumerPort = sc.nextInt();
                     infoHost = args[3];
                     sc = new Scanner(args[4]);
@@ -172,7 +190,7 @@ public final class DataSourceDaemon extends Thread {
                     sc= new Scanner(args[6]);
                     controlLocalPort = sc.nextInt();
                     dsName = controlEndPoint = InetAddress.getLocalHost().getHostName();
-                    break;
+                    break;    
                 default:
                     System.err.println("use: SimpleDataSourceDaemon dsID dcAddress dcPort infoHost infoRemotePort infoLocalPort controlLocalPort");
                     System.exit(1);

@@ -13,7 +13,6 @@ import java.math.BigInteger;
 //import org.planx.xmlstore.routing.messaging.*;
 //import org.planx.xmlstore.routing.operation.*;
 //import org.planx.xmlstore.routing.*;
-import org.planx.routing.messaging.*;
 import org.planx.routing.kademlia.*;
 import org.planx.routing.*;
 
@@ -59,7 +58,11 @@ public class DistributedHashTable {
 
 	connAddr = new InetSocketAddress(InetAddress.getByName(remAddress), remPort);
 
+        
+        System.out.println("Before Connection: " + connAddr.toString());
+        long t1 = System.currentTimeMillis();
 	kademlia.connect(connAddr);
+        System.out.println("After Connection: " + (System.currentTimeMillis() - t1));
     }
 
     /**

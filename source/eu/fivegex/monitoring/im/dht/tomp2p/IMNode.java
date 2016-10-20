@@ -1,9 +1,4 @@
-// IMNode.java
-// Author: Stuart Clayman
-// Email: sclayman@ee.ucl.ac.uk
-// Date: Oct 2008
-
-package eu.reservoir.monitoring.im.dht;
+package eu.fivegex.monitoring.im.dht.tomp2p;
 
 import eu.fivegex.monitoring.appl.dataconsumers.DefaultControllableDataConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
@@ -15,8 +10,9 @@ import eu.reservoir.monitoring.core.ControllableReporter;
 import java.io.Serializable;
 import java.io.IOException;
 import java.util.Collection;
-import java.math.BigInteger;
 import eu.reservoir.monitoring.core.ControllableDataConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An IMNode is responsible for converting  DataSource, ControllableDataConsumer and Probe
@@ -43,6 +39,8 @@ public class IMNode {
 
     // the remote port
     int remotePort = 0;
+    
+    static Logger LOGGER = LoggerFactory.getLogger(IMNode.class);
 
     /**
      * Construct an IMNode, given a local port and a remote host
@@ -64,14 +62,14 @@ public class IMNode {
 		dht = new DistributedHashTable(localPort);
 		dht.connect(remoteHost, remotePort);
 
-		System.out.println("IMNode: connect: " + localPort + " to " + remoteHost + "/" + remotePort);
+		LOGGER.info("IMNode: connect: " + localPort + " to " + remoteHost + "/" + remotePort);
 
 		return true;
 	    } else {
 		return true;
 	    }
 	} catch (IOException ioe) {
-	    System.err.println("IMNode: connect failed: " + ioe);
+	    LOGGER.error("IMNode: connect failed: " + ioe);
 	    if (dht != null) {
 		try {
 		    dht.close();
@@ -241,7 +239,6 @@ public class IMNode {
     public IMNode removeProbe(Probe aProbe) throws IOException {
 	// add probe's ref to its data source
 	// found through the ProbeManager
-	DataSource ds = (DataSource)aProbe.getProbeManager();
 	remDHT("/probe/" + aProbe.getID() + "/datasource");
 
 	// add probe name to DHT
@@ -340,39 +337,37 @@ public class IMNode {
     
     public boolean containsDataSource(ID dataSourceID) {
         try {
-            BigInteger newKey = keyToBigInteger("/datasource/" + dataSourceID + "/name");
+            String newKey = "/datasource/" + dataSourceID + "/name";
             return dht.contains(newKey);
         } 
         catch (IOException ioe) {
-            System.err.println("IMNode: containsDataSource failed for DS " + dataSourceID);
+            LOGGER.error("IMNode: containsDataSource failed for DS " + dataSourceID + ioe.getMessage());
             return false;
         }
     }
     
     public boolean containsDataConsumer(ID dataConsumerID) {
         try {
-            BigInteger newKey = keyToBigInteger("/dataconsumer/" + dataConsumerID + "/name");
+            String newKey = "/dataconsumer/" + dataConsumerID + "/name";
             return dht.contains(newKey);
         } 
         catch (IOException ioe) {
-            System.err.println("IMNode: containsDataConsumer failed for DS " + dataConsumerID);
+            LOGGER.error("IMNode: containsDataConsumer failed for DS " + dataConsumerID + ioe.getMessage());
             return false;
         }
     }
     
-
 
     /**
      * Put stuff into DHT.
      */
     public boolean putDHT(String aKey, Serializable aValue) {
 	try {
-	    BigInteger newKey = keyToBigInteger(aKey);
-	    //System.out.println("IMNode: put " + aKey + " K(" + newKey + ") => " + aValue);
-	    dht.put(newKey, aValue);
+	    LOGGER.debug("IMNode: put " + aKey + " => " + aValue);
+	    dht.put(aKey, aValue);
 	    return true;
 	} catch (IOException ioe) {
-	    System.err.println("IMNode: putDHT failed for key: '" + aKey + "' value: '" + aValue + "'");
+	    LOGGER.error("IMNode: putDHT failed for key: '" + aKey + "' value: '" + aValue + ioe.getMessage());
 	    return false;
 	}
     }
@@ -383,13 +378,11 @@ public class IMNode {
      */
     public Object getDHT(String aKey) {
 	try {
-	    BigInteger newKey = keyToBigInteger(aKey);
-	    Object aValue = dht.get(newKey);
-	    //System.out.println("IMNode: get " + aKey + " = " + newKey + " => " + aValue);
+	    Object aValue = dht.get(aKey);
+	    LOGGER.debug("IMNode: get " + aKey +  " => " + aValue);
 	    return aValue;
-	} catch (IOException ioe) {
-	    System.err.println("IMNode: getDHT failed for key: '" + aKey + "'");
-	    ioe.printStackTrace();
+	} catch (IOException | ClassNotFoundException e) {
+	    LOGGER.error("IMNode: getDHT failed for key: '" + aKey + e.getMessage());
 	    return null;
 	}
     }
@@ -400,31 +393,17 @@ public class IMNode {
      */
     public boolean remDHT(String aKey) {
 	try {
-	    BigInteger newKey = keyToBigInteger(aKey);
-	    dht.remove(newKey);
-	    //System.out.println("IMNode: get " + aKey + " = " + newKey + " => " + aValue);
+	    dht.remove(aKey);
+	    LOGGER.debug("IMNode: remove " + aKey);
 	    return true;
 	} catch (IOException ioe) {
-	    System.err.println("IMNode: remDHT failed for key: '" + aKey + "'");
+	    LOGGER.equals("IMNode: remDHT failed for key: '" + aKey + ioe.getMessage());
 	    return false;
 	}
     }
-
-    /**
-     * Convert a key like /a/b/c/d into a fixed size big integer.
-     */
-    private BigInteger keyToBigInteger(String aKey) {
-	// hash codes are signed ints
-	int i = aKey.hashCode();
-	// convert this into an unsigned long
-	long l = 0xffffffffL & i;
-	// create the BigInteger
-	BigInteger result = BigInteger.valueOf(l);
-
-	return result;
-    }
     
     
+    @Override
     public String toString() {
         return dht.toString();
     }

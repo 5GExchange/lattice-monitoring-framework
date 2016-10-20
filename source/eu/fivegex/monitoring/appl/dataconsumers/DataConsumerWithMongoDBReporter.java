@@ -16,7 +16,7 @@ import java.util.Scanner;
  */
 public class DataConsumerWithMongoDBReporter {
     // The Basic consumer
-    MongodbConsumer consumer;
+    MongoDBConsumer consumer;
 
     /*
      * Construct a SimpleConsumerUDP
@@ -26,7 +26,7 @@ public class DataConsumerWithMongoDBReporter {
         //consumer = new BasicConsumer();
 
         // set up a BasicConsumer for MongoDB
-        consumer = new MongodbConsumer(dbAddr, dbPort, dbName, collectionName);
+        consumer = new MongoDBConsumer(dbAddr, dbPort, dbName, collectionName);
 
         // set up an IP address for data
         InetSocketAddress address = new InetSocketAddress(addr, dataPort);

@@ -5,12 +5,14 @@
  */
 package eu.fivegex.monitoring.control.controller;
 
+import eu.fivegex.monitoring.control.JSONControlInterface;
+
 /**
  *
  * @author uceeftu
  */
-public class ControllerManagementConsole extends RestConsole{
-    public ControllerManagementConsole(Controller controller, int port) {
+public final class JSONControllerManagementConsole extends RestConsole{
+    public JSONControllerManagementConsole(JSONControlInterface controller, int port) {
 
         setAssociated(controller);
         initialise(port);
@@ -18,9 +20,6 @@ public class ControllerManagementConsole extends RestConsole{
 
     @Override
     public void registerCommands() {
-        // /probe/uuid
-        //defineRequestHandler("/probe/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", new ProbeRestHandler());
-        
         // /probe/uuid/?<args>
         defineRequestHandler("/probe/.*", new ProbeRestHandler());
         
@@ -32,6 +31,8 @@ public class ControllerManagementConsole extends RestConsole{
         
         // /dataconsumer/uuid/?<args> 
         defineRequestHandler("/reporter/.*", new ReporterRestHandler());
+        
+        register(new UnknownCommand());
        }
     
 }

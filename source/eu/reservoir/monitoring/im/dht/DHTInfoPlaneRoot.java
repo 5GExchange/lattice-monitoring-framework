@@ -23,6 +23,6 @@ public class DHTInfoPlaneRoot extends DHTInfoPlaneConsumer implements InfoPlane 
 	rootHost = localHostname;
 	rootPort = localPort;
 
-	imNode = new IMNode(localPort, localHostname, localPort);
+	imNode = new eu.fivegex.monitoring.im.dht.tomp2p.IMNode(localPort, localHostname, localPort);
     }
 }

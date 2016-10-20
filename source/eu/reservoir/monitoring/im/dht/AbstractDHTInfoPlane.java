@@ -19,17 +19,17 @@ import java.io.Serializable;
  */
 public abstract class AbstractDHTInfoPlane implements InfoPlane  {
     // An IMNode acts as a node in the DHT
-    IMNode imNode;
-
+    //IMNode imNode;
+    eu.fivegex.monitoring.im.dht.tomp2p.IMNode imNode;
     /**
-     * Connect to a delivery mechansim.
+     * Connect to a delivery mechanism.
      */
     public boolean connect() {
 	return imNode.connect();
     }
 
     /**
-     * Dicconnect from a delivery mechansim.
+     * Disconnect from a delivery mechanism.
      */
     public boolean disconnect() {
 	return imNode.disconnect();

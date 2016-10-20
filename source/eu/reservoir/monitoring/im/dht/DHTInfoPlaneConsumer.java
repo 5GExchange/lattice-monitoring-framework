@@ -5,13 +5,13 @@
 
 package eu.reservoir.monitoring.im.dht;
 
-import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 import eu.reservoir.monitoring.core.Reporter;
+import eu.reservoir.monitoring.core.ControllableDataConsumer;
 
 /**
  * A DHTInfoPlaneConsumer is an InfoPlane implementation
@@ -44,7 +44,7 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
 	rootPort = remotePort;
 	port = localPort;
 
-	imNode = new IMNode(localPort, remoteHostname, remotePort);
+	imNode = new eu.fivegex.monitoring.im.dht.tomp2p.IMNode(localPort, remoteHostname, remotePort);
     }
 
 
@@ -129,7 +129,7 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
     }
 
     @Override
-    public boolean addDataConsumerInfo(DataConsumer dc) {
+    public boolean addDataConsumerInfo(ControllableDataConsumer dc) {
         return false;
     }
 
@@ -139,7 +139,7 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
     }
 
     @Override
-    public boolean removeDataConsumerInfo(DataConsumer dc) {
+    public boolean removeDataConsumerInfo(ControllableDataConsumer dc) {
         return false;
     }
 
@@ -149,12 +149,40 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
     }
     
     @Override
-    public boolean containsDataSource(ID dataSourceID) {
-        return imNode.containsDataSource(dataSourceID);
+    public boolean containsDataSource(ID dataSourceID, int timeOut) {
+        long tStart = System.currentTimeMillis();
+        long tCurrent;
+        boolean found = false;
+        do {
+           found = imNode.containsDataSource(dataSourceID);
+           if (found)
+               return found;
+           try {
+                Thread.sleep(500); // polling every 500 ms until the timeout is reached
+           } catch (InterruptedException e) {
+               return found;
+           }
+           tCurrent = System.currentTimeMillis();
+        }  while (tCurrent - tStart < (long) timeOut);
+        return found;
     }
     
     @Override
-    public boolean containsDataConsumer(ID dataConsumerID) {
-        return imNode.containsDataConsumer(dataConsumerID);
+    public boolean containsDataConsumer(ID dataConsumerID, int timeOut) {
+        long tStart = System.currentTimeMillis();
+        long tCurrent;
+        boolean found = false;
+        do {
+           found = imNode.containsDataConsumer(dataConsumerID);
+           if (found)
+               return found;
+           try {
+                Thread.sleep(500); // polling every 500 ms until the timeout is reached
+           } catch (InterruptedException e) {
+               return found;
+           }
+           tCurrent = System.currentTimeMillis();
+        }  while (tCurrent - tStart < (long) timeOut);
+        return found;
     }
 }

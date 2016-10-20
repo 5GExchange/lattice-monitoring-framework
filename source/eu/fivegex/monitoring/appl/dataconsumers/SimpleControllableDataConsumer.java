@@ -25,7 +25,7 @@ import java.util.Scanner;
  * This receives measurements from a UDP Data Plane.
  */
 public final class SimpleControllableDataConsumer extends Thread {
-    ControllableDataConsumer consumer;
+    DefaultControllableDataConsumer consumer;
 
     /*
      * Construct a controllable SimpleControllableDataConsumer
@@ -41,8 +41,8 @@ public final class SimpleControllableDataConsumer extends Thread {
         
         this.attachShutDownHook();
         
-	// set up a ControllableDataConsumer
-	consumer = new ControllableDataConsumer("controllable-DC");
+	// set up a DefaultControllableDataConsumer
+	consumer = new DefaultControllableDataConsumer("controllable-DC");
         System.out.println("Data Consumer ID: " + consumer.getID());
 
 	// set up an IP address for data and control

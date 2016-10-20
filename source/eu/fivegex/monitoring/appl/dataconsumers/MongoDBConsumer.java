@@ -1,4 +1,4 @@
-// MongodbConsumer.java
+// MongoDBConsumer.java
 // 
 
 package eu.fivegex.monitoring.appl.dataconsumers;
@@ -15,12 +15,12 @@ import eu.reservoir.monitoring.appl.*;
  * info plane.
  */
 
-public class MongodbConsumer extends AbstractDataConsumer implements MeasurementReceiver {
+public class MongoDBConsumer extends AbstractDataConsumer implements MeasurementReceiver {
 
     /**
      * Construct a BasicConsumer.
      */
-    public MongodbConsumer(String dbAddr, int dbPort, String dbName, String collectionName) throws ReporterException {
+    public MongoDBConsumer(String dbAddr, int dbPort, String dbName, String collectionName) throws ReporterException {
         Reporter printReporter =  new PrintReporter();
         Reporter mongoReporter = new MongoDBReporter(dbAddr, dbPort, dbName, collectionName);
         

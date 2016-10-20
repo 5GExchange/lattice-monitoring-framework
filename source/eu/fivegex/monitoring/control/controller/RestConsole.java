@@ -6,19 +6,18 @@
 package eu.fivegex.monitoring.control.controller;
 
 import java.util.HashMap;
-import cc.clayman.console.AbstractRestConsole;
+import org.slf4j.LoggerFactory;
 
 
 /**
  * A ManagementConsole listens for REST requests
- * in the GlobalController
+ * in the Controller
  */
 public abstract class RestConsole extends AbstractRestConsole {
 
-
     // HashMap of command name -> Command
     HashMap<String, Command> commandMap;
-
+    
     /**
      * The no arg Constructor.
      */
@@ -32,10 +31,10 @@ public abstract class RestConsole extends AbstractRestConsole {
      */
     @Override
 	public void initialise (int port) {
-        super.initialise(port);
+            super.initialise(port);
 
-        // setup default /command handler
-        defineRequestHandler("/command/", new CommandAsRestHandler());
+            // setup default /command handler
+            defineRequestHandler("/command/", new CommandAsRestHandler());
 
     }
 
@@ -47,17 +46,17 @@ public abstract class RestConsole extends AbstractRestConsole {
         // check the UnknownCommand exists
         Command unknown = commandMap.get("__UNKNOWN__");
         
-        /*
+        
         if (unknown == null) {
-            //Logger.getLogger("log").logln(USR.ERROR, leadin() + "the UnknownCommand has not been registered");
-            System.out.println("Unknown null");
+            LoggerFactory.getLogger(RestConsole.class).error("Unknown Command is null");
             return false;
-        }*/
+        }
 
 
         return super.start();
-    }
-
+        }
+        
+        
     /**
      * Register a new command with the ManagementConsole.
      */

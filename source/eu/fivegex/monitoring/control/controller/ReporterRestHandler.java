@@ -5,8 +5,8 @@
  */
 package eu.fivegex.monitoring.control.controller;
 
-import eu.fivegex.monitoring.control.ReporterNotFoundException;
 import cc.clayman.console.BasicRequestHandler;
+import eu.fivegex.monitoring.control.JSONControlInterface;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Scanner;
@@ -22,7 +22,7 @@ import us.monoid.json.JSONObject;
  */
 class ReporterRestHandler extends BasicRequestHandler {
 
-    Controller controller_;
+    JSONControlInterface controllerInterface;
     
     public ReporterRestHandler() {
     }
@@ -30,7 +30,7 @@ class ReporterRestHandler extends BasicRequestHandler {
     @Override
     public boolean handle(Request request, Response response) {
         // get Controller
-        controller_ = (Controller) getManagementConsole().getAssociated();
+        controllerInterface = (JSONControlInterface) getManagementConsole().getAssociated();
         
         System.out.println("\n-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
@@ -96,8 +96,6 @@ class ReporterRestHandler extends BasicRequestHandler {
                 System.out.println("IOException" + ex.getMessage());
             } catch (JSONException jex) {
                 System.out.println("JSONException" + jex.getMessage());
-            } catch (ReporterNotFoundException idEx) {
-                System.out.println("ReporterNotFoundException --- " + idEx.getMessage());
             } finally {
                         try {
                             response.close();
@@ -108,7 +106,7 @@ class ReporterRestHandler extends BasicRequestHandler {
      return false;
     }
 
-    private void reporterOperation(Request request, Response response) throws JSONException, IOException, ReporterNotFoundException {
+    private void reporterOperation(Request request, Response response) throws JSONException, IOException {
         /*
         Scanner scanner;
         boolean success = true;
@@ -138,7 +136,7 @@ class ReporterRestHandler extends BasicRequestHandler {
     
     
     
-    private void deleteReporter(Request request, Response response) throws JSONException, IOException, ReporterNotFoundException {
+    private void deleteReporter(Request request, Response response) throws JSONException, IOException {
         boolean success = true;
         String failMessage = null;
         JSONObject jsobj = null;
@@ -150,7 +148,7 @@ class ReporterRestHandler extends BasicRequestHandler {
             String reporterID = sc.next();
             sc.close();
 
-            jsobj = controller_.unloadReporter(reporterID);
+            jsobj = controllerInterface.unloadReporter(reporterID);
 
             if (!jsobj.getBoolean("success")) {
                 failMessage = (String)jsobj.get("msg");

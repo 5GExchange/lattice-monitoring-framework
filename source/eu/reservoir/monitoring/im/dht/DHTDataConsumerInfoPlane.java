@@ -6,7 +6,6 @@
 package eu.reservoir.monitoring.im.dht;
 
 import eu.reservoir.monitoring.core.ControllableReporter;
-import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.ID;
@@ -16,6 +15,7 @@ import eu.reservoir.monitoring.core.Reporter;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 
 import java.io.IOException;
+import eu.reservoir.monitoring.core.ControllableDataConsumer;
 
 /**
  * A DHTDataConsumerInfoPlane is an InfoPlane implementation
@@ -23,7 +23,7 @@ import java.io.IOException;
  */
 
 public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements InfoPlane, DataConsumerInteracter {
-    DataConsumer dataConsumer;
+    ControllableDataConsumer dataConsumer;
     // The hostname of the DHT root.
     String rootHost;
 
@@ -43,7 +43,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
 	rootPort = remotePort;
 	port = localPort;
 
-	imNode = new IMNode(localPort, remoteHostname, remotePort);
+	imNode = new eu.fivegex.monitoring.im.dht.tomp2p.IMNode(localPort, remoteHostname, remotePort);
     }
 
     /**
@@ -61,15 +61,16 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     }
 
     /**
-     * Dicconnect from a delivery mechansim.
-     * In a DHTDataSourceInfoPlane we call dennounce.
+     * Disconnect from a delivery mechanism.
+     * In a DHTDataSourceInfoPlane we call deannounce.
      */
     public boolean disconnect() {
-	if (super.disconnect()) {
+	/*if (super.disconnect()) {
 	    return dennounce();
 	} else {
 	    return false;
-	}
+	}*/
+        return super.disconnect();
     }
 
 
@@ -87,7 +88,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     public boolean dennounce() {
         try {
 	    imNode.removeDataConsumer(dataConsumer);
-	    System.out.println("DHTInfoPlane: just deannounced DataConsumer " + dataConsumer);
+	    System.out.println("DHTInfoPlane: just deannounced this Data Consumer " + dataConsumer.getID());
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -95,10 +96,11 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     }
 
     @Override
-    public boolean addDataConsumerInfo(DataConsumer dc) {
+    public boolean addDataConsumerInfo(ControllableDataConsumer dc) {
         try {
-	    imNode.addDataConsumer(dataConsumer);
-	    System.out.println("DHTInfoPlane: just announced DataConsumer " + dataConsumer);
+	    imNode.addDataConsumer(dc);
+            imNode.addDataConsumerInfo(dc);
+	    System.out.println("DHTInfoPlane: just announced this Data Consumer " + dc.getID());
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -117,7 +119,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     }
 
     @Override
-    public boolean removeDataConsumerInfo(DataConsumer dc) {
+    public boolean removeDataConsumerInfo(ControllableDataConsumer dc) {
         try {
 	    imNode.removeDataConsumer(dc);
 	    System.out.println("DHTInfoPlane: just removed Data Consumer " + dc);
@@ -188,22 +190,22 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     }
 
     @Override
-    public boolean containsDataSource(ID dataSourceID) {
+    public boolean containsDataSource(ID dataSourceID, int timeOut) {
         throw new UnsupportedOperationException("Not supported on a Data Consumer"); 
     }
 
     @Override
-    public boolean containsDataConsumer(ID dataConsumerID) {
+    public boolean containsDataConsumer(ID dataConsumerID, int timeOut) {
         throw new UnsupportedOperationException("Not supported on a Data Consumer");
     } 
 
     @Override
-    public DataConsumer getDataConsumer() {
+    public ControllableDataConsumer getDataConsumer() {
         return this.dataConsumer;
     }
 
     @Override
-    public DataConsumer setDataConsumer(DataConsumer dc) {
+    public ControllableDataConsumer setDataConsumer(ControllableDataConsumer dc) {
         this.dataConsumer = dc;
         return dataConsumer;
     }

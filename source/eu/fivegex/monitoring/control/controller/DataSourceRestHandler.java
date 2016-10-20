@@ -5,8 +5,8 @@
  */
 package eu.fivegex.monitoring.control.controller;
 
-import eu.fivegex.monitoring.control.DSNotFoundException;
 import cc.clayman.console.BasicRequestHandler;
+import eu.fivegex.monitoring.control.JSONControlInterface;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Scanner;
@@ -23,7 +23,7 @@ import us.monoid.json.JSONObject;
  */
 class DataSourceRestHandler extends BasicRequestHandler {
 
-    Controller controller_;
+    JSONControlInterface controllerInterface;
     
     public DataSourceRestHandler() {
     }
@@ -32,7 +32,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
      @Override
     public boolean handle(Request request, Response response) {
         // get Controller
-        controller_ = (Controller) getManagementConsole().getAssociated();
+        controllerInterface = (JSONControlInterface) getManagementConsole().getAssociated();
         
         System.out.println("\n-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
@@ -92,7 +92,8 @@ class DataSourceRestHandler extends BasicRequestHandler {
                             notFound(response, "GET bad request");
                     break;   
                 default:
-                    break;
+                    badRequest(response, "Unknown method" + method);
+                    return false;
             }
             
             
@@ -102,9 +103,8 @@ class DataSourceRestHandler extends BasicRequestHandler {
                 System.out.println("IOException" + ex.getMessage());
             } catch (JSONException jex) {
                 System.out.println("JSONException" + jex.getMessage());
-            } catch (DSNotFoundException idEx) {
-                System.out.println("DSNotFoundException --- " + idEx.getMessage());
-            } finally {
+            }
+             finally {
                         try {
                             response.close();
                             } catch (IOException ex) {
@@ -114,15 +114,14 @@ class DataSourceRestHandler extends BasicRequestHandler {
      return false;
     }
 
-    private void createProbe(Request request, Response response) throws JSONException, IOException, DSNotFoundException {
+    private void createProbe(Request request, Response response) throws JSONException, IOException {
         Path path = request.getPath();
         String[] segments = path.getSegments(); 
         Query query = request.getQuery();
         
         String dsID;
-        String dsName;
+        //String dsName;
         String className;
-        //String rawArgs="";
         String rawArgs=null;
         
         if (query.containsKey("className")) {
@@ -146,15 +145,17 @@ class DataSourceRestHandler extends BasicRequestHandler {
         
         if (segments[1].matches("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
             dsID = segments[1];
-            jsobj = controller_.loadProbe(dsID, className, rawArgs);
+            jsobj = controllerInterface.loadProbe(dsID, className, rawArgs);
         }
-        else {
-            dsName = segments[1];
-            System.out.println("dsName: " + dsName);
-            dsID = controller_.getResolver().getDSIDFromName(dsName);
-            System.out.println("dsID: " + dsID);
-            jsobj = controller_.loadProbe(dsID, className, rawArgs);  
-        }
+        
+//      this was to deploy a DS by name
+//        else {
+//            dsName = segments[1];
+//            System.out.println("dsName: " + dsName);
+//            dsID = controllerInterface.getResolver().getDSIDFromName(dsName);
+//            System.out.println("dsID: " + dsID);
+//            jsobj = controllerInterface.loadProbe(dsID, className, rawArgs);  
+//        }
         
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
@@ -176,7 +177,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
     }
     
     
-    private void deployDS(Request request, Response response) throws JSONException, IOException, DSNotFoundException {
+    private void deployDS(Request request, Response response) throws JSONException, IOException {
         Path path = request.getPath();
         String[] segments = path.getSegments(); 
         Query query = request.getQuery();
@@ -211,7 +212,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         String failMessage = null;
         JSONObject jsobj = null;
         
-        jsobj = controller_.startDS(endPoint, userName, rawArgs);
+        jsobj = controllerInterface.startDS(endPoint, userName, rawArgs);
         
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
@@ -232,7 +233,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
     }
     
     
-    private void stopDS(Request request, Response response) throws JSONException, IOException, DSNotFoundException {
+    private void stopDS(Request request, Response response) throws JSONException, IOException {
         Path path = request.getPath();
         String[] segments = path.getSegments(); 
         Query query = request.getQuery();
@@ -260,7 +261,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         String failMessage = null;
         JSONObject jsobj = null;
         
-        jsobj = controller_.stopDS(endPoint, userName);
+        jsobj = controllerInterface.stopDS(endPoint, userName);
         
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
@@ -286,7 +287,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         String failMessage = null;
         JSONObject jsobj = null;
         
-        jsobj = controller_.getDataSources();
+        jsobj = controllerInterface.getDataSources();
 
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
@@ -328,7 +329,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
             return;
         }
         
-        jsobj = controller_.getDataSourceInfo(dsID);
+        jsobj = controllerInterface.getDataSourceInfo(dsID);
 
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");

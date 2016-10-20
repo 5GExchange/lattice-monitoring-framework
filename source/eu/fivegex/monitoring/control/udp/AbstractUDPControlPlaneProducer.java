@@ -27,10 +27,10 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
     int maxPoolSize;
     int announceListenerPort;
     
-    InformationManager resolver;
+    InformationManager informationManager;
     
-    public AbstractUDPControlPlaneProducer(InformationManager resolver, int port, int maxPoolSize) {
-        this.resolver = resolver;
+    public AbstractUDPControlPlaneProducer(InformationManager infMan, int port, int maxPoolSize) {
+        this.informationManager = infMan;
         this.announceListenerPort = port;
         this.maxPoolSize = maxPoolSize;
     }
@@ -76,25 +76,23 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
     @Override
     public void addNewAnnouncedEntity(ID entityID, AbstractAnnounceMessage.EntityType type) {
         System.out.println("New " + type + " with ID " + entityID);
-        try {
-            Thread.sleep(1000); //needed to wait for the DHT to be updated
-        } catch (InterruptedException ex) {
-                System.out.println("Thread interrupted: " + ex.getMessage());
-                Thread.currentThread().interrupt();
-        }
-        resolver.addNewAnnouncedEntity(entityID, type);
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException ex) {
+//            Thread.currentThread().interrupt();
+//        }
+        informationManager.addNewAnnouncedEntity(entityID, type);
     }
 
     @Override
     public void removeNewDeannouncedEntity(ID entityID, AbstractAnnounceMessage.EntityType type) {
         System.out.println(type + " with ID " + entityID + " is being shutdown");
-        try {
-            Thread.sleep(1000); //needed to wait for the DHT to be updated
-        } catch (InterruptedException ex) {
-                System.out.println("Thread interrupted: " + ex.getMessage());
-                Thread.currentThread().interrupt();
-        }
-        resolver.removeNewDeannouncedEntity(entityID, type);
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException ex) {
+//            Thread.currentThread().interrupt();
+//        }
+        informationManager.removeNewDeannouncedEntity(entityID, type);
     }
     
     

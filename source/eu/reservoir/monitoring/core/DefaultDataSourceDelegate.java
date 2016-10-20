@@ -546,7 +546,7 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
     }
 
     @Override
-    public boolean addDataConsumerInfo(DataConsumer dc) {
+    public boolean addDataConsumerInfo(ControllableDataConsumer dc) {
         throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -556,7 +556,7 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
     }
 
     @Override
-    public boolean removeDataConsumerInfo(DataConsumer dc) {
+    public boolean removeDataConsumerInfo(ControllableDataConsumer dc) {
         throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -571,12 +571,12 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
     }
 
     @Override
-    public boolean containsDataSource(ID dataSourceID) {
+    public boolean containsDataSource(ID dataSourceID, int timeOut) {
         throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public boolean containsDataConsumer(ID dataConsumerID) {
+    public boolean containsDataConsumer(ID dataConsumerID, int timeOut) {
         throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
     }
     

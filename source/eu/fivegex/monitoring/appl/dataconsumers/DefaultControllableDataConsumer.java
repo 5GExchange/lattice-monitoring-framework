@@ -5,27 +5,28 @@
  */
 package eu.fivegex.monitoring.appl.dataconsumers;
 
-import eu.fivegex.monitoring.appl.reporters.PrintReporter;
 import eu.reservoir.monitoring.core.AbstractDataConsumer;
 import eu.reservoir.monitoring.core.MeasurementReceiver;
 import eu.reservoir.monitoring.core.ControllableReporter;
-import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Measurement;
 import java.util.HashMap;
 import java.util.Map;
+import eu.reservoir.monitoring.core.ControllableDataConsumer;
 
 /**
  * Extends AbstractDataConsumer functionalities adding remote control
- * it also provides measurements rate reporting as specified in the DataConsumer Interface
- * it comes with a default PrintReporter
+ it also provides measurements rate reporting as specified in the ControllableDataConsumer Interface
+ it comes with a default PrintReporter
  * @author uceeftu
  */
-public final class ControllableDataConsumer extends AbstractDataConsumer implements MeasurementReceiver, DataConsumer {
+public final class DefaultControllableDataConsumer extends AbstractDataConsumer implements MeasurementReceiver, ControllableDataConsumer {
     /**
      * The DC ID
      */
     ID myID;
+    
+    private int myPID;
     
     /**
      * The DC name
@@ -52,32 +53,35 @@ public final class ControllableDataConsumer extends AbstractDataConsumer impleme
     * a Map Reporter id to ControllableReporter
     */
     Map<ID, ControllableReporter> reporters = new HashMap<>();
+
     
     
-    /**
-     * A print reporter to show measurement on the stdout
-     */
-    ControllableReporter printReporter;
-    
-    
-    public ControllableDataConsumer(String name) {
-        this(name, 20); //default interval every 10 sec
+    public DefaultControllableDataConsumer(String name) {
+        this(name, 20); //default interval every 20 sec
     }
     
-    public ControllableDataConsumer(String name, int rate) {
-        dataConsumerName = name;
-        myID = ID.generate();
-        printReporter = new PrintReporter();
-        this.mReportingInterval = rate;
-        init();
+    
+    public DefaultControllableDataConsumer(String name, int rate) {
+        this(name, ID.generate(), rate);
+    }
+    
+    
+    public DefaultControllableDataConsumer(String dcName, ID id) {
+        this(dcName, id, 20);
+    }
+    
+    
+    public DefaultControllableDataConsumer(String dcName, ID id, int rate) {
+       dataConsumerName = dcName;
+       this.mReportingInterval = rate;
+       myID=id;
+       
+       // gets the PID splitting PID@hostname
+       myPID = Integer.valueOf(java.lang.management.ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
+       init();
     }
     
     private void init() {
-        // we set the DC id to the reporter 
-        // (needed to link information in the info plane)
-        printReporter.setDcId(myID);
-        addReporter(printReporter);
-        
         startMeasurementsRateThread();
     } 
 
@@ -89,7 +93,7 @@ public final class ControllableDataConsumer extends AbstractDataConsumer impleme
         this.measurementsCounter = measurementCounter;
     }
     
-    // creates a thread to measure the number of meaurement taken off th queue
+    // creates a thread to measure the number of meaurements taken off the queue
     // in the mReportingInterval time interval
     private void startMeasurementsRateThread() {
         Thread t = new Thread(new Runnable () {
@@ -129,18 +133,23 @@ public final class ControllableDataConsumer extends AbstractDataConsumer impleme
     }
 
     @Override
-    public DataConsumer setID(ID id) {
+    public ControllableDataConsumer setID(ID id) {
         this.myID = id;
         return this;
     }
 
+    @Override
+    public int getMyPID() {
+        return myPID;
+    }
+    
     @Override
     public String getName() {
         return this.dataConsumerName;
     }
 
     @Override
-    public DataConsumer setName(String dcName) {
+    public ControllableDataConsumer setName(String dcName) {
         this.dataConsumerName = dcName;
         return this;
     }

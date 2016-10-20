@@ -5,10 +5,7 @@ import org.bson.conversions.Bson;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoException;
-import com.mongodb.ReadConcern;
 import com.mongodb.ServerAddress;
-import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import eu.reservoir.monitoring.core.AbstractReporter;
@@ -19,7 +16,6 @@ import eu.reservoir.monitoring.core.ProbeValueWithName;
 import eu.reservoir.monitoring.core.Reporter;
 import eu.reservoir.monitoring.core.Timestamp;
 import eu.reservoir.monitoring.distribution.ConsumerMeasurementWithMetadataAndProbeName;
-import java.util.concurrent.TimeUnit;
 
 public class MongoDBReporter extends AbstractReporter implements Reporter {
     private final String mongoDBAddress;

@@ -5,6 +5,8 @@
  */
 package eu.fivegex.monitoring.control.controller;
 
+import cc.clayman.console.ManagementConsole;
+import eu.fivegex.monitoring.control.JSONControlInterface;
 import eu.fivegex.monitoring.control.ControlServiceException;
 import eu.fivegex.monitoring.control.deployment.DeploymentException;
 import eu.fivegex.monitoring.control.probescatalogue.CatalogueException;
@@ -24,6 +26,10 @@ import java.util.Properties;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 import eu.fivegex.monitoring.control.deployment.EntityDeploymentDelegate;
+import eu.fivegex.monitoring.control.deployment.SSHDataConsumersDeploymentManager;
+import java.net.InetAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -31,17 +37,33 @@ import eu.fivegex.monitoring.control.deployment.EntityDeploymentDelegate;
  */
 public class Controller extends AbstractPlaneInteracter implements JSONControlInterface {
 	
-    private static final Controller controller = new Controller();
+    private static final Controller CONTROLLER = new Controller();
     private InformationManager informationManager;
     
-    private ControllerManagementConsole console = null;
+    private ManagementConsole JSONManagementConsole = null;
     private EntityDeploymentDelegate DSDeploymentManager; 
+    private EntityDeploymentDelegate DCDeploymentManager; 
     private Boolean usingDSDeploymentManager;
+    private Boolean usingDCDeploymentManager;
     private JSONProbeCatalogue probeCatalogue;
+    static Logger LOGGER = LoggerFactory.getLogger(Controller.class);
     
     private Controller() {}
      
-    private void init(String infoPlaneAddr, int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {        
+    private void init(String infoPlaneAddr, int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {  
+        
+        this.usingDSDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.ds.enabled", "false"));
+        this.usingDCDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.ds.enabled", "false"));
+        
+        String localJarPath = pr.getProperty("deployment.localJarPath");
+        String jarFileName = pr.getProperty("deployment.jarFileName");
+        String remoteJarPath = pr.getProperty("deployment.remoteJarPath");
+        String dsClassName = pr.getProperty("deployment.ds.className");
+        String dcClassName = pr.getProperty("deployment.dc.className");
+        
+        Integer announceListeningPort = (Integer) pr.getOrDefault("control.announceport", 8888);
+        Integer transmitterPoolSize = (Integer) pr.getOrDefault("control.poolsize", 8);
+        
         // Controller is the root of the infoPlane - other nodes use it to perform bootstrap
         InfoPlane infoPlane = new DHTInfoPlaneRoot(infoPlaneAddr, infoPlanePort);
 	setInfoPlane(infoPlane);
@@ -52,35 +74,44 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
         // we create a control plane producer 
         // announcePort to listen for announce Messages from DSs/DCs
         // maxPoolSize to instantiate a pool of UDP Transmitters (each tranmistter is not connected to any specific DS)
-        setControlPlane(new UDPControlPlaneXDRProducer(informationManager, 8888, 8)); // TODO: Use parameters to specify both port and maxPoolSize 
+        setControlPlane(new UDPControlPlaneXDRProducer(informationManager, announceListeningPort, transmitterPoolSize));
         
         connect();
         
-        this.usingDSDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.enabled", "false"));
-        
-        String localJarPath = pr.getProperty("deployment.localJarPath");
-        String jarFileName = pr.getProperty("deployment.jarFileName");
-        String remoteJarPath = pr.getProperty("deployment.remoteJarPath");
-        String dsClassName = pr.getProperty("deployment.dsClassName");
-        
-        if (this.usingDSDeploymentManager && localJarPath != null && jarFileName != null && remoteJarPath != null && dsClassName != null) {
-            DSDeploymentManager = new SSHDataSourcesDeploymentManager(localJarPath, jarFileName, remoteJarPath, dsClassName, informationManager);
-            System.out.println("Controller main: Data Source Deployment Manager was started");
-        }
-        else {
-            System.out.println("Controller main: Data Source Deployment Manager was not started");
-            this.usingDSDeploymentManager = false;
+        if (localJarPath != null && jarFileName != null && remoteJarPath != null) {
+            if (this.usingDSDeploymentManager && dsClassName != null) {
+                DSDeploymentManager = new SSHDataSourcesDeploymentManager(localJarPath, jarFileName, remoteJarPath, dsClassName, informationManager);
+                LOGGER.info("Controller main: Data Sources Deployment Manager was started");
+            }
+            else {
+                LOGGER.warn("Controller main: Data Sources Deployment Manager was not started");
+                this.usingDSDeploymentManager = false;
+            }
+            
+            if (this.usingDCDeploymentManager && dcClassName != null) {
+                DCDeploymentManager = new SSHDataConsumersDeploymentManager(localJarPath, jarFileName, remoteJarPath, dcClassName, informationManager);
+                LOGGER.info("Controller main: Data Consumers Deployment Manager was started");
+            }
+            else {
+                LOGGER.warn("Controller main: Data Consumers Deployment Manager was not started");
+                this.usingDCDeploymentManager = false;
+            }
         }
         
         probeCatalogue = new JSONProbeCatalogue(probesPackage, probesSuffix);
         
-        console=new ControllerManagementConsole(this, managementPort);
-        console.start();   
+        JSONManagementConsole=new JSONControllerManagementConsole(this, managementPort);
+        JSONManagementConsole.start();   
     }
     
     
     public static Controller getInstance() {
-        return controller;
+        return CONTROLLER;
+    }
+    
+    
+    public InformationManager getInformationManager() {
+        return informationManager;
     }
     
     
@@ -89,9 +120,134 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
     }
     
     
-    public InformationManager getResolver() {
-        return informationManager;
+    /* TODO: recheck and complete all the result.put msg in each method */
+    
+    @Override
+    public JSONObject startDS(String endPoint, String userName, String args) throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        ID startedDsID;
+        
+        result.put("operation", "startDS");
+        result.put("endpoint",endPoint);
+
+        if (this.usingDSDeploymentManager) {
+            try {
+                //this.DSDeploymentManager.deployEntity(endPoint, userName); // possible side-effect: updated jars will not be overwritten
+                startedDsID = this.DSDeploymentManager.startEntity(endPoint, userName, args);
+
+                if (startedDsID == null) {
+                    result.put("msg", "en error occured while starting the DS on the specified endpoint");
+                    result.put("success", false);
+                }
+
+                else {
+                    result.put("ID", startedDsID.toString());
+                    result.put("success", true);
+                }
+
+            } catch (DeploymentException ex) {
+                    result.put("success", false);
+                    result.put("msg", "DeploymentException while performing startDS operation: " + ex.getMessage());
+              }
+        }
+        else {
+            result.put("success", false);
+            result.put("msg", "Deployment Manager is not running");
+        }
+        return result;
     }
+    
+    
+    @Override
+    public JSONObject stopDS(String endPoint, String userName) throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        result.put("operation", "stopDS");
+        result.put("endpoint",endPoint);
+        
+        if (this.usingDSDeploymentManager) {
+            try {
+                Boolean returnValue = this.DSDeploymentManager.stopEntity(endPoint, userName);
+                result.put("success", returnValue);
+            } catch (DeploymentException ex) {
+                result.put("success", false);
+                result.put("msg", "DeploymentException while performing stopDS operation: " + ex.getMessage());
+              }
+        }
+        else {
+            result.put("success", false);
+            result.put("msg", "Deployment Manager is not running");
+        }
+        return result;
+    }
+    
+    @Override
+    public JSONObject getDataSourceInfo(String dsID) throws JSONException {
+        JSONObject result = new JSONObject();
+         
+        String dsName;
+        
+        result.put("operation", "getDataSourceInfo");
+        result.put("ID", dsID);
+        try {
+            dsName = (String) this.getControlHandle().getDataSourceInfo(ID.fromString(dsID));
+            result.put("name", dsName);
+            result.put("success", true);
+        } catch (ControlServiceException ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+        } 
+        return result;
+     }
+    
+    
+    @Override
+    public JSONObject loadProbe(String id, String probeClassName, String probeArgs) throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        ID createdProbeID;
+        
+        result.put("operation", "loadProbe");
+        result.put("probeClassName",probeClassName);
+        
+        Object [] probeArgsAsObjects = new Object[0];
+        
+        if (probeArgs != null) {
+            probeArgsAsObjects = (Object[])probeArgs.split(" ");
+        }
+        
+        try {
+            createdProbeID = this.getControlHandle().loadProbe(ID.fromString(id), probeClassName, probeArgsAsObjects);
+            result.put("createdProbeID", createdProbeID.toString());
+            result.put("success", true);
+        } catch (ControlServiceException ex) {
+            result.put("success", false);
+            result.put("msg", "ControlServiceException while performing loadProbe operation: " + ex.getMessage());
+        }
+        return result;
+        }
+    
+    @Override
+    public JSONObject unloadProbe(String id) throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        Boolean invocationResult;
+        
+        result.put("operation", "unlodProbe");
+        result.put("probeID",id);
+        
+        try {
+            invocationResult = this.getControlHandle().unloadProbe(ID.fromString(id));
+            result.put("success", invocationResult);
+        } catch (ControlServiceException ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+        }
+        
+        return result;
+    }
+    
     
     
     @Override
@@ -135,51 +291,6 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
         }
     
     
-    @Override
-    public JSONObject loadProbe(String id, String probeClassName, String probeArgs) throws JSONException {
-        JSONObject result = new JSONObject();
-        
-        ID createdProbeID;
-        
-        result.put("operation", "loadProbe");
-        result.put("probeClassName",probeClassName);
-        
-        Object [] probeArgsAsObjects = new Object[0];
-        
-        if (probeArgs != null) {
-            probeArgsAsObjects = (Object[])probeArgs.split(" ");
-        }
-        
-        try {
-            createdProbeID = this.getControlHandle().loadProbe(ID.fromString(id), probeClassName, probeArgsAsObjects);
-            result.put("createdProbeID", createdProbeID.toString());
-            result.put("success", true);
-        } catch (ControlServiceException ex) {
-            result.put("success", false);
-            result.put("msg", ex.getMessage());
-        }
-        return result;
-        }
-    
-    @Override
-    public JSONObject unloadProbe(String id) throws JSONException {
-        JSONObject result = new JSONObject();
-        
-        Boolean invocationResult;
-        
-        result.put("operation", "unlodProbe");
-        result.put("probeID",id);
-        
-        try {
-            invocationResult = this.getControlHandle().unloadProbe(ID.fromString(id));
-            result.put("success", invocationResult);
-        } catch (ControlServiceException ex) {
-            result.put("success", false);
-            result.put("msg", ex.getMessage());
-        }
-        
-        return result;
-        }
      
     @Override
     public JSONObject setProbeServiceID(String probeID, String serviceID) throws JSONException {
@@ -226,105 +337,6 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
 
     
     @Override
-    public JSONObject startDS(String endPoint, String userName, String args) throws JSONException {
-        JSONObject result = new JSONObject();
-        
-        ID startedDsID;
-        
-        result.put("operation", "startDS");
-        result.put("endpoint",endPoint);
-
-        if (this.usingDSDeploymentManager) {
-            try {
-                this.DSDeploymentManager.deployEntity(endPoint, userName);
-                startedDsID = this.DSDeploymentManager.startEntity(endPoint, userName, args);
-
-                if (startedDsID == null) {
-                    result.put("msg", "en error occured while starting the DS on the specified endpoint");
-                    result.put("success", false);
-                }
-
-                else {
-                    result.put("ID", startedDsID.toString());
-                    result.put("success", true);
-                }
-
-            } catch (DeploymentException ex) {
-                    result.put("success", false);
-                    result.put("msg", ex.getMessage());
-              }
-        }
-        else {
-            result.put("success", false);
-            result.put("msg", "Deployment Manager is not running");
-        }
-        return result;
-    }
-    
-    
-    @Override
-    public JSONObject stopDS(String endPoint, String userName) throws JSONException {
-        JSONObject result = new JSONObject();
-        
-        result.put("operation", "stopDS");
-        result.put("endpoint",endPoint);
-        
-        if (this.usingDSDeploymentManager) {
-            try {
-                Boolean returnValue = this.DSDeploymentManager.stopEntity(endPoint, userName);
-                result.put("success", returnValue);
-            } catch (DeploymentException ex) {
-                result.put("success", false);
-                result.put("msg", ex.getMessage());
-              }
-        }
-        else {
-            result.put("success", false);
-            result.put("msg", "Deployment Manager is not running");
-        }
-        return result;
-    }
-    
-    @Override
-    public JSONObject getDataSourceInfo(String dsID) throws JSONException {
-        JSONObject result = new JSONObject();
-         
-        String dsName;
-        
-        result.put("operation", "getDataSourceInfo");
-        result.put("ID", dsID);
-        try {
-            dsName = (String) this.getControlHandle().getDataSourceInfo(ID.fromString(dsID));
-            result.put("name", dsName);
-            result.put("success", true);
-        } catch (ControlServiceException ex) {
-            result.put("success", false);
-            result.put("msg", ex.getMessage());
-        } 
-        return result;
-     }
-    
-    
-    @Override
-    public JSONObject getProbesCatalogue() throws JSONException {
-        JSONObject result = new JSONObject();
-        
-        result.put("operation", "getProbesCatalogue");
-        
-        try {
-            JSONObject catalogue = this.probeCatalogue.getProbeCatalogue();
-            result.put("probesCatalogue", catalogue);
-            result.put("success", true);
-        } catch (CatalogueException ex) {
-            result.put("success", false);
-            result.put("msg", ex.getMessage());
-          }
-        
-        return result;   
-    }
-    
-    
-    @Override
     public JSONObject setProbeDataRate(String probeID, String dataRate) throws JSONException {
         JSONObject result = new JSONObject();
         Boolean invocationResult;
@@ -342,6 +354,67 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
             result.put("msg", ex.getMessage());
         }
         
+        return result;
+    }
+
+    
+    @Override
+    public JSONObject startDC(String endPoint, String userName, String args) throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        ID startedDcID;
+        
+        result.put("operation", "startDC");
+        result.put("endpoint",endPoint);
+
+        if (this.usingDCDeploymentManager) {
+            try {
+                //this.DCDeploymentManager.deployEntity(endPoint, userName); // possible side-effect: updated jars will not be overwritten
+                startedDcID = this.DCDeploymentManager.startEntity(endPoint, userName, args);
+
+                if (startedDcID == null) {
+                    result.put("msg", "en error occured while starting the DC on the specified endpoint");
+                    result.put("success", false);
+                }
+
+                else {
+                    result.put("ID", startedDcID.toString());
+                    result.put("success", true);
+                }
+
+            } catch (DeploymentException ex) {
+                    result.put("success", false);
+                    result.put("msg", "DeploymentException while performing startDC operation: " + ex.getMessage());
+              }
+        }
+        else {
+            result.put("success", false);
+            result.put("msg", "Data Consumers Deployment Manager is not running");
+        }
+        return result;
+    } 
+    
+
+    @Override
+    public JSONObject stopDC(String endPoint, String userName) throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        result.put("operation", "stopDC");
+        result.put("endpoint", endPoint);
+        
+        if (this.usingDCDeploymentManager) {
+            try {
+                Boolean returnValue = this.DCDeploymentManager.stopEntity(endPoint, userName);
+                result.put("success", returnValue);
+            } catch (DeploymentException ex) {
+                result.put("success", false);
+                result.put("msg", "DeploymentException while performing stopDC operation: " + ex.getMessage());
+              }
+        }
+        else {
+            result.put("success", false);
+            result.put("msg", "Data Consumer Deployment Manager is not running");
+        }
         return result;
     }
     
@@ -362,7 +435,7 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
             result.put("success", true);
         } catch (ControlServiceException ex) {
             result.put("success", false);
-            result.put("msg", "ControlServiceException while performing getDataConsumerMeasurementRate opertaion: " + ex.getMessage());
+            result.put("msg", "ControlServiceException while performing getDataConsumerMeasurementRate operation: " + ex.getMessage());
         }
         
         return result;
@@ -413,7 +486,9 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
             result.put("msg", "ControlServiceException while performing unloadReporter operation: " + ex.getMessage());
         }
         return result;
-        }
+    }
+    
+    
     
     @Override
     public JSONObject getDataSources() throws JSONException {
@@ -451,6 +526,26 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
     }
     
     
+    @Override
+    public JSONObject getProbesCatalogue() throws JSONException {
+        JSONObject result = new JSONObject();
+        
+        result.put("operation", "getProbesCatalogue");
+        
+        try {
+            JSONObject catalogue = this.probeCatalogue.getProbeCatalogue();
+            result.put("probesCatalogue", catalogue);
+            result.put("success", true);
+        } catch (CatalogueException ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+          }
+        
+        return result;   
+    }
+    
+    
+    
     
     
     public static void main(String[] args) {
@@ -459,22 +554,24 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
         String propertiesFile = null;
         
         // setting some default values
-        String remoteInfoHost="localhost"; // controller is the DHT root: connecting locally
+        String remoteInfoHost = "localhost";
         int infoPlanePort = 6699; // the same port is used as remote and local by DHTInfoPlaneRoot
         int restConsolePort = 6666;
         String probePackage = "eu.fivegex.monitoring.appl.probes";
         String probeSuffix = "Probe";
         
-        if (args.length == 0)
+        if (args.length == 0) {
             propertiesFile = System.getProperty("user.home") + "/controller.properties";
+        }
         else if (args.length == 1)
             propertiesFile = args[0];
         else {
-            System.err.println("Controller main: please use: java Controller [file.properties]");
+            LOGGER.error("Controller main: please use: java Controller [file.properties]");
             System.exit(1);
         }
         
 	try {
+            remoteInfoHost = InetAddress.getLocalHost().getHostName();
             input = new FileInputStream(propertiesFile);
 
             // load a properties file
@@ -487,11 +584,11 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
             probeSuffix = prop.getProperty("probes.suffix");
             
 	} catch (IOException ex) {
-		System.err.println("Controller main: error while opening the property file: " + ex.getMessage());
-                System.err.println("Controller main: falling back to default configuration values");
+		LOGGER.error("Controller main: error while opening the property file: " + ex.getMessage());
+                LOGGER.error("Controller main: falling back to default configuration values");
 	} catch (NumberFormatException ex) {
-                System.err.println("Controller main: error while parsing property file: " + propertiesFile + ", " + ex.getMessage());
-                System.err.println("Controller main: falling back to default configuration values");
+                LOGGER.error("Controller main: error while parsing property file: " + propertiesFile + ", " + ex.getMessage());
+                LOGGER.error("Controller main: falling back to default configuration values");
         } finally {        
             if (input != null) {
                 try {

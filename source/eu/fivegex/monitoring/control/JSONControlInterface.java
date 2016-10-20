@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.control.controller;
+package eu.fivegex.monitoring.control;
 
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
@@ -12,7 +12,7 @@ import us.monoid.json.JSONObject;
  *
  * @author uceeftu
  */
-interface JSONControlInterface {
+public interface JSONControlInterface extends ControlInterface {
     
     JSONObject startDS(String endPoint, String userName, String args) throws JSONException;
     
@@ -20,19 +20,23 @@ interface JSONControlInterface {
     
     JSONObject getDataSourceInfo(String dsID) throws JSONException;
     
-    JSONObject turnOffProbe(String id) throws JSONException;
-    
-    JSONObject turnOnProbe(String id) throws JSONException;
-    
     JSONObject loadProbe(String id, String probeClassName, String probeArgs) throws JSONException;
     
     JSONObject unloadProbe(String id) throws JSONException;
+    
+    JSONObject turnOffProbe(String id) throws JSONException;
+    
+    JSONObject turnOnProbe(String id) throws JSONException;
      
     JSONObject setProbeServiceID(String probeID, String serviceID) throws JSONException;
     
     JSONObject setProbeGroupID(String probeID, String groupID) throws JSONException;
     
     JSONObject setProbeDataRate(String probeID, String dataRate) throws JSONException;
+    
+    JSONObject startDC(String endPoint, String userName, String args) throws JSONException;
+    
+    JSONObject stopDC(String endPoint, String userName) throws JSONException;
     
     JSONObject getDataConsumerMeasurementRate(String dcID) throws JSONException;
     

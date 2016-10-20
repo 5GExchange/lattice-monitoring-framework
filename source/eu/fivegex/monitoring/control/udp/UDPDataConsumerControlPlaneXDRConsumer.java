@@ -8,7 +8,6 @@ package eu.fivegex.monitoring.control.udp;
 import eu.fivegex.monitoring.control.ControlServiceException;
 import eu.fivegex.monitoring.control.ReporterLoader;
 import eu.fivegex.monitoring.control.ReporterLoaderException;
-import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
@@ -17,11 +16,12 @@ import eu.reservoir.monitoring.core.plane.DataConsumerControlPlane;
 import eu.reservoir.monitoring.core.plane.DeannounceMessage;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import eu.reservoir.monitoring.core.ControllableDataConsumer;
 
 
 
 public class UDPDataConsumerControlPlaneXDRConsumer extends AbstractUDPControlPlaneXDRConsumer implements DataConsumerControlPlane, DataConsumerInteracter {
-    DataConsumer dataConsumer;
+    ControllableDataConsumer dataConsumer;
     
     public UDPDataConsumerControlPlaneXDRConsumer(InetSocketAddress localAddress, InetSocketAddress controllerAddress) {
         super(localAddress, controllerAddress);
@@ -59,12 +59,12 @@ public class UDPDataConsumerControlPlaneXDRConsumer extends AbstractUDPControlPl
     
 
     @Override
-    public DataConsumer getDataConsumer() {
+    public ControllableDataConsumer getDataConsumer() {
         return this.dataConsumer;
     }
 
     @Override
-    public DataConsumer setDataConsumer(DataConsumer dc) {
+    public ControllableDataConsumer setDataConsumer(ControllableDataConsumer dc) {
         this.dataConsumer = dc;
         return this.dataConsumer;
     }  

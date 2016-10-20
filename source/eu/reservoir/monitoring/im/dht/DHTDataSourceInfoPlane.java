@@ -5,7 +5,6 @@
 
 package eu.reservoir.monitoring.im.dht;
 
-import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
@@ -16,6 +15,7 @@ import eu.reservoir.monitoring.core.Reporter;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 
 import java.io.IOException;
+import eu.reservoir.monitoring.core.ControllableDataConsumer;
 
 /**
  * A DHTDataSourceInfoPlane is an InfoPlane implementation
@@ -46,7 +46,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	rootPort = remotePort;
 	port = localPort;
 
-	imNode = new IMNode(localPort, remoteHostname, remotePort);
+	imNode = new eu.fivegex.monitoring.im.dht.tomp2p.IMNode(localPort, remoteHostname, remotePort);
     }
 
     /**
@@ -89,7 +89,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
             // adding additional DS information
             addDataSourceInfo(dataSource);
             
-	    System.out.println("DHTInfoPlane: just announced DataSource " + dataSource);
+	    System.out.println("DHTInfoPlane: just announced this Data Source " + dataSource.getID());
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -103,6 +103,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
         try {
             DataSource dataSource = dataSourceDelegate.getDataSource();
             imNode.removeDataSource(dataSource);
+            System.out.println("DHTInfoPlane: just deannounced this Data Source " + dataSource.getID());
             return true;
         } catch (IOException ioe) {
             return false;
@@ -255,7 +256,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
     }
 
     @Override
-    public boolean addDataConsumerInfo(DataConsumer dc) {
+    public boolean addDataConsumerInfo(ControllableDataConsumer dc) {
         return false;
     }
 
@@ -265,7 +266,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
     }
 
     @Override
-    public boolean removeDataConsumerInfo(DataConsumer dc) {
+    public boolean removeDataConsumerInfo(ControllableDataConsumer dc) {
         return false;
     }
 
@@ -275,12 +276,12 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
     }
 
     @Override
-    public boolean containsDataSource(ID dataSourceID) {
+    public boolean containsDataSource(ID dataSourceID, int timeOut) {
         throw new UnsupportedOperationException("Not supported on a Data Source");
     }
 
     @Override
-    public boolean containsDataConsumer(ID dataConsumerID) {
+    public boolean containsDataConsumer(ID dataConsumerID, int timeOut) {
         throw new UnsupportedOperationException("Not supported on a Data Source");
     }
     

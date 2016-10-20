@@ -131,11 +131,11 @@ public abstract class AbstractUDPControlPlaneXDRConsumer extends AbstractUDPCont
                 // a ControlServiceException may be wrapped within InvocationTargetException coming from the 
                 // reflection invocation 
                 if (wrappedException instanceof ControlServiceException) 
-                    // we further unwrap the cause from the ControlServiceException
+                    // we further unwrap the cause from the ControlServiceException and put it in a ControlPlaneConsumerException
                     exceptionToSend = new ControlPlaneConsumerException(wrappedException.getCause());
                 
                 replyMessage = new ControlPlaneReplyMessage(exceptionToSend, ctrlOperationName, seqNo);
-                throw new ReflectiveOperationException(exceptionToSend.getCause()); // we also throw the Exception locally unwrapping it from ControlPlaneException 
+                throw new ReflectiveOperationException(exceptionToSend.getCause()); // we also throw the exception locally unwrapping it from ControlPlaneException 
         } finally {
             if (replyMessage != null)
                 transmitReply(replyMessage, metaData);

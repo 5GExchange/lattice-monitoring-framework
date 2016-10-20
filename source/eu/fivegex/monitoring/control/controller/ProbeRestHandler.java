@@ -5,8 +5,8 @@
  */
 package eu.fivegex.monitoring.control.controller;
 
-import eu.fivegex.monitoring.control.ProbeNotFoundException;
 import cc.clayman.console.BasicRequestHandler;
+import eu.fivegex.monitoring.control.JSONControlInterface;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Scanner;
@@ -23,7 +23,7 @@ import us.monoid.json.JSONObject;
  */
 class ProbeRestHandler extends BasicRequestHandler {
 
-    Controller controller_;
+    JSONControlInterface controllerInterface;
     
     public ProbeRestHandler() {
     }
@@ -31,7 +31,7 @@ class ProbeRestHandler extends BasicRequestHandler {
     @Override
     public boolean handle(Request request, Response response) {
         // get Controller
-        controller_ = (Controller) getManagementConsole().getAssociated();
+        controllerInterface = (JSONControlInterface) getManagementConsole().getAssociated();
         
         System.out.println("\n-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
@@ -88,7 +88,7 @@ class ProbeRestHandler extends BasicRequestHandler {
                     break;
                 default:
                     badRequest(response, "Unknown method" + method);
-                    break;
+                    return false;
             }
             
             return true;
@@ -97,8 +97,6 @@ class ProbeRestHandler extends BasicRequestHandler {
                 System.out.println("IOException" + ex.getMessage());
             } catch (JSONException jex) {
                 System.out.println("JSONException" + jex.getMessage());
-            } catch (ProbeNotFoundException idEx) {
-                System.out.println("ProbeIDNotFoundException --- " + idEx.getMessage());
             } finally {
                         try {
                             response.close();
@@ -109,7 +107,7 @@ class ProbeRestHandler extends BasicRequestHandler {
      return false;
     }
 
-    private void probeOperation(Request request, Response response) throws JSONException, IOException, ProbeNotFoundException {
+    private void probeOperation(Request request, Response response) throws JSONException, IOException {
         Scanner scanner;
         boolean success = true;
         String failMessage = null;
@@ -147,7 +145,7 @@ class ProbeRestHandler extends BasicRequestHandler {
                 return;
             }   
             
-        jsobj = controller_.setProbeServiceID(probeID, serviceID);    
+        jsobj = controllerInterface.setProbeServiceID(probeID, serviceID);    
         }
         
         else if (query.containsKey("sliceid")) {
@@ -164,7 +162,7 @@ class ProbeRestHandler extends BasicRequestHandler {
                 return;
             }   
             
-        jsobj = controller_.setProbeGroupID(probeID, sliceID);    
+        jsobj = controllerInterface.setProbeGroupID(probeID, sliceID);    
         }
         
         else if (query.containsKey("status")) {
@@ -183,10 +181,10 @@ class ProbeRestHandler extends BasicRequestHandler {
             
             switch (status) {
             case "off":
-                jsobj = controller_.turnOffProbe(probeID);
+                jsobj = controllerInterface.turnOffProbe(probeID);
                 break;
             case "on":
-                jsobj = controller_.turnOnProbe(probeID);
+                jsobj = controllerInterface.turnOnProbe(probeID);
                 break;
             default:
                 complain(response, status + " is not a valid probe status");
@@ -209,7 +207,7 @@ class ProbeRestHandler extends BasicRequestHandler {
                 return;
             }
             
-            jsobj = controller_.setProbeDataRate(probeID, dataRate);
+            jsobj = controllerInterface.setProbeDataRate(probeID, dataRate);
         }
         
         
@@ -238,7 +236,7 @@ class ProbeRestHandler extends BasicRequestHandler {
     
     
     
-    private void deleteProbe(Request request, Response response) throws JSONException, IOException, ProbeNotFoundException {
+    private void deleteProbe(Request request, Response response) throws JSONException, IOException {
         boolean success = true;
         String failMessage = null;
         JSONObject jsobj = null;
@@ -250,7 +248,7 @@ class ProbeRestHandler extends BasicRequestHandler {
             String probeID = sc.next();
             sc.close();
 
-            jsobj = controller_.unloadProbe(probeID);
+            jsobj = controllerInterface.unloadProbe(probeID);
 
             if (!jsobj.getBoolean("success")) {
                 failMessage = (String)jsobj.get("msg");
@@ -291,7 +289,7 @@ class ProbeRestHandler extends BasicRequestHandler {
             return;
         }
         
-        jsobj = controller_.getProbesCatalogue();
+        jsobj = controllerInterface.getProbesCatalogue();
 
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
