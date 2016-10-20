@@ -77,11 +77,11 @@ public abstract class AbstractRestConsole implements Container, ManagementConsol
 
             connection.connect(address);
 
-            LoggerFactory.getLogger(RestConsole.class).info("REST console: listening on port " + port);
+            LoggerFactory.getLogger(RestConsole.class).info("Listening on port " + port);
             return true;
 
         } catch (IOException ioe) {
-            LoggerFactory.getLogger(RestConsole.class).info("REST console: cannot listen on port " + port);
+            LoggerFactory.getLogger(RestConsole.class).error("Cannot listen on port " + port);
             return false;
         }
 

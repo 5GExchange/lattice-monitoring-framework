@@ -81,19 +81,19 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
         if (localJarPath != null && jarFileName != null && remoteJarPath != null) {
             if (this.usingDSDeploymentManager && dsClassName != null) {
                 DSDeploymentManager = new SSHDataSourcesDeploymentManager(localJarPath, jarFileName, remoteJarPath, dsClassName, informationManager);
-                LOGGER.info("Controller main: Data Sources Deployment Manager was started");
+                LOGGER.info("Data Sources Deployment Manager was started");
             }
             else {
-                LOGGER.warn("Controller main: Data Sources Deployment Manager was not started");
+                LOGGER.warn("Data Sources Deployment Manager was not started");
                 this.usingDSDeploymentManager = false;
             }
             
             if (this.usingDCDeploymentManager && dcClassName != null) {
                 DCDeploymentManager = new SSHDataConsumersDeploymentManager(localJarPath, jarFileName, remoteJarPath, dcClassName, informationManager);
-                LOGGER.info("Controller main: Data Consumers Deployment Manager was started");
+                LOGGER.info("Data Consumers Deployment Manager was started");
             }
             else {
-                LOGGER.warn("Controller main: Data Consumers Deployment Manager was not started");
+                LOGGER.warn("Data Consumers Deployment Manager was not started");
                 this.usingDCDeploymentManager = false;
             }
         }
@@ -584,11 +584,11 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
             probeSuffix = prop.getProperty("probes.suffix");
             
 	} catch (IOException ex) {
-		LOGGER.error("Controller main: error while opening the property file: " + ex.getMessage());
-                LOGGER.error("Controller main: falling back to default configuration values");
+		LOGGER.error("Error while opening the property file: " + ex.getMessage());
+                LOGGER.error("Falling back to default configuration values");
 	} catch (NumberFormatException ex) {
-                LOGGER.error("Controller main: error while parsing property file: " + propertiesFile + ", " + ex.getMessage());
-                LOGGER.error("Controller main: falling back to default configuration values");
+                LOGGER.error("Error while parsing property file: " + propertiesFile + ", " + ex.getMessage());
+                LOGGER.error("Falling back to default configuration values");
         } finally {        
             if (input != null) {
                 try {

@@ -62,14 +62,14 @@ public class IMNode {
 		dht = new DistributedHashTable(localPort);
 		dht.connect(remoteHost, remotePort);
 
-		LOGGER.info("IMNode: connect: " + localPort + " to " + remoteHost + "/" + remotePort);
+		LOGGER.info("Connect: " + localPort + " to " + remoteHost + "/" + remotePort);
 
 		return true;
 	    } else {
 		return true;
 	    }
 	} catch (IOException ioe) {
-	    LOGGER.error("IMNode: connect failed: " + ioe);
+	    LOGGER.error("Connect failed: " + ioe);
 	    if (dht != null) {
 		try {
 		    dht.close();
@@ -341,7 +341,7 @@ public class IMNode {
             return dht.contains(newKey);
         } 
         catch (IOException ioe) {
-            LOGGER.error("IMNode: containsDataSource failed for DS " + dataSourceID + ioe.getMessage());
+            LOGGER.error("ContainsDataSource failed for DS " + dataSourceID + ioe.getMessage());
             return false;
         }
     }
@@ -352,7 +352,7 @@ public class IMNode {
             return dht.contains(newKey);
         } 
         catch (IOException ioe) {
-            LOGGER.error("IMNode: containsDataConsumer failed for DS " + dataConsumerID + ioe.getMessage());
+            LOGGER.error("ContainsDataConsumer failed for DS " + dataConsumerID + ioe.getMessage());
             return false;
         }
     }
@@ -363,11 +363,11 @@ public class IMNode {
      */
     public boolean putDHT(String aKey, Serializable aValue) {
 	try {
-	    LOGGER.debug("IMNode: put " + aKey + " => " + aValue);
+	    LOGGER.debug("put " + aKey + " => " + aValue);
 	    dht.put(aKey, aValue);
 	    return true;
 	} catch (IOException ioe) {
-	    LOGGER.error("IMNode: putDHT failed for key: '" + aKey + "' value: '" + aValue + ioe.getMessage());
+	    LOGGER.error("putDHT failed for key: '" + aKey + "' value: '" + aValue + "'" +ioe.getMessage());
 	    return false;
 	}
     }
@@ -379,10 +379,10 @@ public class IMNode {
     public Object getDHT(String aKey) {
 	try {
 	    Object aValue = dht.get(aKey);
-	    LOGGER.debug("IMNode: get " + aKey +  " => " + aValue);
+	    LOGGER.debug("get " + aKey +  " => " + aValue);
 	    return aValue;
 	} catch (IOException | ClassNotFoundException e) {
-	    LOGGER.error("IMNode: getDHT failed for key: '" + aKey + e.getMessage());
+	    LOGGER.error("getDHT failed for key: '" + aKey + e.getMessage());
 	    return null;
 	}
     }
@@ -394,10 +394,10 @@ public class IMNode {
     public boolean remDHT(String aKey) {
 	try {
 	    dht.remove(aKey);
-	    LOGGER.debug("IMNode: remove " + aKey);
+	    LOGGER.debug("removing " + aKey);
 	    return true;
 	} catch (IOException ioe) {
-	    LOGGER.equals("IMNode: remDHT failed for key: '" + aKey + ioe.getMessage());
+	    LOGGER.equals("remDHT failed for key: '" + aKey + "'" + ioe.getMessage());
 	    return false;
 	}
     }
