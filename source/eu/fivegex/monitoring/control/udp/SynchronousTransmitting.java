@@ -18,7 +18,7 @@ import java.io.IOException;
  * A Class implementing this interface is basically a transmitter of control messages 
    and receiver of control message replies 
  */
-public interface TransmittingAndReceiving extends Transmitting {
+public interface SynchronousTransmitting extends Transmitting {
     public Object synchronousTransmit(ControlPlaneMessage dpm, MetaData metaData) throws IOException, ControlPlaneConsumerException;
     
     public Object receivedReply(ByteArrayInputStream bis, MetaData metaData, int seqNo) throws IOException;

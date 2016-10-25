@@ -14,6 +14,8 @@ import org.simpleframework.http.Path;
 import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
@@ -24,6 +26,7 @@ import us.monoid.json.JSONObject;
 class DataSourceRestHandler extends BasicRequestHandler {
 
     JSONControlInterface controllerInterface;
+    private Logger LOGGER = LoggerFactory.getLogger(DataSourceRestHandler.class);
     
     public DataSourceRestHandler() {
     }
@@ -34,7 +37,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         // get Controller
         controllerInterface = (JSONControlInterface) getManagementConsole().getAssociated();
         
-        System.out.println("\n-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
+        LOGGER.debug("-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
         
         long time = System.currentTimeMillis();
@@ -100,15 +103,15 @@ class DataSourceRestHandler extends BasicRequestHandler {
             return true;
             
             } catch (IOException ex) {
-                System.out.println("IOException" + ex.getMessage());
+                LOGGER.error("IOException" + ex.getMessage());
             } catch (JSONException jex) {
-                System.out.println("JSONException" + jex.getMessage());
+                LOGGER.error("JSONException" + jex.getMessage());
             }
              finally {
                         try {
                             response.close();
                             } catch (IOException ex) {
-                                System.out.println("IOException" + ex.getMessage());
+                                LOGGER.error("IOException" + ex.getMessage());
                               }
                       }
      return false;
@@ -159,7 +162,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.out.println("createProbe: failure detected: " + failMessage);
+            LOGGER.error("createProbe: failure detected: " + failMessage);
             success = false;   
         }   
     
@@ -216,7 +219,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.out.println("startDS: failure detected: " + failMessage);
+            LOGGER.error("startDS: failure detected: " + failMessage);
             success = false;   
         }   
     
@@ -265,7 +268,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.out.println("stopDS: failure detected: " + failMessage);
+            LOGGER.error("stopDS: failure detected: " + failMessage);
             success = false;   
         }   
     
@@ -291,7 +294,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
 
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.out.println("getDataSources: failure detected: " + failMessage);
+            LOGGER.error("getDataSources: failure detected: " + failMessage);
             success = false;   
         }
 
@@ -323,7 +326,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
             scanner.close();
         }
         else {
-            System.out.println("dsID is not valid");
+            LOGGER.error("dsID is not valid");
             scanner.close();
             complain(response, "data source ID is not a valid UUID: " + path.getName());
             return;
@@ -333,7 +336,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
 
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.err.println("DataSourceRestHandler: getDataSourceName failure: " + failMessage);
+            LOGGER.error("getDataSourceName failure: " + failMessage);
             success = false;   
         }
 

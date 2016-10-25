@@ -6,31 +6,45 @@
 package eu.fivegex.monitoring.control.udp;
 
 import eu.fivegex.monitoring.control.ControlPlaneConsumerException;
-import eu.fivegex.monitoring.control.controller.InformationManager;
-import eu.reservoir.monitoring.core.ID;
+import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
+import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegateInteracter;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
+import eu.reservoir.monitoring.core.plane.AnnounceEventListener;
 import eu.reservoir.monitoring.core.plane.ControllerControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneMessage;
 import eu.reservoir.monitoring.distribution.MetaData;
+import eu.reservoir.monitoring.distribution.Receiving;
 import eu.reservoir.monitoring.distribution.udp.UDPReceiver;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.io.ByteArrayInputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author uceeftu
  */
-public abstract class AbstractUDPControlPlaneProducer implements ControllerControlPlane, TransmittingAndReceiving, ReceivingAnnounce  {
+public abstract class AbstractUDPControlPlaneProducer implements 
+        ControllerControlPlane, SynchronousTransmitting, Receiving, InfoPlaneDelegateInteracter  {
+    
     UDPReceiver AnnounceListener;
     UDPTransmitterPool controlTransmittersPool;
     int maxPoolSize;
     int announceListenerPort;
     
-    InformationManager informationManager;
+    InfoPlaneDelegate infoPlaneDelegate;
+    AnnounceEventListener listener;
     
-    public AbstractUDPControlPlaneProducer(InformationManager infMan, int port, int maxPoolSize) {
-        this.informationManager = infMan;
+    static Logger LOGGER = LoggerFactory.getLogger("UDPControlPlaneProducer");
+    
+    public AbstractUDPControlPlaneProducer(int maxPoolSize) {
+        this.announceListenerPort = -1;
+        this.maxPoolSize = maxPoolSize;
+    }
+    
+    
+    public AbstractUDPControlPlaneProducer(int port, int maxPoolSize) {
         this.announceListenerPort = port;
         this.maxPoolSize = maxPoolSize;
     }
@@ -40,7 +54,7 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
     public boolean connect() {
 	try {
 	    // Creating listener for Announce Messages - only connect if we're not already connected
-	    if (AnnounceListener == null) {
+	    if (AnnounceListener == null && announceListenerPort != -1) {
                 AnnounceListener = new UDPReceiver(this, announceListenerPort, "AnnounceListener");
                 AnnounceListener.listen();
             }
@@ -53,8 +67,7 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
             return true;
             
 	} catch (IOException ioe) {
-	    // Current implementation will be to do a stack trace
-	    //ioe.printStackTrace();
+	    LOGGER.error("Error while connecting " + ioe.getMessage());
 	    return false;
 	}
     }
@@ -72,29 +85,6 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
 	}
     }
 
-    
-    @Override
-    public void addNewAnnouncedEntity(ID entityID, AbstractAnnounceMessage.EntityType type) {
-        System.out.println("New " + type + " with ID " + entityID);
-//        try {
-//            Thread.sleep(1000);
-//        } catch (InterruptedException ex) {
-//            Thread.currentThread().interrupt();
-//        }
-        informationManager.addNewAnnouncedEntity(entityID, type);
-    }
-
-    @Override
-    public void removeNewDeannouncedEntity(ID entityID, AbstractAnnounceMessage.EntityType type) {
-        System.out.println(type + " with ID " + entityID + " is being shutdown");
-//        try {
-//            Thread.sleep(1000);
-//        } catch (InterruptedException ex) {
-//            Thread.currentThread().interrupt();
-//        }
-        informationManager.removeNewDeannouncedEntity(entityID, type);
-    }
-    
     
     @Override
     public boolean announce() {
@@ -119,5 +109,26 @@ public abstract class AbstractUDPControlPlaneProducer implements ControllerContr
     @Override
     public InetSocketAddress getControlEndPoint() {
         throw new UnsupportedOperationException("Abstract UDP Control Plane Producer: getting control endpoint is not supported");
-    }  
+    }
+    
+
+    @Override
+    public InfoPlaneDelegate getInfoPlaneDelegateInteracter() {
+        return infoPlaneDelegate;
+    }
+
+    @Override
+    public void setInfoPlaneDelegateInteracter(InfoPlaneDelegate im) {
+        this.infoPlaneDelegate = im;
+    }
+    
+    
+    public void addAnnounceEventListener(AnnounceEventListener l) {
+        listener = l;
+    }
+
+    protected void fireEvent(AbstractAnnounceMessage m) {
+        listener.receivedAnnounceEvent(m);
+    }
+    
 }

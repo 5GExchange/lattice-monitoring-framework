@@ -12,13 +12,15 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
-import eu.fivegex.monitoring.control.controller.InformationManager;
+import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -36,9 +38,11 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
     protected final Map<String, Long> entityDeployedOnEndPoint;
     protected final Map<String, SSHDeploymentInfo> entityRunningOnEndPoint;
     
-    protected final InformationManager informationManager;
+    protected final InfoPlaneDelegate infoPlaneDelegate;
+    
+    Logger LOGGER = LoggerFactory.getLogger(SSHDeploymentManager.class);
 
-    public SSHDeploymentManager(String localJarFilePath, String jarFileName, String remoteJarFilePath, String entityFileName, EntityType entityType, InformationManager info) {
+    public SSHDeploymentManager(String localJarFilePath, String jarFileName, String remoteJarFilePath, String entityFileName, EntityType entityType, InfoPlaneDelegate info) {
         this.entityType = entityType;
         this.entityFileName = entityFileName;
         this.localJarFilePath = localJarFilePath;
@@ -52,7 +56,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
         this.entityDeployedOnEndPoint = new ConcurrentHashMap<>();
         this.entityRunningOnEndPoint = new ConcurrentHashMap<>(); 
         
-        this.informationManager = info;
+        this.infoPlaneDelegate = info;
     }
 
     /*
@@ -68,7 +72,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
 
     protected Session connectWithKey(String endPoint, String userName) throws JSchException {
         String privateKeyFile = System.getProperty("user.home") + "/.ssh/id_rsa";
-        //System.out.println(privateKeyFile);
+        LOGGER.debug("Using identity from file: " + privateKeyFile);
         jsch.addIdentity(privateKeyFile);
         Session session = jsch.getSession(userName, endPoint, 22); // @TODO: port should be also a parameter
         session.setConfig("PreferredAuthentications", "publickey");
@@ -87,7 +91,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
         }
         deploymentMonitor.putIfAbsent(endPointAddress, true);
         synchronized (deploymentMonitor.get(endPointAddress)) {
-            System.out.println(Thread.currentThread().getName() + ": Deploying "+ entityType);
+            LOGGER.debug("Deploying " + entityType);
             File jarFile = new File(this.localJarFilePath + "/" + this.jarFileName);
                 if (!jarFile.exists()) {
                     throw new DeploymentException("Error: file " + this.localJarFilePath + "/" + this.jarFileName + " does not exist");
@@ -104,8 +108,8 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
                 channel.connect(3000);
                 c = (ChannelSftp) channel;
                 c.put(this.localJarFilePath + "/" + this.jarFileName, this.remoteJarFilePath + "/" + this.jarFileName, ChannelSftp.OVERWRITE);
-                System.out.println("Copying: " + this.localJarFilePath + "/" + this.jarFileName);
-                System.out.println("to: " + this.remoteJarFilePath + "/" + this.jarFileName);
+                LOGGER.debug("Copying: " + this.localJarFilePath + "/" + this.jarFileName 
+                                         + "to: " + this.remoteJarFilePath + "/" + this.jarFileName);
                 //adding info to the map
                 entityDeployedOnEndPoint.putIfAbsent(endPointAddress, jarFile.lastModified());
             } catch (JSchException | SftpException e) {
@@ -140,7 +144,7 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
             }
             try {
                 session = this.connectWithKey(endPointAddress, userName);
-                System.out.println(Thread.currentThread().getName() + ": Stopping " + entityType);
+                LOGGER.debug("Stopping " + entityType);
                 String command = "kill " + endPointInfo.getEntityPID();
                 channel = session.openChannel("exec");
                 ((ChannelExec) channel).setCommand(command);

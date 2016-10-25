@@ -5,6 +5,7 @@
 
 package eu.reservoir.monitoring.im.dht;
 
+import eu.fivegex.monitoring.im.dht.tomp2p.IMNode;
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
@@ -16,6 +17,9 @@ import eu.reservoir.monitoring.core.plane.InfoPlane;
 
 import java.io.IOException;
 import eu.reservoir.monitoring.core.ControllableDataConsumer;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
+import eu.reservoir.monitoring.core.plane.AnnounceMessage;
+import eu.reservoir.monitoring.core.plane.DeannounceMessage;
 
 /**
  * A DHTDataSourceInfoPlane is an InfoPlane implementation
@@ -35,6 +39,8 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 
     // The local port
     int port;
+    
+    
 
     /**
      * Construct a DHTInfoPlane.
@@ -46,7 +52,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	rootPort = remotePort;
 	port = localPort;
 
-	imNode = new eu.fivegex.monitoring.im.dht.tomp2p.IMNode(localPort, remoteHostname, remotePort);
+	imNode = new IMNode(localPort, remoteHostname, remotePort);
     }
 
     /**
@@ -89,7 +95,8 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
             // adding additional DS information
             addDataSourceInfo(dataSource);
             
-	    System.out.println("DHTInfoPlane: just announced this Data Source " + dataSource.getID());
+            imNode.announce(new AnnounceMessage(dataSource.getID(), EntityType.DATASOURCE));
+	    LOGGER.info("just announced this Data Source " + dataSource.getID());
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -103,7 +110,9 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
         try {
             DataSource dataSource = dataSourceDelegate.getDataSource();
             imNode.removeDataSource(dataSource);
-            System.out.println("DHTInfoPlane: just deannounced this Data Source " + dataSource.getID());
+            
+            imNode.announce(new DeannounceMessage(dataSource.getID(), EntityType.DATASOURCE));
+            LOGGER.info("just deannounced this Data Source " + dataSource.getID());
             return true;
         } catch (IOException ioe) {
             return false;
@@ -147,7 +156,8 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.addProbe(p);
 
-	    System.out.println("DHTInfoPlane: just added Probe " + p);
+	    LOGGER.info("just added Probe " + p.getClass());
+            LOGGER.debug(p.toString());
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -163,7 +173,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.addProbeAttribute(p, pa);
 
-	    //System.out.println("DHTInfoPlane: just added ProbeAttribute " + p + "." + pa);
+	    LOGGER.debug("just added ProbeAttribute " + p + "." + pa);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -177,7 +187,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.modifyDataSource(ds);
 
-	    System.out.println("DHTInfoPlane: just modified DataSource " + ds);
+	    LOGGER.info("just modified DataSource " + ds);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -191,7 +201,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.modifyProbe(p);
 
-	    System.out.println("DHTInfoPlane: just modified Probe " + p);
+	    LOGGER.info("just modified Probe " + p.getClass());
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -205,7 +215,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.modifyProbeAttribute(p, pa);
 
-	    System.out.println("DHTInfoPlane: just modified ProbeAttribute " + p + "." + pa);
+	    LOGGER.debug("just modified ProbeAttribute " + p + "." + pa);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -220,7 +230,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.removeDataSource(ds);
 
-	    System.out.println("DHTInfoPlane: just removed DataSource " + ds);
+	    LOGGER.info("just removed Data Source " + ds);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -234,7 +244,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.removeProbe(p);
 
-	    System.out.println("DHTInfoPlane: just removed Probe " + p);
+	    LOGGER.info("just removed Probe " + p.getClass());
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -248,7 +258,7 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	try {
 	    imNode.removeProbeAttribute(p, pa);
 
-	    System.out.println("DHTInfoPlane: just removed ProbeAttribute " + p + "." + pa);
+	    LOGGER.debug("just removed ProbeAttribute " + p + "." + pa);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -284,8 +294,5 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
     public boolean containsDataConsumer(ID dataConsumerID, int timeOut) {
         throw new UnsupportedOperationException("Not supported on a Data Source");
     }
-    
-    
-    
     
 }

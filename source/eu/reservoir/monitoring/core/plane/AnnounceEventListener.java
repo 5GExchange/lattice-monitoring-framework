@@ -3,16 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.control;
+package eu.reservoir.monitoring.core.plane;
 
 /**
  *
  * @author uceeftu
  */
-public class DCNotFoundException extends Exception {
+public interface AnnounceEventListener {
 
-    public DCNotFoundException(String message) {
-        super(message);
-    }
+    public void receivedAnnounceEvent(AbstractAnnounceMessage m);
     
 }

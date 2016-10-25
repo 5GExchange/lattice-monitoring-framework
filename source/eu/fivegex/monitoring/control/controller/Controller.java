@@ -27,18 +27,21 @@ import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 import eu.fivegex.monitoring.control.deployment.EntityDeploymentDelegate;
 import eu.fivegex.monitoring.control.deployment.SSHDataConsumersDeploymentManager;
+import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegateInteracter;
+import eu.reservoir.monitoring.core.plane.ControlPlane;
 
 /**
  *
  * @author uceeftu
  */
 public class Controller extends AbstractPlaneInteracter implements JSONControlInterface {
-	
+    
     private static final Controller CONTROLLER = new Controller();
-    private InformationManager informationManager;
+    private InfoPlaneDelegate controlInformationManager;
     
     private ManagementConsole JSONManagementConsole = null;
     private EntityDeploymentDelegate DSDeploymentManager; 
@@ -46,8 +49,8 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
     private Boolean usingDSDeploymentManager;
     private Boolean usingDCDeploymentManager;
     private JSONProbeCatalogue probeCatalogue;
-    static Logger LOGGER = LoggerFactory.getLogger(Controller.class);
-    
+    private static Logger LOGGER;
+
     private Controller() {}
      
     private void init(String infoPlaneAddr, int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {  
@@ -61,26 +64,37 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
         String dsClassName = pr.getProperty("deployment.ds.className");
         String dcClassName = pr.getProperty("deployment.dc.className");
         
-        Integer announceListeningPort = (Integer) pr.getOrDefault("control.announceport", 8888);
+        //Integer announceListeningPort = (Integer) pr.getOrDefault("control.announceport", 8888);
         Integer transmitterPoolSize = (Integer) pr.getOrDefault("control.poolsize", 8);
         
         // Controller is the root of the infoPlane - other nodes use it to perform bootstrap
         InfoPlane infoPlane = new DHTInfoPlaneRoot(infoPlaneAddr, infoPlanePort);
+        
+        // we get the ControlInformationManager from the InfoPlane
+        controlInformationManager = ((InfoPlaneDelegateInteracter) infoPlane).getInfoPlaneDelegateInteracter();
+        
+        // setting the InfoPlane to send announce events to the ControlInformationManager
+        ((DHTInfoPlaneRoot) infoPlane).addAnnounceEventListener(controlInformationManager);
 	setInfoPlane(infoPlane);
         
-        // we create the wrapper to the InfoPlane to resolve probes IDs to DSs IP:port, etc.
-        informationManager = new InformationManager(infoPlane);
-        
-        // we create a control plane producer 
+        // create a control plane producer 
         // announcePort to listen for announce Messages from DSs/DCs
-        // maxPoolSize to instantiate a pool of UDP Transmitters (each tranmistter is not connected to any specific DS)
-        setControlPlane(new UDPControlPlaneXDRProducer(informationManager, announceListeningPort, transmitterPoolSize));
+        // maxPoolSize to instantiate a pool of UDP Transmitters (each transmitter is not connected to any specific DS)
+        // ControlPlane controlPlane = new UDPControlPlaneXDRProducer(8888, transmitterPoolSize);
+        
+        // create a control plane producer without announce listening capabilities 
+        ControlPlane controlPlane = new UDPControlPlaneXDRProducer(transmitterPoolSize);
+        
+        // setting the InfoPlaneDelegate to the Control Plane
+        ((InfoPlaneDelegateInteracter) controlPlane).setInfoPlaneDelegateInteracter(controlInformationManager);
+        //((UDPControlPlaneXDRProducer) controlPlane).addAnnounceEventListener(controlInformationManager);
+        setControlPlane(controlPlane);
         
         connect();
         
         if (localJarPath != null && jarFileName != null && remoteJarPath != null) {
             if (this.usingDSDeploymentManager && dsClassName != null) {
-                DSDeploymentManager = new SSHDataSourcesDeploymentManager(localJarPath, jarFileName, remoteJarPath, dsClassName, informationManager);
+                DSDeploymentManager = new SSHDataSourcesDeploymentManager(localJarPath, jarFileName, remoteJarPath, dsClassName, controlInformationManager);
                 LOGGER.info("Data Sources Deployment Manager was started");
             }
             else {
@@ -89,7 +103,7 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
             }
             
             if (this.usingDCDeploymentManager && dcClassName != null) {
-                DCDeploymentManager = new SSHDataConsumersDeploymentManager(localJarPath, jarFileName, remoteJarPath, dcClassName, informationManager);
+                DCDeploymentManager = new SSHDataConsumersDeploymentManager(localJarPath, jarFileName, remoteJarPath, dcClassName, controlInformationManager);
                 LOGGER.info("Data Consumers Deployment Manager was started");
             }
             else {
@@ -110,8 +124,8 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
     }
     
     
-    public InformationManager getInformationManager() {
-        return informationManager;
+    public InfoPlaneDelegate getInfoPlaneDelegate() {
+        return controlInformationManager;
     }
     
     
@@ -133,7 +147,6 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
 
         if (this.usingDSDeploymentManager) {
             try {
-                //this.DSDeploymentManager.deployEntity(endPoint, userName); // possible side-effect: updated jars will not be overwritten
                 startedDsID = this.DSDeploymentManager.startEntity(endPoint, userName, args);
 
                 if (startedDsID == null) {
@@ -497,7 +510,7 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
         result.put("operation", "getDataSources");
         
         try {
-            JSONObject dataSources = this.informationManager.getDataSourcesAsJSON();
+            JSONObject dataSources = this.controlInformationManager.getDataSources();
             result.put("datasources", dataSources);
             result.put("success", true);
         } catch (JSONException ex) {
@@ -515,7 +528,7 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
         result.put("operation", "getDataConsumers");
         
         try {
-            JSONObject dataConsumers = this.informationManager.getDataConsumersAsJSON();
+            JSONObject dataConsumers = this.controlInformationManager.getDataConsumers();
             result.put("dataconsumers", dataConsumers);
             result.put("success", true);
         } catch (JSONException ex) {
@@ -549,6 +562,12 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
     
     
     public static void main(String[] args) {
+        System.setProperty(org.slf4j.impl.SimpleLogger.LOG_FILE_KEY, "System.out");
+        System.setProperty(org.slf4j.impl.SimpleLogger.SHOW_SHORT_LOG_NAME_KEY, "true");
+        System.setProperty(org.slf4j.impl.SimpleLogger.SHOW_THREAD_NAME_KEY, "false");
+        
+        LOGGER = LoggerFactory.getLogger(Controller.class);
+        
         Properties prop = new Properties();
 	InputStream input = null;
         String propertiesFile = null;
@@ -560,14 +579,16 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
         String probePackage = "eu.fivegex.monitoring.appl.probes";
         String probeSuffix = "Probe";
         
-        if (args.length == 0) {
-            propertiesFile = System.getProperty("user.home") + "/controller.properties";
-        }
-        else if (args.length == 1)
-            propertiesFile = args[0];
-        else {
-            LOGGER.error("Controller main: please use: java Controller [file.properties]");
-            System.exit(1);
+        switch (args.length) {
+            case 0:
+                propertiesFile = System.getProperty("user.home") + "/controller.properties";
+                break;
+            case 1:
+                propertiesFile = args[0];
+                break;
+            default:
+                LOGGER.error("Controller main: please use: java Controller [file.properties]");
+                System.exit(1);
         }
         
 	try {

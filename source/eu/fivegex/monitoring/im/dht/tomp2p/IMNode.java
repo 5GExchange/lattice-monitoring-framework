@@ -11,6 +11,8 @@ import java.io.Serializable;
 import java.io.IOException;
 import java.util.Collection;
 import eu.reservoir.monitoring.core.ControllableDataConsumer;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
+import eu.reservoir.monitoring.core.plane.AnnounceEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,9 +29,11 @@ import org.slf4j.LoggerFactory;
  * <li> /probe/probe-id/attribute = value
  * </ul>
  */
-public class IMNode {
+public class IMNode implements AnnounceEventListener {
     // The actual DHT
     DistributedHashTable dht = null;
+    
+    AnnounceEventListener listener;
 
     // the local port
     int localPort = 0;
@@ -62,8 +66,10 @@ public class IMNode {
 		dht = new DistributedHashTable(localPort);
 		dht.connect(remoteHost, remotePort);
 
-		LOGGER.info("Connect: " + localPort + " to " + remoteHost + "/" + remotePort);
+		LOGGER.info("Connecting " + localPort + " to " + remoteHost + "/" + remotePort);
 
+                //setting this IMNode as a AnnounceEventListener in the DHT
+                dht.addAnnounceEventListener(this);
 		return true;
 	    } else {
 		return true;
@@ -335,10 +341,10 @@ public class IMNode {
     }
     
     
-    public boolean containsDataSource(ID dataSourceID) {
+    public boolean containsDataSource(ID dataSourceID, int timeout) {
         try {
             String newKey = "/datasource/" + dataSourceID + "/name";
-            return dht.contains(newKey);
+            return dht.contains(newKey, timeout);
         } 
         catch (IOException ioe) {
             LOGGER.error("ContainsDataSource failed for DS " + dataSourceID + ioe.getMessage());
@@ -346,10 +352,10 @@ public class IMNode {
         }
     }
     
-    public boolean containsDataConsumer(ID dataConsumerID) {
+    public boolean containsDataConsumer(ID dataConsumerID, int timeout) {
         try {
             String newKey = "/dataconsumer/" + dataConsumerID + "/name";
-            return dht.contains(newKey);
+            return dht.contains(newKey, timeout);
         } 
         catch (IOException ioe) {
             LOGGER.error("ContainsDataConsumer failed for DS " + dataConsumerID + ioe.getMessage());
@@ -367,7 +373,7 @@ public class IMNode {
 	    dht.put(aKey, aValue);
 	    return true;
 	} catch (IOException ioe) {
-	    LOGGER.error("putDHT failed for key: '" + aKey + "' value: '" + aValue + "'" +ioe.getMessage());
+	    LOGGER.error("putDHT failed for key: '" + aKey + "' value: '" + aValue + "' " +ioe.getMessage());
 	    return false;
 	}
     }
@@ -382,7 +388,7 @@ public class IMNode {
 	    LOGGER.debug("get " + aKey +  " => " + aValue);
 	    return aValue;
 	} catch (IOException | ClassNotFoundException e) {
-	    LOGGER.error("getDHT failed for key: '" + aKey + e.getMessage());
+	    LOGGER.error("getDHT failed for key: '" + aKey + " " + e.getMessage());
 	    return null;
 	}
     }
@@ -397,11 +403,16 @@ public class IMNode {
 	    LOGGER.debug("removing " + aKey);
 	    return true;
 	} catch (IOException ioe) {
-	    LOGGER.equals("remDHT failed for key: '" + aKey + "'" + ioe.getMessage());
+	    LOGGER.error("remDHT failed for key: '" + aKey + "' " + ioe.getMessage());
 	    return false;
 	}
     }
     
+    
+    public void announce(AbstractAnnounceMessage m) {
+        dht.announce(m);
+    }
+
     
     @Override
     public String toString() {
@@ -409,4 +420,19 @@ public class IMNode {
     }
     
 
+    @Override
+    public void receivedAnnounceEvent(AbstractAnnounceMessage m) {
+        fireEvent(m);
+        
+    }
+    
+    
+    public void addAnnounceEventListener(AnnounceEventListener l) {
+        this.listener=l;
+    }
+    
+    protected void fireEvent(AbstractAnnounceMessage m) {
+        listener.receivedAnnounceEvent(m);
+    }
+    
 }

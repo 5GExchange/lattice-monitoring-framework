@@ -5,6 +5,7 @@
 
 package eu.reservoir.monitoring.im.dht;
 
+import eu.fivegex.monitoring.im.dht.tomp2p.IMNode;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 
 
@@ -23,6 +24,8 @@ public class DHTInfoPlaneRoot extends DHTInfoPlaneConsumer implements InfoPlane 
 	rootHost = localHostname;
 	rootPort = localPort;
 
-	imNode = new eu.fivegex.monitoring.im.dht.tomp2p.IMNode(localPort, localHostname, localPort);
-    }
+        // from the super class
+	imNode = new IMNode(localPort, localHostname, localPort);
+        imNode.addAnnounceEventListener(this);
+    } 
 }

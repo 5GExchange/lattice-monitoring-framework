@@ -10,24 +10,35 @@ import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
 import eu.reservoir.monitoring.distribution.MetaData;
 import eu.reservoir.monitoring.distribution.ReceivingAndReplying;
+import eu.reservoir.monitoring.distribution.Transmitting;
 import eu.reservoir.monitoring.distribution.udp.UDPReceiver;
 import eu.reservoir.monitoring.distribution.udp.UDPTransmitter;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author uceeftu
  */
-public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, ReceivingAndReplying, TransmittingAnnounce {
+public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, ReceivingAndReplying, Transmitting {
     
     InetSocketAddress localAddress;
     InetSocketAddress controllerAddress;
 
     UDPReceiver udpReceiver;
     UDPTransmitter udpAt; 
+    
+    static Logger LOGGER = LoggerFactory.getLogger("ControlPlaneConsumer");
 
+    public AbstractUDPControlPlaneConsumer(InetSocketAddress localAddress) {
+        this.localAddress = localAddress;
+        this.controllerAddress = null;
+    }
+    
+    
     public AbstractUDPControlPlaneConsumer(InetSocketAddress localAddress, InetSocketAddress controllerAddress) {
         this.localAddress = localAddress;
         this.controllerAddress = controllerAddress;
@@ -58,7 +69,8 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, R
 		rr.listen();
 		udpReceiver = rr;
 
-                udpAt = new UDPTransmitter(this, controllerAddress);
+                if (controllerAddress != null)
+                    udpAt = new UDPTransmitter(this, controllerAddress);
 		return true;
 	    } else {
 		return true;
@@ -93,12 +105,12 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, R
     
     @Override
     public void error(Exception e) {
-        System.err.println("UDP Control Plane Consumer error: " + e.getMessage());
+        LOGGER.error("UDP Control Plane Consumer error: " + e.getMessage());
     }
 
     @Override
     public boolean transmitted(int id) {
-        System.out.println("UDP Control Plane Consumer: just sent Announce/Deannounce message");
+        LOGGER.info("UDP Control Plane Consumer: just sent Announce/Deannounce message");
         return true;
     }
     

@@ -3,7 +3,7 @@
 // Email: sclayman@ee.ucl.ac.uk
 // Date: Oct 2008
 
-package eu.reservoir.monitoring.im.dht;
+package eu.reservoir.monitoring.im.dht.planx;
 
 import eu.fivegex.monitoring.appl.dataconsumers.DefaultControllableDataConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
@@ -30,7 +30,9 @@ import eu.reservoir.monitoring.core.ControllableDataConsumer;
  * <ul>
  * <li> /probe/probe-id/attribute = value
  * </ul>
- */
+ * @deprecated 
+ **/
+
 public class IMNode {
     // The actual DHT
     DistributedHashTable dht = null;

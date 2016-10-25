@@ -18,8 +18,13 @@ import java.net.InetSocketAddress;
 
 
 
-public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlaneXDRConsumer implements DataSourceControlPlane, DataSourceDelegateInteracter, TransmittingAnnounce {
+public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlaneXDRConsumer implements DataSourceControlPlane, DataSourceDelegateInteracter {
     DataSourceDelegate dataSourceDelegate;
+    
+    
+    public UDPDataSourceControlPlaneXDRConsumer(InetSocketAddress localAddress) {
+        super(localAddress);
+    }
     
     public UDPDataSourceControlPlaneXDRConsumer(InetSocketAddress localAddress, InetSocketAddress controllerAddress) {
         super(localAddress, controllerAddress);
@@ -29,7 +34,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
     @Override
     public boolean announce() {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        System.out.println("UDP Control Plane Consumer: announcing Data Source " + dataSource.getID());
+        LOGGER.debug("invoking announce for Data Source " + dataSource.getID());
         
         AbstractAnnounceMessage message = new AnnounceMessage(dataSource.getID(), AbstractAnnounceMessage.EntityType.DATASOURCE);
         
@@ -37,7 +42,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
             announceSerializer(message);
             return true;
         } catch (IOException e) {
-            System.out.println("Error while announcing Data Source" + e.getMessage());
+            LOGGER.error("Error while announcing Data Source" + e.getMessage());
             return false;
         }
     }
@@ -45,7 +50,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
     @Override
     public boolean dennounce() {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        System.out.println("UDP Control Plane Consumer: deannouncing Data Source " + dataSource.getID());
+        LOGGER.debug("invoking deannounce for Data Source " + dataSource.getID());
         
         AbstractAnnounceMessage message = new DeannounceMessage(dataSource.getID(), AbstractAnnounceMessage.EntityType.DATASOURCE);
         
@@ -53,7 +58,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
             announceSerializer(message);
             return true;
         } catch (IOException e) {
-            System.out.println("Error while deannouncing Data Source" + e.getMessage());
+            LOGGER.error("Error while deannouncing Data Source" + e.getMessage());
             return false;
         }
     }
@@ -76,7 +81,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
     public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws ControlServiceException {
         DataSource dataSource = dataSourceDelegate.getDataSource();
         try {
-            System.out.println("******* UDPControlPlaneConsumer -> loadProbe");
+            LOGGER.info("** invoking loadProbe **");
             ProbeLoader p = new ProbeLoader(probeClassName, probeArgs);
             if (dataSource instanceof ControllableDataSource)
                 return ((ControllableDataSource)dataSource).addProbe(p);
@@ -90,7 +95,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
     @Override
     public boolean unloadProbe(ID probeID) throws ControlServiceException {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        System.out.println("******* UDPControlPlaneConsumer -> unloadProbe");
+        LOGGER.info("** invoking unloadProbe **");
         Probe p = dataSource.getProbeByID(probeID);
         dataSource.removeProbe(p);
         return true;
@@ -115,7 +120,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
     @Override
     public boolean setProbeServiceID(ID probeID, ID id) {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        System.out.println("******* UDPControlPlaneConsumer -> setProbeServiceID");
+        LOGGER.info("** invoking setProbeServiceID **");
         dataSource.setProbeServiceID(probeID, id);
         return true;
         }
@@ -128,7 +133,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
     @Override
     public boolean setProbeGroupID(ID probeID, ID id) {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        System.out.println("******* UDPControlPlaneConsumer -> setProbeGroupID");
+        LOGGER.info("** invoking setProbeGroupID **");
         dataSource.setProbeGroupID(probeID, id);
         return true;
     }
@@ -141,7 +146,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
     @Override
     public boolean setProbeDataRate(ID probeID, Rational dataRate) {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        System.out.println("******* UDPControlPlaneConsumer -> setProbeDataRate");
+        LOGGER.info("** invoking setProbeDataRate **");
         dataSource.setProbeDataRate(probeID, dataRate);
         return true;
     }
@@ -159,7 +164,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
     @Override
     public boolean turnOnProbe(ID probeID) {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        System.out.println("******* UDPControlPlaneConsumer -> turnOnProbe");
+        LOGGER.info("** invoking turnOnProbe **");
         if (!dataSource.isProbeOn(probeID)) {
             dataSource.turnOnProbe(probeID);
             return true;
@@ -171,7 +176,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
     @Override
     public boolean turnOffProbe(ID probeID) {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        System.out.println("******* UDPControlPlaneConsumer -> turnOffProbe");
+        LOGGER.info("** invoking turnOffProbe **");
         if (dataSource.isProbeOn(probeID)) {
             dataSource.turnOffProbe(probeID);
             return true;
@@ -203,7 +208,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
     @Override
     public String getDataSourceInfo(ID id) {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        System.out.println("******* UDPControlPlaneConsumer -> getDataSourceInfo");
+        LOGGER.info("** invoking getDataSourceInfo **");
         return dataSource.getName();
     }
 

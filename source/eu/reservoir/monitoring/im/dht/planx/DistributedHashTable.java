@@ -3,7 +3,7 @@
 // Email: sclayman@ee.ucl.ac.uk
 // Date: Oct 2008
 
-package eu.reservoir.monitoring.im.dht;
+package eu.reservoir.monitoring.im.dht.planx;
 
 import java.io.Serializable;
 import java.io.IOException;
@@ -20,7 +20,8 @@ import org.planx.routing.*;
  * A Distributed Hash Table implementation.
  * Values can be accessed and added from any one
  * of the distributed nodes.
- */
+ * @deprecated 
+ **/
 public class DistributedHashTable {
     Kademlia kademlia = null;
 

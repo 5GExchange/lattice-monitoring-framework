@@ -1,5 +1,7 @@
 package eu.fivegex.monitoring.im.dht.tomp2p;
 
+import eu.reservoir.monitoring.core.plane.AnnounceEventListener;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
@@ -9,7 +11,11 @@ import net.tomp2p.futures.FutureDHT;
 import net.tomp2p.p2p.Peer;
 import net.tomp2p.p2p.PeerMaker;
 import net.tomp2p.peers.Number160;
+import net.tomp2p.peers.PeerAddress;
+import net.tomp2p.rpc.ObjectDataReply;
 import net.tomp2p.storage.Data;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A Distributed Hash Table implementation.
@@ -17,10 +23,16 @@ import net.tomp2p.storage.Data;
  * of the distributed nodes.
  */
 
-public class DistributedHashTable {
+public class DistributedHashTable implements ObjectDataReply {
     Peer peer; 
 
+    PeerAddress rootPeer;
+    
     int localPort = 0;
+    
+    AnnounceEventListener listener;
+    
+    static Logger LOGGER = LoggerFactory.getLogger(DistributedHashTable.class);
 
     /**
      * Constructor a Peer on a specified localPort
@@ -44,12 +56,41 @@ public class DistributedHashTable {
 	FutureBootstrap bootstrap = peer.bootstrap().setInetAddress(remoteAddress)
                                                     .setPorts(remPort)
                                                     .start();
+        
+        /* broadcast may also be used: 
+        FutureBootstrap bootstrap = peer.bootstrap().setBroadcast()
+                                                    .setPorts(remPort)
+                                                    .start();
+        */
+        
         bootstrap.awaitUninterruptibly();
         if (bootstrap.getBootstrapTo() != null) {
-            peer.discover().setPeerAddress(bootstrap.getBootstrapTo().iterator().next()).start().awaitUninterruptibly();
+            rootPeer = bootstrap.getBootstrapTo().iterator().next();
+            peer.discover().setPeerAddress(rootPeer).start().awaitUninterruptibly();
         }
+        else // we are on the root node
+            setupReplyHandler(); // used by the root node to receive Announce/Deannounce messages
     }
-
+    
+    
+    private void setupReplyHandler() {
+        LOGGER.debug("Setting up reply handler for Announce/Deannounce messages");
+        peer.setObjectDataReply(this);
+    }
+    
+    // called back by the netty thread when a message is received on the DHT
+    @Override
+    public Object reply(PeerAddress sender, Object request) throws Exception {
+        AbstractAnnounceMessage m = AbstractAnnounceMessage.fromString((String)request);
+        LOGGER.debug("Received " + m.getMessageType() + " message for " + m.getEntity() + 
+                     " with ID " + m.getEntityID() +
+                     " from " + sender.getID());            
+        this.fireEvent(AbstractAnnounceMessage.fromString((String)request));
+            
+        return "ACK"; // @ TODO: will return an ACK
+    }
+    
+    
     /**
      * Close the peer connection
      */
@@ -89,11 +130,11 @@ public class DistributedHashTable {
      * Does the DHT contain a particular Identifier.
      * Returns true if the map contains the specified key and false otherwise.
      */
-    public boolean contains(String aKey) throws IOException {
+    public boolean contains(String aKey, int timeout) throws IOException {
 	Number160 keyHash = Number160.createHash(aKey);
 
 	FutureDHT futureDHT = peer.get(keyHash).start();
-        futureDHT.awaitUninterruptibly();
+        futureDHT.awaitUninterruptibly(timeout);
         
         if (futureDHT.isSuccess()) {
             return true;
@@ -111,10 +152,32 @@ public class DistributedHashTable {
 	return this;
     }
     
+    
+    public void announce(AbstractAnnounceMessage m) {
+        try {
+            LOGGER.debug("About to send " + m.getMessageType() + " message for this " + m.getEntity());
+            FutureDHT futureSend = peer.send(rootPeer.getID()).setObject(AbstractAnnounceMessage.toString(m)).start();
+            futureSend.awaitUninterruptibly();
+            LOGGER.debug(m.getMessageType() + " message sent for this " + m.getEntity());
+            
+            // waiting for ACK here - should re-transmit in case
+            //for (Object o: futureSend.getRawDirectData2().values())
+            //    System.out.println(" ----- " + o + " ----- ");
+            
+        } catch (IOException e) {
+            LOGGER.error("Error while sending " + m.getMessageType() + "message " + e.getMessage());
+        }
+    }
   
     public String toString() {
             return peer.toString();
         }
+    
+    public void addAnnounceEventListener(AnnounceEventListener l) {
+        listener = l;
+    }
 
-
+    protected void fireEvent(AbstractAnnounceMessage m) {
+        listener.receivedAnnounceEvent(m);
+    }
 }

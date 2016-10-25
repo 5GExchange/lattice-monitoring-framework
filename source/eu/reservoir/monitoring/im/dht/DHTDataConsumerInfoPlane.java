@@ -5,6 +5,7 @@
 
 package eu.reservoir.monitoring.im.dht;
 
+import eu.fivegex.monitoring.im.dht.tomp2p.IMNode;
 import eu.reservoir.monitoring.core.ControllableReporter;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.DataSource;
@@ -16,6 +17,9 @@ import eu.reservoir.monitoring.core.plane.InfoPlane;
 
 import java.io.IOException;
 import eu.reservoir.monitoring.core.ControllableDataConsumer;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
+import eu.reservoir.monitoring.core.plane.AnnounceMessage;
+import eu.reservoir.monitoring.core.plane.DeannounceMessage;
 
 /**
  * A DHTDataConsumerInfoPlane is an InfoPlane implementation
@@ -43,7 +47,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
 	rootPort = remotePort;
 	port = localPort;
 
-	imNode = new eu.fivegex.monitoring.im.dht.tomp2p.IMNode(localPort, remoteHostname, remotePort);
+	imNode = new IMNode(localPort, remoteHostname, remotePort);
     }
 
     /**
@@ -88,7 +92,9 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     public boolean dennounce() {
         try {
 	    imNode.removeDataConsumer(dataConsumer);
-	    System.out.println("DHTInfoPlane: just deannounced this Data Consumer " + dataConsumer.getID());
+            
+            imNode.announce(new DeannounceMessage(dataConsumer.getID(), AbstractAnnounceMessage.EntityType.DATACONSUMER));
+	    LOGGER.info("just deannounced this Data Consumer " + dataConsumer.getID());
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -100,7 +106,9 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
         try {
 	    imNode.addDataConsumer(dc);
             imNode.addDataConsumerInfo(dc);
-	    System.out.println("DHTInfoPlane: just announced this Data Consumer " + dc.getID());
+            
+            imNode.announce(new AnnounceMessage(dataConsumer.getID(), AbstractAnnounceMessage.EntityType.DATACONSUMER));
+	    LOGGER.info("just announced this Data Consumer " + dc.getID());
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -111,7 +119,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     public boolean addReporterInfo(Reporter r) {
         try {
 	    imNode.addReporter((ControllableReporter)r);
-	    System.out.println("DHTInfoPlane: just added reporter " + ((ControllableReporter)r).getName());
+	    LOGGER.info("just added reporter " + ((ControllableReporter)r).getName());
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -122,7 +130,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     public boolean removeDataConsumerInfo(ControllableDataConsumer dc) {
         try {
 	    imNode.removeDataConsumer(dc);
-	    System.out.println("DHTInfoPlane: just removed Data Consumer " + dc);
+	    LOGGER.info("just removed Data Consumer " + dc);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -133,7 +141,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     public boolean removeReporterInfo(Reporter r) {
         try {
 	    imNode.addReporter((ControllableReporter)r);
-	    System.out.println("DHTInfoPlane: just removed reporter " + r);
+	    LOGGER.info("just removed reporter " + r);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;

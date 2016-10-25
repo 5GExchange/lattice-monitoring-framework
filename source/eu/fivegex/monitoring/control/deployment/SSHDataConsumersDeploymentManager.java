@@ -9,8 +9,8 @@ import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
-import eu.fivegex.monitoring.control.DCNotFoundException;
-import eu.fivegex.monitoring.control.controller.InformationManager;
+import eu.fivegex.monitoring.im.delegate.DCNotFoundException;
+import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
 import java.net.InetAddress;
@@ -23,7 +23,7 @@ import java.net.UnknownHostException;
 public class SSHDataConsumersDeploymentManager extends SSHDeploymentManager {
     
     
-    public SSHDataConsumersDeploymentManager (String localJarFilePath, String jarFileName, String remoteJarFilePath, String dcFileName, InformationManager info) {
+    public SSHDataConsumersDeploymentManager (String localJarFilePath, String jarFileName, String remoteJarFilePath, String dcFileName, InfoPlaneDelegate info) {
         super(localJarFilePath, jarFileName, remoteJarFilePath, dcFileName, EntityType.DATACONSUMER, info);
     }
     
@@ -59,7 +59,7 @@ public class SSHDataConsumersDeploymentManager extends SSHDeploymentManager {
                 // we are genereting here the entity ID and passing it as a parameter to the remote process
                 entityID= ID.generate();
                 entityIDAsString = entityID.toString();
-                System.out.println("Generated entity ID: " + entityIDAsString);
+                LOGGER.debug("Generated " + entityType + " ID: " + entityIDAsString);
                 
                 // this is only intended for testing the mongoDB reporter
                 String externalJars = this.remoteJarFilePath + "/libs/mongo-java-driver-3.2.2.jar"; 
@@ -76,10 +76,10 @@ public class SSHDataConsumersDeploymentManager extends SSHDeploymentManager {
                 
                 // we are supposed to wait here until the announce message associated to the DS is received from the Announcelistener thread
                 // or the timeout is reached (5 secs)
-                informationManager.waitForDataConsumer(entityID, 7500);
+                infoPlaneDelegate.addDataConsumer(entityID, 7500);
                 
                 // if there is no Exception before we can now try to get the Data Source PID
-                pID = informationManager.getDCPIDFromID(entityID);
+                pID = infoPlaneDelegate.getDCPIDFromID(entityID);
                 
             } catch (JSchException | DCNotFoundException e) {
                 // we are here if there was an error while starting the remote Data Consumer
@@ -95,7 +95,7 @@ public class SSHDataConsumersDeploymentManager extends SSHDeploymentManager {
                 throw new DeploymentException(errorMessage);
                 
             } catch (InterruptedException ie) {
-                System.out.println("Interrupted " + ie.getMessage());
+                LOGGER.info("Interrupted " + ie.getMessage());
             }
               finally {
                 // as the command was started without a pty when we close the channel 

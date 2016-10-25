@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Set;
 import org.simpleframework.http.Response;
 import org.simpleframework.http.Request;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import us.monoid.json.*;
 
@@ -28,6 +29,7 @@ import us.monoid.json.*;
  */
 public abstract class AbstractRestConsole implements Container, ManagementConsole {
 
+    private static Logger LOGGER = LoggerFactory.getLogger(RestConsole.class);
     // the port this element is listening on
     protected int port;
 
@@ -77,11 +79,11 @@ public abstract class AbstractRestConsole implements Container, ManagementConsol
 
             connection.connect(address);
 
-            LoggerFactory.getLogger(RestConsole.class).info("Listening on port " + port);
+            LOGGER.info("Listening on port " + port);
             return true;
 
         } catch (IOException ioe) {
-            LoggerFactory.getLogger(RestConsole.class).error("Cannot listen on port " + port);
+            LOGGER.error("Cannot listen on port " + port);
             return false;
         }
 
@@ -109,13 +111,12 @@ public abstract class AbstractRestConsole implements Container, ManagementConsol
      */
     public void handle(Request request, Response response) {
         try {
-            /*
-            System.out.println("method: " + request.getMethod());
-            System.out.println("path: " + request.getPath());
-            System.out.println("query: " + request.getQuery());
-            System.out.println("target: " + request.getTarget());
-            System.out.println("directory: " + request.getPath().getDirectory());
-            */
+            
+            LOGGER.debug("method: " + request.getMethod());
+            LOGGER.debug("path: " + request.getPath());
+            LOGGER.debug("query: " + request.getQuery());
+            LOGGER.debug("target: " + request.getTarget());
+            LOGGER.debug("directory: " + request.getPath().getDirectory());
 
             String path =  request.getPath().getPath();
             String directory = request.getPath().getDirectory();
@@ -139,13 +140,13 @@ public abstract class AbstractRestConsole implements Container, ManagementConsol
 
             // if we fall through @TODO: use logger
             {
-                System.out.println("AbstractRestConsole error: " + "no command");
+                LOGGER.error("AbstractRestConsole error: " + "no command");
 
-                System.out.println("method: " + request.getMethod());
-                System.out.println("path: " + request.getPath());
-                System.out.println("query: " + request.getQuery());
-                System.out.println("target: " + request.getTarget());
-                System.out.println("directory: " + request.getPath().getDirectory());
+                LOGGER.error("method: " + request.getMethod());
+                LOGGER.error("path: " + request.getPath());
+                LOGGER.error("query: " + request.getQuery());
+                LOGGER.error("target: " + request.getTarget());
+                LOGGER.error("directory: " + request.getPath().getDirectory());
 
                 //fetch the UnknownCommand
                 PrintStream out = response.getPrintStream();
@@ -158,9 +159,9 @@ public abstract class AbstractRestConsole implements Container, ManagementConsol
 
 
         } catch (IOException ioe) {
-            System.err.println(ioe.getMessage());
+            LOGGER.error(ioe.getMessage());
         } catch (JSONException jex) {
-            System.err.println(jex.getMessage());
+            LOGGER.error(jex.getMessage());
         }
     }
 
@@ -175,8 +176,6 @@ public abstract class AbstractRestConsole implements Container, ManagementConsol
 
         // put in map
         handlerMap.put(pattern, rh);
-
-        //System.err.println(leadin() + "Defined " + pattern + " for " + rh.getClass().getName());
     }
 
     /**

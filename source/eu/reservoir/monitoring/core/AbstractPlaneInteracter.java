@@ -108,7 +108,21 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 		dataPlaneStatus = PlaneConnectStatus.CONNECTED;
 	    }
 	}
+        
+        // connect to info plane
+	if (infoPlane != null) {
+	    infoPlaneStatus = PlaneConnectStatus.CONNECTING;
 
+	    conn = infoPlane.connect();
+
+	    if (!conn) {
+		failed = true;
+		infoPlaneStatus = PlaneConnectStatus.FAILED;
+	    } else {
+		infoPlaneStatus = PlaneConnectStatus.CONNECTED;
+	    }
+	}
+        
 	// connect to control plane
 	if (controlPlane != null) {
 	    controlPlaneStatus = PlaneConnectStatus.CONNECTING;
@@ -122,22 +136,7 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 		controlPlaneStatus = PlaneConnectStatus.CONNECTED;
 	    }
 	}
-
-	// connect to info plane
-	if (infoPlane != null) {
-	    infoPlaneStatus = PlaneConnectStatus.CONNECTING;
-
-	    conn = infoPlane.connect();
-
-	    if (!conn) {
-		failed = true;
-		infoPlaneStatus = PlaneConnectStatus.FAILED;
-	    } else {
-		infoPlaneStatus = PlaneConnectStatus.CONNECTED;
-	    }
-	}
-
-	
+        
 	if (failed) {
 	    // failed to connect announced is not performed
 	    return false;
@@ -219,6 +218,20 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 	    }
 	}
 
+        // connect to info plane
+	if (infoPlane != null) {
+	    infoPlaneStatus = PlaneConnectStatus.DISCONNECTING;
+
+	    conn = infoPlane.disconnect();
+
+	    if (!conn) { 
+		failed = true; 
+		infoPlaneStatus = PlaneConnectStatus.FAILED;
+	    } else {
+		infoPlaneStatus = PlaneConnectStatus.DISCONNECTED;
+	    }
+	}
+        
 	// connect to control plane
 	if (controlPlane != null) {
 	    controlPlaneStatus = PlaneConnectStatus.DISCONNECTING;
@@ -230,22 +243,6 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 		controlPlaneStatus = PlaneConnectStatus.FAILED;
 	    } else {
 		controlPlaneStatus = PlaneConnectStatus.DISCONNECTED;
-	    }
-	}
-
-	// connect to info plane
-	boolean i = false;
-
-	if (infoPlane != null) {
-	    infoPlaneStatus = PlaneConnectStatus.DISCONNECTING;
-
-	    conn = infoPlane.disconnect();
-
-	    if (!conn) { 
-		failed = true; 
-		infoPlaneStatus = PlaneConnectStatus.FAILED;
-	    } else {
-		infoPlaneStatus = PlaneConnectStatus.DISCONNECTED;
 	    }
 	}
 
@@ -267,14 +264,14 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 		dataPlane.announce();
 	    }
 
+            // announce the DataSource to the infoPlane
+	    if (infoPlane != null) {
+		infoPlane.announce();
+	    }
+            
 	    // announce the DataSource to the controlPlane
 	    if (controlPlane != null) {
 		controlPlane.announce();
-	    }
-
-	    // announce the DataSource to the infoPlane
-	    if (infoPlane != null) {
-		infoPlane.announce();
 	    }
 
 	    return true;
@@ -293,16 +290,15 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 		dataPlane.dennounce();
 	    }
 
+            // deannounce the DataSource to the infoPlane
+	    if (infoPlane != null) {
+		infoPlane.dennounce();
+	    }
+            
 	    // deannounce the DataSource to the controlPlane
 	    if (controlPlane != null) {
 		controlPlane.dennounce();
 	    }
-
-	    // deannounce the DataSource to the infoPlane
-	    if (infoPlane != null) {
-		infoPlane.dennounce();
-	    }
-
 	    return true;
 	} catch (Exception e) {
 	    return false;

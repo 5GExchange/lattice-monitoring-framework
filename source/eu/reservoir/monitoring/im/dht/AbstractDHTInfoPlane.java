@@ -5,11 +5,14 @@
 
 package eu.reservoir.monitoring.im.dht;
 
+import eu.fivegex.monitoring.im.dht.tomp2p.IMNode;
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 import java.io.Serializable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A DHTInfoPlane is an InfoPlane implementation
@@ -19,8 +22,13 @@ import java.io.Serializable;
  */
 public abstract class AbstractDHTInfoPlane implements InfoPlane  {
     // An IMNode acts as a node in the DHT
-    //IMNode imNode;
-    eu.fivegex.monitoring.im.dht.tomp2p.IMNode imNode;
+    IMNode imNode;
+    
+    static Logger LOGGER = LoggerFactory.getLogger("DHTInfoPlane");
+    
+    public AbstractDHTInfoPlane() {
+    }
+    
     /**
      * Connect to a delivery mechanism.
      */
@@ -100,6 +108,6 @@ public abstract class AbstractDHTInfoPlane implements InfoPlane  {
     public String toString() {
         return imNode.toString();
     }
+
     
- 
 }

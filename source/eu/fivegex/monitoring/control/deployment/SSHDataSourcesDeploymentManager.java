@@ -9,8 +9,8 @@ import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
-import eu.fivegex.monitoring.control.DSNotFoundException;
-import eu.fivegex.monitoring.control.controller.InformationManager;
+import eu.fivegex.monitoring.im.delegate.DSNotFoundException;
+import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
 import java.net.InetAddress;
@@ -23,7 +23,7 @@ import java.net.UnknownHostException;
 public class SSHDataSourcesDeploymentManager extends SSHDeploymentManager {
     
     
-    public SSHDataSourcesDeploymentManager (String localJarFilePath, String jarFileName, String remoteJarFilePath, String dsFileName, InformationManager info) {
+    public SSHDataSourcesDeploymentManager (String localJarFilePath, String jarFileName, String remoteJarFilePath, String dsFileName, InfoPlaneDelegate info) {
         super(localJarFilePath, jarFileName, remoteJarFilePath, dsFileName, EntityType.DATASOURCE, info);
     }
     
@@ -59,7 +59,7 @@ public class SSHDataSourcesDeploymentManager extends SSHDeploymentManager {
                 // we are genereting here the entity ID and passing it as a parameter to the remote process
                 entityID= ID.generate();
                 entityIDAsString = entityID.toString();
-                System.out.println("Generated entity ID: " + entityIDAsString);
+                LOGGER.debug("Generated " + entityType + " ID: " + entityIDAsString);
                 
                 String command = jvm + 
                                  " -cp " + this.remoteJarFilePath + "/" + this.jarFileName + " " + 
@@ -74,10 +74,10 @@ public class SSHDataSourcesDeploymentManager extends SSHDeploymentManager {
                 
                 // we are supposed to wait here until the announce message associated to the DS is received from the Announcelistener thread
                 // or the timeout is reached (5 secs)
-                informationManager.waitForDataSource(entityID, 7500);
+                infoPlaneDelegate.addDataSource(entityID, 7500);
                 
                 // if there is no Exception before we can now try to get the Data Source PID
-                pID = informationManager.getDSPIDFromID(entityID);
+                pID = infoPlaneDelegate.getDSPIDFromID(entityID);
                 
             } catch (JSchException | DSNotFoundException e) {
                 // we are here if there was an error while starting the remote Data Source
@@ -93,7 +93,7 @@ public class SSHDataSourcesDeploymentManager extends SSHDeploymentManager {
                 throw new DeploymentException(errorMessage);
                 
             } catch (InterruptedException ie) {
-                System.out.println("Interrupted " + ie.getMessage());
+                LOGGER.info("Interrupted " + ie.getMessage());
             }
               finally {
                 // as the command was started without a pty when we close the channel 

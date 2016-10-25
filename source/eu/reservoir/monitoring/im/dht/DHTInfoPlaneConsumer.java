@@ -5,6 +5,8 @@
 
 package eu.reservoir.monitoring.im.dht;
 
+import eu.fivegex.monitoring.im.delegate.ControlInformationManager;
+import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Probe;
@@ -12,12 +14,20 @@ import eu.reservoir.monitoring.core.ProbeAttribute;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 import eu.reservoir.monitoring.core.Reporter;
 import eu.reservoir.monitoring.core.ControllableDataConsumer;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
+import eu.reservoir.monitoring.core.plane.AnnounceEventListener;
+import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegateInteracter;
+import eu.fivegex.monitoring.im.dht.tomp2p.IMNode;
 
 /**
  * A DHTInfoPlaneConsumer is an InfoPlane implementation
  * that collects data from the Information Model data.
  */
-public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPlane  {
+public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPlane, InfoPlaneDelegateInteracter, AnnounceEventListener  {
+    private InfoPlaneDelegate infoPlaneDelegate;
+    
+    AnnounceEventListener listener;
+    
     // The hostname of the DHT root.
     String rootHost;
 
@@ -31,6 +41,7 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
      * Constructor for subclasses.
      */
     DHTInfoPlaneConsumer() {
+        setInfoPlaneDelegateInteracter(new ControlInformationManager(this));
     }
 
 
@@ -44,7 +55,8 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
 	rootPort = remotePort;
 	port = localPort;
 
-	imNode = new eu.fivegex.monitoring.im.dht.tomp2p.IMNode(localPort, remoteHostname, remotePort);
+	imNode = new IMNode(localPort, remoteHostname, remotePort);
+        imNode.addAnnounceEventListener(this);
     }
 
 
@@ -149,40 +161,37 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
     }
     
     @Override
-    public boolean containsDataSource(ID dataSourceID, int timeOut) {
-        long tStart = System.currentTimeMillis();
-        long tCurrent;
-        boolean found = false;
-        do {
-           found = imNode.containsDataSource(dataSourceID);
-           if (found)
-               return found;
-           try {
-                Thread.sleep(500); // polling every 500 ms until the timeout is reached
-           } catch (InterruptedException e) {
-               return found;
-           }
-           tCurrent = System.currentTimeMillis();
-        }  while (tCurrent - tStart < (long) timeOut);
-        return found;
+    public boolean containsDataSource(ID dataSourceID, int timeout) {
+        return imNode.containsDataSource(dataSourceID, timeout); 
     }
     
     @Override
-    public boolean containsDataConsumer(ID dataConsumerID, int timeOut) {
-        long tStart = System.currentTimeMillis();
-        long tCurrent;
-        boolean found = false;
-        do {
-           found = imNode.containsDataConsumer(dataConsumerID);
-           if (found)
-               return found;
-           try {
-                Thread.sleep(500); // polling every 500 ms until the timeout is reached
-           } catch (InterruptedException e) {
-               return found;
-           }
-           tCurrent = System.currentTimeMillis();
-        }  while (tCurrent - tStart < (long) timeOut);
-        return found;
+    public boolean containsDataConsumer(ID dataConsumerID, int timeout) {
+        return imNode.containsDataConsumer(dataConsumerID, timeout);
     }
+    
+    
+    @Override
+    public void receivedAnnounceEvent(AbstractAnnounceMessage m) {
+        infoPlaneDelegate.receivedAnnounceEvent(m);
+    }
+    
+    @Override
+    public void setInfoPlaneDelegateInteracter(InfoPlaneDelegate im) {
+        this.infoPlaneDelegate = im;
+    }
+
+    @Override
+    public InfoPlaneDelegate getInfoPlaneDelegateInteracter() {
+        return this.infoPlaneDelegate;
+    }
+    
+    public void addAnnounceEventListener(AnnounceEventListener l) {
+        this.listener=l;
+    }
+    
+    protected void fireEvent(AbstractAnnounceMessage m) {
+        listener.receivedAnnounceEvent(m);
+    }
+    
 }

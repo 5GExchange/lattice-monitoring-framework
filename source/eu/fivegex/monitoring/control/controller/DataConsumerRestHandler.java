@@ -14,6 +14,8 @@ import org.simpleframework.http.Path;
 import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
@@ -24,6 +26,7 @@ import us.monoid.json.JSONObject;
 class DataConsumerRestHandler extends BasicRequestHandler {
     
     JSONControlInterface controllerInterface;
+    private Logger LOGGER = LoggerFactory.getLogger(DataConsumerRestHandler.class);
 
     public DataConsumerRestHandler() {
     }
@@ -33,7 +36,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         // get Controller
         controllerInterface = (JSONControlInterface) getManagementConsole().getAssociated();
         
-        System.out.println("\n-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
+        LOGGER.debug("-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
         
         long time = System.currentTimeMillis();
@@ -99,14 +102,14 @@ class DataConsumerRestHandler extends BasicRequestHandler {
             return true;
             
             } catch (IOException ex) {
-                System.out.println("IOException" + ex.getMessage());
+                LOGGER.error("IOException" + ex.getMessage());
             } catch (JSONException jex) {
-                System.out.println("JSONException" + jex.getMessage());
+                LOGGER.error("JSONException" + jex.getMessage());
             } finally {
                         try {
                             response.close();
                             } catch (IOException ex) {
-                                System.out.println("IOException" + ex.getMessage());
+                                LOGGER.error("IOException" + ex.getMessage());
                               }
                       }
      return false;
@@ -151,7 +154,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.out.println("startDC: failure detected: " + failMessage);
+            LOGGER.error("startDC: failure detected: " + failMessage);
             success = false;   
         }   
     
@@ -198,7 +201,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.out.println("stopDC: failure detected: " + failMessage);
+            LOGGER.error("stopDC: failure detected: " + failMessage);
             success = false;   
         }   
     
@@ -257,7 +260,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         
         if (!jsobj.getBoolean("success")) {
             failMessage =(String)jsobj.get("msg");
-            System.err.println("DataConsumerRestHandler: loadReporter failure: " + failMessage);
+            LOGGER.error("loadReporter failure: " + failMessage);
             success = false;   
         }   
     
@@ -289,11 +292,10 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         scanner = new Scanner (segments[1]);
         if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
             dcID = scanner.next();
-            System.out.println("dcID " + dcID);
             scanner.close();
         }
         else {
-            System.out.println("DC ID is not valid");
+            LOGGER.error("Data Consumer ID is not a valid UUID");
             scanner.close();
             complain(response, "Data Consumer ID is not a valid UUID: " + segments[1]);
             return;
@@ -309,7 +311,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
 
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.out.println("getDataConsumerMeasurementRate: failure detected: " + failMessage);
+            LOGGER.error("getDataConsumerMeasurementRate: failure detected: " + failMessage);
             success = false;   
         }
 
@@ -335,7 +337,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
 
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.out.println("getDataConsumers: failure detected: " + failMessage);
+            LOGGER.error("getDataConsumers: failure detected: " + failMessage);
             success = false;   
         }
 

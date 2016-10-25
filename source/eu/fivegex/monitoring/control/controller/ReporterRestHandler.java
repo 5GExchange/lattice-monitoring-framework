@@ -13,6 +13,8 @@ import java.util.Scanner;
 import org.simpleframework.http.Path;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
@@ -23,6 +25,7 @@ import us.monoid.json.JSONObject;
 class ReporterRestHandler extends BasicRequestHandler {
 
     JSONControlInterface controllerInterface;
+    private Logger LOGGER = LoggerFactory.getLogger(ReporterRestHandler.class);
     
     public ReporterRestHandler() {
     }
@@ -32,7 +35,7 @@ class ReporterRestHandler extends BasicRequestHandler {
         // get Controller
         controllerInterface = (JSONControlInterface) getManagementConsole().getAssociated();
         
-        System.out.println("\n-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
+        LOGGER.debug("-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
         
         long time = System.currentTimeMillis();
@@ -93,14 +96,14 @@ class ReporterRestHandler extends BasicRequestHandler {
             return true;
             
             } catch (IOException ex) {
-                System.out.println("IOException" + ex.getMessage());
+                LOGGER.error("IOException" + ex.getMessage());
             } catch (JSONException jex) {
-                System.out.println("JSONException" + jex.getMessage());
+                LOGGER.error("JSONException" + jex.getMessage());
             } finally {
                         try {
                             response.close();
                             } catch (IOException ex) {
-                                System.out.println("IOException" + ex.getMessage());
+                                LOGGER.error("IOException" + ex.getMessage());
                               }
                       }
      return false;
@@ -152,7 +155,7 @@ class ReporterRestHandler extends BasicRequestHandler {
 
             if (!jsobj.getBoolean("success")) {
                 failMessage = (String)jsobj.get("msg");
-                System.out.println("ReporterRestHandler: failure detected: " + failMessage);
+                LOGGER.error("failure detected: " + failMessage);
                 success = false;   
             }
 

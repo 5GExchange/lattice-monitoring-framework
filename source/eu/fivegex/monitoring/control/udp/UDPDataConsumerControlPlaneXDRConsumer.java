@@ -30,28 +30,28 @@ public class UDPDataConsumerControlPlaneXDRConsumer extends AbstractUDPControlPl
 
     @Override
     public boolean announce() {
-        System.out.println("UDP Control Plane Consumer: announcing Data Consumer");
+        LOGGER.debug("invoking announce for Data Consumer" + dataConsumer.getID());
         AbstractAnnounceMessage message = new AnnounceMessage(dataConsumer.getID(), AbstractAnnounceMessage.EntityType.DATACONSUMER);
         
         try {
             announceSerializer(message);
             return true;
         } catch (IOException e) {
-            System.out.println("Error while announcing Data Consumer" + e.getMessage());
+            LOGGER.error("Error while announcing Data Consumer" + e.getMessage());
             return false;
         }
     }
 
     @Override
     public boolean dennounce() {
-        System.out.println("UDP Control Plane Consumer: deannouncing Data Consumer");
+        LOGGER.debug("invoking deannounce for Data Consumer" + dataConsumer.getID());
         AbstractAnnounceMessage message = new DeannounceMessage(dataConsumer.getID(), AbstractAnnounceMessage.EntityType.DATACONSUMER);
         
         try {
             announceSerializer(message);
             return true;
         } catch (IOException e) {
-            System.out.println("Error while deannouncing Data Consumer" + e.getMessage());
+            LOGGER.error("Error while deannouncing Data Consumer" + e.getMessage());
             return false;
         }
     }
@@ -71,14 +71,14 @@ public class UDPDataConsumerControlPlaneXDRConsumer extends AbstractUDPControlPl
     
     @Override
     public float getDCMeasurementsRate(ID dcID) {
-        System.out.println("******* UDPControlPlaneConsumer -> getDCMeasurementsRate");
+        LOGGER.info("** invoking getDCMeasurementsRate **");
         return dataConsumer.getMeasurementsRate();
     }
     
     @Override
     public ID loadReporter(ID dataConsumerID, String reporterClassName, Object... reporterArgs) throws ControlServiceException {
         try {
-            System.out.println("******* UDPControlPlaneConsumer -> loadReporter");
+            LOGGER.info("** invoking loadReporter **");
             ReporterLoader r = new ReporterLoader(reporterClassName, reporterArgs);
             dataConsumer.addReporter(r.getReporter());
             return r.getReporter().getId();
@@ -89,7 +89,7 @@ public class UDPDataConsumerControlPlaneXDRConsumer extends AbstractUDPControlPl
 
     @Override
     public boolean unloadReporter(ID reporterID) throws ControlServiceException {
-        System.out.println("******* UDPControlPlaneConsumer -> unloadReporter");
+        LOGGER.info("** invoking unloadReporter **");
         dataConsumer.removeReporter(dataConsumer.getReporterById(reporterID));
         return true;
     }

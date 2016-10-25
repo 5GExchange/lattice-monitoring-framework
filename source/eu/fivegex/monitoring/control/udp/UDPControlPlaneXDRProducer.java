@@ -7,20 +7,21 @@ package eu.fivegex.monitoring.control.udp;
 
 import eu.fivegex.monitoring.control.ControlPlaneConsumerException;
 import eu.fivegex.monitoring.control.ControlServiceException;
-import eu.fivegex.monitoring.control.DCNotFoundException;
-import eu.fivegex.monitoring.control.DSNotFoundException;
-import eu.fivegex.monitoring.control.ProbeNotFoundException;
-import eu.fivegex.monitoring.control.ReporterNotFoundException;
-import eu.fivegex.monitoring.control.controller.InformationManager;
+import eu.fivegex.monitoring.im.delegate.DCNotFoundException;
+import eu.fivegex.monitoring.im.delegate.DSNotFoundException;
+import eu.fivegex.monitoring.im.delegate.ProbeNotFoundException;
+import eu.fivegex.monitoring.im.delegate.ReporterNotFoundException;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Measurement;
 import eu.reservoir.monitoring.core.Rational;
 import eu.reservoir.monitoring.core.Timestamp;
 import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
+import eu.reservoir.monitoring.core.plane.AnnounceMessage;
 import eu.reservoir.monitoring.core.plane.ControlPlaneMessage;
 import eu.reservoir.monitoring.core.plane.ControlOperation;
 import eu.reservoir.monitoring.core.plane.ControllerControlPlane;
+import eu.reservoir.monitoring.core.plane.DeannounceMessage;
 import eu.reservoir.monitoring.core.plane.MessageType;
 import eu.reservoir.monitoring.distribution.MetaData;
 import eu.reservoir.monitoring.distribution.XDRDataInputStream;
@@ -38,8 +39,16 @@ import java.util.List;
 
 public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer implements ControllerControlPlane {
     
-    public UDPControlPlaneXDRProducer(InformationManager resolver, int port, int maxPoolSize) {
-        super(resolver, port, maxPoolSize);
+    /**
+     * Creates a Producer without announce/deannounce management capabilities
+     * @param maxPoolSize is the size of the UDP Transmitters pool
+     */
+    public UDPControlPlaneXDRProducer(int maxPoolSize) {
+        super(maxPoolSize);
+    }
+    
+    public UDPControlPlaneXDRProducer(int port, int maxPoolSize) {
+        super(port, maxPoolSize);
     }
     
 
@@ -65,7 +74,7 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
             // convert args to byte          
             dataOutput.write(cpMessage.getMethodArgsAsByte());
 
-            System.out.println("\n--------- Sending Control Message with seqNo: " + seqNo + " ----------");
+            LOGGER.debug("--------- Sending Control Message with seqNo: " + seqNo + " ----------");
 
             // getting a Transmitter from the Pool
             UDPSynchronousTransmitter connection = controlTransmittersPool.getConnection();
@@ -74,7 +83,7 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
             // putting the Transmitter back to the Pool
             controlTransmittersPool.releaseConnection(connection);
         } catch (InterruptedException ex) {
-            System.out.println(Thread.currentThread().getName() + " interrupted" + ex.getMessage());
+            LOGGER.info("interrupted " + ex.getMessage());
         }
         
         if (result instanceof ControlPlaneConsumerException) {
@@ -100,8 +109,8 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         }
 
         else if (mType == MessageType.CONTROL_REPLY) {
-                System.out.println("\n-------- Control Reply Message Received ---------");
-                System.out.println("From: " + metaData);
+                LOGGER.debug("-------- Control Reply Message Received ---------");
+                LOGGER.debug("From: " + metaData);
 
                 int replyMessageSeqNo = dataIn.readInt();
 
@@ -121,9 +130,9 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
 
                 if (replyMessageSeqNo == seqNo)
                     if (result instanceof Exception )
-                        System.err.println("Request seqNo: " + replyMessageSeqNo + "\nOperation: " + ctrlOperationName + "\nResult: " + result.toString());
+                        LOGGER.error("Reply for request with seqNo: " + replyMessageSeqNo + " Operation: " + ctrlOperationName + " Result: " + result.toString());
                     else
-                        System.out.println("Request seqNo: " + replyMessageSeqNo + "\nOperation: " + ctrlOperationName + "\nResult: " + result.toString());
+                        LOGGER.info("Reply for request with seqNo: " + replyMessageSeqNo + " Operation: " + ctrlOperationName + " Result: " + result.toString());
                 else
                     // we should not likely arrive here
                     throw new IOException("Message Sequence number mismatch! " + replyMessageSeqNo + " not equal to " + seqNo);
@@ -156,18 +165,18 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
                     long entityIDLSB = dataIn.readLong();
                     ID entityID = new ID(entityIDMSB, entityIDLSB);
                     if (mType == MessageType.ANNOUNCE) {
-                        System.out.println("\n-------- Announce Message Received ---------");
-                        addNewAnnouncedEntity(entityID, entity);
+                        LOGGER.debug("-------- Announce Message Received ---------");
+                        fireEvent(new AnnounceMessage(entityID, entity));
                     }
                     else {
-                        System.out.println("\n-------- Dennounce Message Received ---------");
-                        removeNewDeannouncedEntity(entityID, entity);
+                        LOGGER.debug("-------- Dennounce Message Received ---------");
+                        fireEvent(new DeannounceMessage(entityID, entity));
                     }
                         
                 }         
         }
         catch (Exception exception) {
-            System.out.println("UDP Control Plane Producer: error while reading Announce/Deannounce message: " + exception.getMessage());
+            LOGGER.error("error while reading Announce/Deannounce message: " + exception.getMessage());
         }
         
     }
@@ -179,12 +188,12 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
     
     @Override
     public void error(Exception e) {
-        System.err.println("UDP Control Plane Producer error: " + e.getMessage());
+        LOGGER.error("UDP Control Plane Producer error: " + e.getMessage());
     }
     
     @Override
     public boolean transmitted(int id) {
-        System.out.println("UDP Control Plane Producer: just transmitted Control Message with seqNo: " + id);
+        LOGGER.info("just transmitted Control Message with seqNo: " + id);
         return true;
     }
     
@@ -206,12 +215,12 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.LOAD_PROBE, args);
         
         try {
-            InetSocketAddress dstAddr = informationManager.getDSAddressFromID(dataSourceID);
+            InetSocketAddress dstAddr = infoPlaneDelegate.getDSAddressFromID(dataSourceID);
             MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             //we return the ID of the new created probe as result
             probeID = (ID) synchronousTransmit(m, mData);
         } catch (IOException | DSNotFoundException | ControlPlaneConsumerException ex) {
-            System.out.println("Error while performing load probe command " + ex.getMessage());
+            LOGGER.error("Error while performing load probe command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
         return probeID;
@@ -225,11 +234,11 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.UNLOAD_PROBE, args);
         try {
-            InetSocketAddress dstAddr = informationManager.getDSAddressFromProbeID(probeID);
+            InetSocketAddress dstAddr = infoPlaneDelegate.getDSAddressFromProbeID(probeID);
             MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) synchronousTransmit(m, mData);
         } catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
-            System.out.println("Error while performing unload probe command " + ex.getMessage());
+            LOGGER.error("Error while performing unload probe command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
         
@@ -260,11 +269,11 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.SET_PROBE_SERVICE_ID, args);
         try {
-            InetSocketAddress dstAddr = informationManager.getDSAddressFromProbeID(probeID);
+            InetSocketAddress dstAddr = infoPlaneDelegate.getDSAddressFromProbeID(probeID);
             MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) synchronousTransmit(m, mData);
         } catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
-            System.out.println("Error while performing set probe service ID command " + ex.getMessage());
+            LOGGER.error("Error while performing set probe service ID command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
         
@@ -286,11 +295,11 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.SET_PROBE_GROUP_ID, args);
         try {
-            InetSocketAddress dstAddr = informationManager.getDSAddressFromProbeID(probeID);
+            InetSocketAddress dstAddr = infoPlaneDelegate.getDSAddressFromProbeID(probeID);
             MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) synchronousTransmit(m, mData);
         } catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
-            System.out.println("Error while performing set probe group ID command " + ex.getMessage());
+            LOGGER.error("Error while performing set probe group ID command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
         
@@ -312,12 +321,12 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.SET_PROBE_DATA_RATE, args);
         
         try {
-            InetSocketAddress dstAddr = informationManager.getDSAddressFromProbeID(probeID);
+            InetSocketAddress dstAddr = infoPlaneDelegate.getDSAddressFromProbeID(probeID);
             MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) synchronousTransmit(m, mData);
         } 
           catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
-            System.out.println("Error while performing turn on probe command " + ex.getMessage());
+            LOGGER.error("Error while performing turn on probe command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
         
@@ -342,11 +351,11 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.TURN_ON_PROBE, args);
         try {
-            InetSocketAddress dstAddr = informationManager.getDSAddressFromProbeID(probeID);
+            InetSocketAddress dstAddr = infoPlaneDelegate.getDSAddressFromProbeID(probeID);
             MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) synchronousTransmit(m, mData);
         } catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
-            System.out.println("Error while performing turn on probe command " + ex.getMessage());
+            LOGGER.error("Error while performing turn on probe command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
         
@@ -361,12 +370,12 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.TURN_OFF_PROBE, args);
         try {
-            InetSocketAddress dstAddr = informationManager.getDSAddressFromProbeID(probeID);
+            InetSocketAddress dstAddr = infoPlaneDelegate.getDSAddressFromProbeID(probeID);
             MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) synchronousTransmit(m, mData);
             return result;
         } catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
-            System.out.println("Error while performing turn off probe command " + ex.getMessage());
+            LOGGER.error("Error while performing turn off probe command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
         }
@@ -402,11 +411,11 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.GET_DS_NAME, args);
         
         try {
-            InetSocketAddress dstAddr = informationManager.getDSAddressFromID(id);
+            InetSocketAddress dstAddr = infoPlaneDelegate.getDSAddressFromID(id);
             MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());            
             name = (String) synchronousTransmit(m, mData);
         } catch (IOException | DSNotFoundException | ControlPlaneConsumerException ex) {
-            System.out.println("Error while performing getDataSourceName command " + ex.getMessage());
+            LOGGER.error("Error while performing getDataSourceName command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
         return name;
@@ -430,11 +439,11 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.GET_DC_RATE, args);
         
         try {
-            InetSocketAddress dstAddr = informationManager.getDCAddressFromID(dcId);
+            InetSocketAddress dstAddr = infoPlaneDelegate.getDCAddressFromID(dcId);
             MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());            
             rate = (Float) synchronousTransmit(m, mData);
         } catch (IOException | DCNotFoundException | ControlPlaneConsumerException ex) {
-            System.out.println("Error while performing getDCMeasurementsRate command " + ex.getMessage());
+            LOGGER.error("Error while performing getDCMeasurementsRate command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
         return rate;
@@ -452,11 +461,12 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.LOAD_REPORTER, args);
         
         try {
-            InetSocketAddress dstAddr = informationManager.getDCAddressFromID(dataConsumerID);
+            InetSocketAddress dstAddr = infoPlaneDelegate.getDCAddressFromID(dataConsumerID);
             MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             //we return the ID of the new created reporter as result
             reporterID = (ID) synchronousTransmit(m, mData);
         } catch (IOException | DCNotFoundException | ControlPlaneConsumerException ex) {
+            LOGGER.error("Error while performing loadReporter command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
         return reporterID;
@@ -471,11 +481,11 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.UNLOAD_REPORTER, args);
         try {
-            InetSocketAddress dstAddr = informationManager.getDCAddressFromReporterID(reporterID);
+            InetSocketAddress dstAddr = infoPlaneDelegate.getDCAddressFromReporterID(reporterID);
             MetaData mData = new UDPControlMetaData(dstAddr.getAddress(), dstAddr.getPort());
             result = (Boolean) synchronousTransmit(m, mData);
         } catch (IOException | DCNotFoundException | ReporterNotFoundException | ControlPlaneConsumerException ex) {
-            System.out.println("Error while performing unload reporter command " + ex.getMessage());
+            LOGGER.error("Error while performing unloadReporter command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
         return result;

@@ -10,11 +10,9 @@ import eu.fivegex.monitoring.control.ControlPlaneConsumerException;
 import eu.fivegex.monitoring.control.ControlServiceException;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.ControlOperation;
-import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneReplyMessage;
 import eu.reservoir.monitoring.core.plane.MessageType;
 import eu.reservoir.monitoring.distribution.MetaData;
-import eu.reservoir.monitoring.distribution.ReceivingAndReplying;
 import eu.reservoir.monitoring.distribution.XDRDataInputStream;
 import eu.reservoir.monitoring.distribution.XDRDataOutputStream;
 import java.io.ByteArrayInputStream;
@@ -33,8 +31,14 @@ import java.util.List;
  *
  * @author uceeftu
  */
-public abstract class AbstractUDPControlPlaneXDRConsumer extends AbstractUDPControlPlaneConsumer implements ControlPlane, ReceivingAndReplying, TransmittingAnnounce {
+public abstract class AbstractUDPControlPlaneXDRConsumer extends AbstractUDPControlPlaneConsumer {
 
+    
+    public AbstractUDPControlPlaneXDRConsumer(InetSocketAddress localAddress) {
+        super(localAddress);
+    }
+    
+    
     public AbstractUDPControlPlaneXDRConsumer(InetSocketAddress localAddress, InetSocketAddress controllerAddress) {
         super(localAddress, controllerAddress);
     }
@@ -61,7 +65,10 @@ public abstract class AbstractUDPControlPlaneXDRConsumer extends AbstractUDPCont
         dataOutput.writeLong(message.getEntityID().getMostSignificantBits());
         dataOutput.writeLong(message.getEntityID().getLeastSignificantBits());
 
-        udpAt.transmit(byteStream, 0);
+        if (udpAt != null) {
+            LOGGER.info("Sending " + message.getMessageType() + "message for " + message.getEntity() + " " + message.getEntityID());
+            udpAt.transmit(byteStream, 0);
+        }
     }
 
     
@@ -85,7 +92,7 @@ public abstract class AbstractUDPControlPlaneXDRConsumer extends AbstractUDPCont
 	    }
 
             else if (mType == MessageType.CONTROL) {
-                System.out.println("\n-------- Control Message Received ---------");
+                LOGGER.debug("-------- Control Message Received ---------");
                 
                 String ctrlOperationMethod = dataIn.readUTF();
                 ctrlOperationName = ControlOperation.lookup(ctrlOperationMethod);
@@ -93,9 +100,9 @@ public abstract class AbstractUDPControlPlaneXDRConsumer extends AbstractUDPCont
                 // get source replyMessage sequence number
                 seqNo = dataIn.readInt();
                 
-                System.out.println("Operation String: " + ctrlOperationName);
-                System.out.println("Operation Method: " + ctrlOperationMethod);
-                System.out.println("Source Message ID: " + seqNo);
+                LOGGER.debug("Operation String: " + ctrlOperationName);
+                LOGGER.debug("Operation Method: " + ctrlOperationMethod);
+                LOGGER.debug("Source Message ID: " + seqNo);
                 
                 byte [] args = new byte[8192];
                 dataIn.readFully(args);
@@ -140,7 +147,7 @@ public abstract class AbstractUDPControlPlaneXDRConsumer extends AbstractUDPCont
             if (replyMessage != null)
                 transmitReply(replyMessage, metaData);
             else
-                System.out.println("UDP Control Plane Consumer: the received message was not a Control Message"); 
+                LOGGER.warn("the received message was not a Control Message"); 
           }
     }
 

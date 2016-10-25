@@ -132,10 +132,10 @@ public final class UDPSynchronousTransmitter {
             // we block this thread until a reply message is received
             socket.receive(replyPacket);
             
-            if (transmitting instanceof TransmittingAndReceiving) {
+            if (transmitting instanceof SynchronousTransmitting) {
                 ByteArrayInputStream theBytes = new ExposedByteArrayInputStream(replyPacket.getData(), 0, replyPacket.getLength());
                 UDPControlMetaData metaData = new UDPControlMetaData(replyPacket.getAddress(), replyPacket.getPort(), replyPacket.getLength());
-                return ((TransmittingAndReceiving)transmitting).receivedReply(theBytes, metaData, seqNo);
+                return ((SynchronousTransmitting)transmitting).receivedReply(theBytes, metaData, seqNo);
             }
            
         }

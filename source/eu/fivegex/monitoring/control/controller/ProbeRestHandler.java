@@ -14,6 +14,8 @@ import org.simpleframework.http.Path;
 import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
@@ -24,6 +26,7 @@ import us.monoid.json.JSONObject;
 class ProbeRestHandler extends BasicRequestHandler {
 
     JSONControlInterface controllerInterface;
+    private Logger LOGGER = LoggerFactory.getLogger(ProbeRestHandler.class);
     
     public ProbeRestHandler() {
     }
@@ -33,7 +36,7 @@ class ProbeRestHandler extends BasicRequestHandler {
         // get Controller
         controllerInterface = (JSONControlInterface) getManagementConsole().getAssociated();
         
-        System.out.println("\n-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
+        LOGGER.debug("-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
         
         long time = System.currentTimeMillis();
@@ -94,14 +97,14 @@ class ProbeRestHandler extends BasicRequestHandler {
             return true;
             
             } catch (IOException ex) {
-                System.out.println("IOException" + ex.getMessage());
+                LOGGER.error("IOException" + ex.getMessage());
             } catch (JSONException jex) {
-                System.out.println("JSONException" + jex.getMessage());
+                LOGGER.error("JSONException" + jex.getMessage());
             } finally {
                         try {
                             response.close();
                             } catch (IOException ex) {
-                                System.out.println("IOException" + ex.getMessage());
+                                LOGGER.error("IOException" + ex.getMessage());
                               }
                       }
      return false;
@@ -125,7 +128,7 @@ class ProbeRestHandler extends BasicRequestHandler {
             scanner.close();
         }
         else {
-            System.err.println("probeID is not valid");
+            LOGGER.error("probe ID is not a valid UUID");
             scanner.close();
             complain(response, "probe ID is not a valid UUID: " + segments[1]);
             return;
@@ -140,6 +143,7 @@ class ProbeRestHandler extends BasicRequestHandler {
                 serviceID = scanner.next();
                 scanner.close();
             } else {
+                LOGGER.error("service ID is not a valid UUID");
             	scanner.close();
                 complain(response, "service ID is not a valid UUID");
                 return;
@@ -157,6 +161,7 @@ class ProbeRestHandler extends BasicRequestHandler {
                 sliceID = scanner.next();
                 scanner.close();
             } else {
+                LOGGER.error("slice ID is not a valid UUID");
             	scanner.close();
                 complain(response, "slice ID is not a valid UUID");
                 return;
@@ -174,6 +179,7 @@ class ProbeRestHandler extends BasicRequestHandler {
                 status = scanner.next();
                 scanner.close();
             } else {
+                LOGGER.error("status arg is empty");
             	scanner.close();
                 complain(response, "status arg is empty");
                 return;
@@ -187,6 +193,7 @@ class ProbeRestHandler extends BasicRequestHandler {
                 jsobj = controllerInterface.turnOnProbe(probeID);
                 break;
             default:
+                LOGGER.error(status + " is not a valid probe status");
                 complain(response, status + " is not a valid probe status");
                 response.close();
                 return;
@@ -202,6 +209,7 @@ class ProbeRestHandler extends BasicRequestHandler {
                 dataRate = scanner.next();
                 scanner.close();
             } else {
+                LOGGER.error("datarate arg is empty");
             	scanner.close();
                 complain(response, "datarate arg is empty");
                 return;
@@ -216,6 +224,7 @@ class ProbeRestHandler extends BasicRequestHandler {
         }
 
         if (!jsobj.getBoolean("success")) {
+            LOGGER.error("ProbeRestHandler: failure detected");
             failMessage = (String)jsobj.get("msg");
             System.out.println("ProbeRestHandler: failure detected: " + failMessage);
             success = false;
@@ -252,7 +261,7 @@ class ProbeRestHandler extends BasicRequestHandler {
 
             if (!jsobj.getBoolean("success")) {
                 failMessage = (String)jsobj.get("msg");
-                System.out.println("ProbeRestHandler: failure detected: " + failMessage);
+                LOGGER.error("failure detected: " + failMessage);
                 success = false;   
             }
 
@@ -284,6 +293,7 @@ class ProbeRestHandler extends BasicRequestHandler {
         String[] segments = path.getSegments();
         
         if (!segments[1].equals("catalogue")) {
+            LOGGER.error(segments[1] + "is not a valid path");
             badRequest(response, segments[1] + "is not a valid path");
             response.close();
             return;
@@ -293,7 +303,7 @@ class ProbeRestHandler extends BasicRequestHandler {
 
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.out.println("getProbesCatalogue: failure detected: " + failMessage);
+            LOGGER.error("getProbesCatalogue: failure detected: " + failMessage);
             success = false;   
         }
 
