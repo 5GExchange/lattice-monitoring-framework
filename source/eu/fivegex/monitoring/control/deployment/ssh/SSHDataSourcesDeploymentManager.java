@@ -3,12 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.control.deployment;
+package eu.fivegex.monitoring.control.deployment.ssh;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
+import eu.fivegex.monitoring.control.deployment.DeploymentException;
 import eu.fivegex.monitoring.im.delegate.DSNotFoundException;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import eu.reservoir.monitoring.core.ID;
@@ -81,12 +82,12 @@ public class SSHDataSourcesDeploymentManager extends SSHDeploymentManager {
                 
             } catch (JSchException | DSNotFoundException e) {
                 // we are here if there was an error while starting the remote Data Source
-                String errorMessage = "Error while starting " + entityType + " on " + endPointAddress + "\n" + e.getMessage();
+                String errorMessage = "Error while starting " + entityType + " on " + endPointAddress + " " + e.getMessage();
                 if (channel != null) {
                     if (!channel.isClosed())
-                        errorMessage += "\nthe SSH remote channel is still open - the DS may be up and running";
+                        errorMessage += ". The SSH remote channel is still open - the DS may be up and running. ";
                     else
-                        errorMessage += "\nremote process exit-status " + channel.getExitStatus();
+                        errorMessage += "Remote process exit-status " + channel.getExitStatus();
                 }
                 
                 // TODO we may now collect the error log file to report back the issue 

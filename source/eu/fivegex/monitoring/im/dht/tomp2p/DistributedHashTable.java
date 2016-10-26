@@ -57,12 +57,6 @@ public class DistributedHashTable implements ObjectDataReply {
                                                     .setPorts(remPort)
                                                     .start();
         
-        /* broadcast may also be used: 
-        FutureBootstrap bootstrap = peer.bootstrap().setBroadcast()
-                                                    .setPorts(remPort)
-                                                    .start();
-        */
-        
         bootstrap.awaitUninterruptibly();
         if (bootstrap.getBootstrapTo() != null) {
             rootPeer = bootstrap.getBootstrapTo().iterator().next();
@@ -70,6 +64,27 @@ public class DistributedHashTable implements ObjectDataReply {
         }
         else // we are on the root node
             setupReplyHandler(); // used by the root node to receive Announce/Deannounce messages
+    }
+    
+    /**
+     * Start the bootstrap process broadcasting to a given remote port
+     */
+    
+    public String connect(int remPort) throws IOException {
+        FutureBootstrap bootstrap = peer.bootstrap().setBroadcast()
+                                                    .setPorts(remPort)
+                                                    .start();
+        
+        bootstrap.awaitUninterruptibly();
+        if (bootstrap.getBootstrapTo() != null) {
+            rootPeer = bootstrap.getBootstrapTo().iterator().next();
+            peer.discover().setPeerAddress(rootPeer).start().awaitUninterruptibly();
+            return rootPeer.getInetAddress().getHostName();
+        }
+        else { // we are on the root node
+            setupReplyHandler(); // used by the root node to receive Announce/Deannounce messages
+            return peer.getPeerAddress().getInetAddress().getHostName();
+        }
     }
     
     

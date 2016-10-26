@@ -63,7 +63,7 @@ public final class UDPSynchronousTransmitter {
     }
     
      /**
-     * Construct a transmitter without a particular IP dstAddress
+     * Construct a transmitter not connected to a particular IP dstAddress
      */
     public UDPSynchronousTransmitter(Transmitting transmitting) throws IOException {
         this.transmitting=transmitting;

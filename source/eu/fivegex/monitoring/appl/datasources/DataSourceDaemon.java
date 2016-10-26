@@ -65,8 +65,8 @@ public final class DataSourceDaemon extends Thread {
         this.dataSourceID = ID.fromString(myID);
         this.dataSourceName = myDSName;
         
-        dataConsumerPair = new InetSocketAddress(InetAddress.getByName(dataConsumerName), dataConsumerPort);
-        localCtrlPair = new InetSocketAddress(InetAddress.getByName(localControlEndPoint), controlPlaneLocalPort);
+        this.dataConsumerPair = new InetSocketAddress(InetAddress.getByName(dataConsumerName), dataConsumerPort);
+        this.localCtrlPair = new InetSocketAddress(InetAddress.getByName(localControlEndPoint), controlPlaneLocalPort);
         
         this.remoteInfoHost = infoPlaneRootName;
         this.localInfoPort = infoPlaneLocalPort;
@@ -122,15 +122,18 @@ public final class DataSourceDaemon extends Thread {
         
 	// set up the planes
 	dataSource.setDataPlane(new UDPDataPlaneProducer(dataConsumerPair));
-        dataSource.setInfoPlane(new DHTDataSourceInfoPlane(remoteInfoHost, remoteInfoPort, localInfoPort));
+        //dataSource.setInfoPlane(new DHTDataSourceInfoPlane(remoteInfoHost, remoteInfoPort, localInfoPort));
+        dataSource.setInfoPlane(new DHTDataSourceInfoPlane(remoteInfoPort, localInfoPort)); // announcing to broadcast
         
         if (this.remoteCtrlPair != null)
             dataSource.setControlPlane(new UDPDataSourceControlPlaneXDRConsumer(localCtrlPair, remoteCtrlPair));
         else
             dataSource.setControlPlane(new UDPDataSourceControlPlaneXDRConsumer(localCtrlPair));
         
-	if (!dataSource.connect()) 
+	if (!dataSource.connect()) {
+            LOGGER.error("Error while connecting to the Planes");
             System.exit(1); //terminating as there was an error while connecting to the planes
+        }
     }
     
     
@@ -160,12 +163,12 @@ public final class DataSourceDaemon extends Thread {
     
     @Override
     public void run() {
-        System.out.println("Disconnecting from the planes before shutting down");
+        LOGGER.info("Disconnecting from the planes before shutting down");
         try {
             // will first do deannounce and then disconnect from each of the planes
             dataSource.disconnect();
         } catch (Exception e) {
-            System.err.println("Something went wrong while disconnecting from the planes " + e.getMessage());
+            LOGGER.error("Something went wrong while disconnecting from the planes " + e.getMessage());
           }
     }
     
@@ -224,7 +227,7 @@ public final class DataSourceDaemon extends Thread {
                     dsName = controlEndPoint = InetAddress.getLocalHost().getHostName();
                     break;    
                 default:
-                    System.err.println("use: SimpleDataSourceDaemon dsID dcAddress dcPort infoHost infoRemotePort infoLocalPort controlLocalPort");
+                    LOGGER.error("use: SimpleDataSourceDaemon dsID dcAddress dcPort infoHost infoRemotePort infoLocalPort controlLocalPort");
                     System.exit(1);
             }
             
@@ -242,7 +245,7 @@ public final class DataSourceDaemon extends Thread {
             dataSourceDaemon.init();
             
         } catch (Exception ex) {
-            System.err.println("Error while starting the Data Source " + ex.getMessage());
+            LOGGER.error("Error while starting the Data Source " + ex.getMessage());
 	}
     }
 }

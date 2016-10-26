@@ -14,8 +14,9 @@ import static us.monoid.web.Resty.content;
 import static us.monoid.web.Resty.form;
 
 /**
- * Makes REST calls to VIM / GlobalController using Resty
- */
+ * Makes REST calls to Controller using Resty
+ * @deprecated 
+ **/
 public class RestClient {
     // A URI for a VIM / GlobalController to interact with
     String vimURI;

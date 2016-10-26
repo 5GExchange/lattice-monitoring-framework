@@ -24,6 +24,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Scanner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This receives measurements from a UDP Data Plane.
@@ -33,108 +35,126 @@ public final class ControllableDataConsumerDaemon extends Thread {
     
     ID dataConsumerID;
     
+    String dataConsumerName = "controllable-DC";
+    
+    int dataPort;
+    
+    InetSocketAddress localCtrlPair;
+    InetSocketAddress remoteCtrlPair;
+    
+    String remoteInfoHost;
+    int localInfoPort;
+    int remoteInfoPort;
+    
+    private static Logger LOGGER;
+    
     PrintStream outStream;
     PrintStream errStream;
 
-    /*
-     * Construct a controllable SimpleControllableDataConsumer
-     */
+    
     public ControllableDataConsumerDaemon(String myID,
-                                          String dataAddr, 
+                                          int dataPort, 
+                                          String infoPlaneRootName,   
+                                          int infoPlaneRootPort,
+                                          int infoPlaneLocalPort,
+                                          String controlAddr,
+                                          int controlPort
+                                          ) throws UnknownHostException {
+    
+        this.dataConsumerID = ID.fromString(myID);
+        this.dataPort = dataPort;
+        
+        this.localCtrlPair = new InetSocketAddress(InetAddress.getByName(controlAddr), controlPort);
+        
+        this.remoteInfoHost = infoPlaneRootName;
+        this.localInfoPort = infoPlaneLocalPort;
+        this.remoteInfoPort = infoPlaneRootPort;
+    }
+    
+    
+    
+    public ControllableDataConsumerDaemon(String myID,
                                           int dataPort, 
                                           String infoPlaneRootName,   
                                           int infoPlaneRootPort,
                                           int infoPlaneLocalPort,
                                           String controlAddr,
                                           int controlPort,
-                                          int controlRemotePort) throws UnknownHostException, IOException {
+                                          int controlRemotePort) throws UnknownHostException {
+    
+        this(myID, dataPort, infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort, controlAddr, controlPort);
+        this.remoteCtrlPair = new InetSocketAddress(InetAddress.getByName(infoPlaneRootName), controlRemotePort);
+    }
+    
+    
+    public void init() throws IOException {
+        attachShutDownHook();
+        setLogger();
         
-        this.attachShutDownHook();
+        consumer = new DefaultControllableDataConsumer(dataConsumerName, dataConsumerID);
         
-        dataConsumerID = ID.fromString(myID);
-	// set up a DefaultControllableDataConsumer
-	consumer = new DefaultControllableDataConsumer("controllable-DC", dataConsumerID);
+        LOGGER.info("Data Consumer ID: " + consumer.getID());
+        LOGGER.info("Process ID: " + consumer.getMyPID());
+        LOGGER.info("Connecting to the Info Plane using: " + localInfoPort + ":" + remoteInfoHost + ":" + remoteInfoPort);
+        LOGGER.info("Connecting to the Control Plane using: " + localCtrlPair.getPort() + ":" + localCtrlPair.getHostName());
         
-        setStreams();
-        
-        System.out.println("Data Consumer ID: " + consumer.getID());
-        System.out.println("Process ID: " + consumer.getMyPID());
-        System.out.println("Connecting to the Info Plane using: " + infoPlaneLocalPort + ":" + infoPlaneRootName + ":" + infoPlaneRootPort);
-        System.out.println("Connecting to the Control Plane using: " + controlPort + ":" + controlAddr);
-
-	// set up an IP address for data and control
-	InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(dataAddr), dataPort);
-        InetSocketAddress ctrlAddress = new InetSocketAddress(InetAddress.getByName(controlAddr), controlPort);
-        
-        //  we are assuming here that the infoplane and control plane host of the controller are the same
-        InetSocketAddress ctrlRemoteAddress = new InetSocketAddress(InetAddress.getByName(infoPlaneRootName), controlRemotePort);
-        
-	// set up data plane
-	consumer.setDataPlane(new UDPDataPlaneConsumer(address));
-        
-        ControlPlane controlPlane = new UDPDataConsumerControlPlaneXDRConsumer(ctrlAddress, ctrlRemoteAddress);
-        ((DataConsumerInteracter) controlPlane).setDataConsumer(consumer);
-        consumer.setControlPlane(controlPlane);
-        
-        InfoPlane infoPlane = new DHTDataConsumerInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort);
+        // set up data plane listening on *:port
+	consumer.setDataPlane(new UDPDataPlaneConsumer(dataPort));
+       
+        //InfoPlane infoPlane = new DHTDataConsumerInfoPlane(remoteInfoHost, remoteInfoPort, localInfoPort);
+        InfoPlane infoPlane = new DHTDataConsumerInfoPlane(remoteInfoPort, localInfoPort); // announcing to broadcast
         ((DataConsumerInteracter) infoPlane).setDataConsumer(consumer);
         consumer.setInfoPlane(infoPlane);
+        
+        ControlPlane controlPlane;
+        if (this.remoteCtrlPair != null)
+            controlPlane = new UDPDataConsumerControlPlaneXDRConsumer(localCtrlPair, remoteCtrlPair);
+        else
+            controlPlane = new UDPDataConsumerControlPlaneXDRConsumer(localCtrlPair);
+        
+        ((DataConsumerInteracter) controlPlane).setDataConsumer(consumer);
+        consumer.setControlPlane(controlPlane);    
 
-        if (!consumer.connect()) 
+        if (!consumer.connect()) {
+            LOGGER.error("Error while connecting to the Planes");
             System.exit(1); //terminating as there was an error while connecting to the planes
-    }
-
-    
-    void setStreams() throws IOException {
-        String outFileName = "data-consumer-" + dataConsumerID + "-out.log";
-        String errFileName = "data-consumer-" + dataConsumerID + "-err.log";
-        
-        //String outFileName = "data-consumer-" + "out.log";
-        //String errFileName = "data-consumer-" + "err.log";
-        
-        File outLogFile;
-        File errLogFile;
-        
-        outLogFile = new File("/tmp/" + outFileName);
-        errLogFile = new File("/tmp/" + errFileName);
-        
-        if (!outLogFile.exists()) {
-	    outLogFile.createNewFile();
-	}
-        
-        if (!outLogFile.canWrite()) {
-            outLogFile = new File(System.getProperty("user.home") + "/" + outFileName);
-            if (!outLogFile.exists())
-               outLogFile.createNewFile(); 
         }
-        
-        if (!errLogFile.exists()) {
-	    errLogFile.createNewFile();
-	}
-        
-        if (!errLogFile.canWrite()) {
-            errLogFile = new File(System.getProperty("user.home") + "/" + errFileName);
-            if (!errLogFile.exists())
-               errLogFile.createNewFile(); 
-        }
-        
-        outStream = new PrintStream(outLogFile);
-        errStream = new PrintStream(errLogFile);
-	
-        System.setOut(outStream);
-        System.setErr(errStream);
-        System.in.close();
     }
     
     
+    void setLogger() throws IOException {
+        String logFileName = "data-consumer-" + dataConsumerID + ".log";
+        File logFile;
+        
+        logFile = new File("/tmp/" + logFileName);
+        
+        if (!logFile.exists()) {
+	    logFile.createNewFile();
+	}
+        
+        if (!logFile.canWrite()) {
+            logFile = new File(System.getProperty("user.home") + "/" + logFileName);
+            if (!logFile.exists())
+               logFile.createNewFile(); 
+        }
+        
+        System.setProperty(org.slf4j.impl.SimpleLogger.LOG_FILE_KEY, logFile.getCanonicalPath());
+        System.setProperty(org.slf4j.impl.SimpleLogger.SHOW_SHORT_LOG_NAME_KEY, "true");
+        System.setProperty(org.slf4j.impl.SimpleLogger.SHOW_THREAD_NAME_KEY, "false");
+        
+        LOGGER = LoggerFactory.getLogger(ControllableDataConsumerDaemon.class);
+    }
+    
+    
+   
     @Override
     public void run() {
-        System.out.println("Disconnecting from the planes before shutting down");
+        LOGGER.info("Disconnecting from the planes before shutting down");
         try {
-            // first performs deannounce and then disconnect for each of the planes
+            // performs deannounce and then disconnect for each plane
             consumer.disconnect(); 
         } catch (Exception e) {
-            System.out.println("Something went wrong while Disconnecting from the planes " + e.getMessage());
+            LOGGER.error("Something went wrong while Disconnecting from the planes " + e.getMessage());
           }
     }
     
@@ -146,24 +166,21 @@ public final class ControllableDataConsumerDaemon extends Thread {
     public static void main(String [] args) {
         try {
             String dcID = ID.generate().toString();
-            String dcAddr = null;
+            //String dcAddr = null; listening on all the addresses
             int dataPort = 22997;
             String infoHost = null;
             int infoRemotePort= 6699;
             int infoLocalPort = 10000;
             String controlEndPoint = null;
             int controlLocalPort = 2222;
-            int controllerRemotePort = 8888;
+            //int controllerRemotePort = 8888; commenting out as we use announce on the Info Plane
             
             Scanner sc;
                     
             switch (args.length) {
                 case 0:
                     String loopBack = InetAddress.getLoopbackAddress().getHostName();
-                    System.out.println("No arguments provided - running on loopback: " + loopBack);
-                    dcAddr = infoHost = controlEndPoint = loopBack;
-                    System.out.println("DataConsumerWithMeasurementRate listening on Data plane: " + dcAddr + "/" + dataPort);
-                    System.out.println("DataConsumerWithMeasurementRate listening on Control plane: " + controlEndPoint + "/" + controlLocalPort);
+                    infoHost = controlEndPoint = loopBack;
                     break;
                 case 5:
                     sc = new Scanner(args[0]);
@@ -175,7 +192,7 @@ public final class ControllableDataConsumerDaemon extends Thread {
                     infoLocalPort = sc.nextInt();
                     sc= new Scanner(args[4]);
                     controlLocalPort = sc.nextInt();
-                    dcAddr = controlEndPoint = InetAddress.getLocalHost().getHostName();
+                    controlEndPoint = InetAddress.getLocalHost().getHostName();
                     break;
                 case 6:
                     dcID = args[0];
@@ -188,25 +205,24 @@ public final class ControllableDataConsumerDaemon extends Thread {
                     infoLocalPort = sc.nextInt();
                     sc= new Scanner(args[5]);
                     controlLocalPort = sc.nextInt();
-                    dcAddr = controlEndPoint = InetAddress.getLocalHost().getHostName();
-                    //System.err.println("DataConsumerWithMeasurementRate listening on Data plane: " + dcAddr + "/" + dataPort);
-                    //System.err.println("DataConsumerWithMeasurementRate listening on Control plane: " + controlEndPoint + "/" + controlLocalPort);
+                    controlEndPoint = InetAddress.getLocalHost().getHostName();
                     break;
                 default:
-                    System.err.println("usage: SimpleControllableDataConsumer dcID localdataPort infoHost infoRemotePort infoLocalPort controlLocalPort");
+                    LOGGER.error("usage: ControllableDataConsumerDaemon dcID localdataPort infoHost infoRemotePort infoLocalPort controlLocalPort");
                     System.exit(1);
             }
-            ControllableDataConsumerDaemon dc = new ControllableDataConsumerDaemon(dcID, 
-                                                                                   dcAddr, 
+            ControllableDataConsumerDaemon dataConsumer = new ControllableDataConsumerDaemon(dcID, 
                                                                                    dataPort, 
                                                                                    infoHost, 
                                                                                    infoRemotePort, 
                                                                                    infoLocalPort, 
                                                                                    controlEndPoint, 
-                                                                                   controlLocalPort, 
-                                                                                   controllerRemotePort);
+                                                                                   controlLocalPort);
+                                                                                   //controllerRemotePort);
+            dataConsumer.init();
+            
         } catch (Exception e) {
-            System.out.println("Error " + e.getMessage());
+            LOGGER.error("Error " + e.getMessage());
         } 
 
     }

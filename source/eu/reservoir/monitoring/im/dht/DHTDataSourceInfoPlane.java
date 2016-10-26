@@ -55,6 +55,14 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
 	imNode = new IMNode(localPort, remoteHostname, remotePort);
     }
 
+    
+    public DHTDataSourceInfoPlane(int remotePort, int localPort) {
+	rootPort = remotePort;
+	port = localPort;
+
+	imNode = new IMNode(localPort, remotePort);
+    }
+
     /**
      * Connect to a delivery mechanism.
      * In a DHTDataSourceInfoPlane we call announce.

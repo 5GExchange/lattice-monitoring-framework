@@ -34,7 +34,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
     @Override
     public boolean announce() {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        LOGGER.debug("invoking announce for Data Source " + dataSource.getID());
+        LOGGER.debug("Invoking announce for Data Source " + dataSource.getID());
         
         AbstractAnnounceMessage message = new AnnounceMessage(dataSource.getID(), AbstractAnnounceMessage.EntityType.DATASOURCE);
         
@@ -50,7 +50,7 @@ public class UDPDataSourceControlPlaneXDRConsumer extends AbstractUDPControlPlan
     @Override
     public boolean dennounce() {
         DataSource dataSource = dataSourceDelegate.getDataSource();
-        LOGGER.debug("invoking deannounce for Data Source " + dataSource.getID());
+        LOGGER.debug("Invoking deannounce for Data Source " + dataSource.getID());
         
         AbstractAnnounceMessage message = new DeannounceMessage(dataSource.getID(), AbstractAnnounceMessage.EntityType.DATASOURCE);
         

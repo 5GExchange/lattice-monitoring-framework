@@ -66,7 +66,7 @@ public abstract class AbstractUDPControlPlaneXDRConsumer extends AbstractUDPCont
         dataOutput.writeLong(message.getEntityID().getLeastSignificantBits());
 
         if (udpAt != null) {
-            LOGGER.info("Sending " + message.getMessageType() + "message for " + message.getEntity() + " " + message.getEntityID());
+            LOGGER.info("Sending " + message.getMessageType() + " message for " + message.getEntity() + " " + message.getEntityID());
             udpAt.transmit(byteStream, 0);
         }
     }

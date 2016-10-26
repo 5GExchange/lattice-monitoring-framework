@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.control.deployment;
+package eu.fivegex.monitoring.control.deployment.ssh;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
@@ -12,9 +12,12 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
+import eu.fivegex.monitoring.control.deployment.DeploymentException;
+import eu.fivegex.monitoring.control.deployment.EntityDeploymentDelegate;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
@@ -101,13 +104,13 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
                 return false;
             }
             Session session = null;
-            ChannelSftp c = null;
+            ChannelSftp channelSftp = null;
             try {
                 session = this.connectWithKey(endPointAddress, userName);
                 Channel channel = session.openChannel("sftp");
                 channel.connect(3000);
-                c = (ChannelSftp) channel;
-                c.put(this.localJarFilePath + "/" + this.jarFileName, this.remoteJarFilePath + "/" + this.jarFileName, ChannelSftp.OVERWRITE);
+                channelSftp = (ChannelSftp) channel;
+                channelSftp.put(this.localJarFilePath + "/" + this.jarFileName, this.remoteJarFilePath + "/" + this.jarFileName, ChannelSftp.OVERWRITE);
                 LOGGER.debug("Copying: " + this.localJarFilePath + "/" + this.jarFileName 
                                          + "to: " + this.remoteJarFilePath + "/" + this.jarFileName);
                 //adding info to the map
@@ -115,8 +118,8 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
             } catch (JSchException | SftpException e) {
                 throw new DeploymentException("Error while deploying " + entityType + " on " + endPointAddress + ", " + e.getMessage());
             } finally {
-                if (session != null && c != null) {
-                    c.disconnect();
+                if (session != null && channelSftp != null) {
+                    channelSftp.disconnect();
                     session.disconnect();
                 }
             }
@@ -131,18 +134,17 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
     public boolean stopEntity(String endPoint, String userName) throws DeploymentException {
         Session session = null;
         Channel channel = null;
-        String endPointAddress;
+        String endPointAddress = endPoint;
+        
         try {
             endPointAddress = InetAddress.getByName(endPoint).getHostAddress();
-        } catch (UnknownHostException e) {
-            throw new DeploymentException("Error while resolving endPoint address " + e.getMessage());
-        }
-        synchronized (this.entityRunningOnEndPoint.get(endPointAddress)) {
-            SSHDeploymentInfo endPointInfo = this.entityRunningOnEndPoint.get(endPointAddress);
-            if (endPointInfo == null) {
-                return false;
-            }
-            try {
+        
+            synchronized (this.entityRunningOnEndPoint.get(endPointAddress)) {
+                SSHDeploymentInfo endPointInfo = this.entityRunningOnEndPoint.get(endPointAddress);
+                if (endPointInfo == null) {
+                    return false;
+                }
+
                 session = this.connectWithKey(endPointAddress, userName);
                 LOGGER.debug("Stopping " + entityType);
                 String command = "kill " + endPointInfo.getEntityPID();
@@ -153,22 +155,27 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
                     if (channel.isClosed()) {
                         if (channel.getExitStatus() == 0) {
                             this.entityRunningOnEndPoint.remove(endPointAddress);
-                            return true;
+                            break;
                         } else {
-                            // the process is likely to be already stopped removing from the map
+                            // the process is likely to be already stopped: removing from the map
                             this.entityRunningOnEndPoint.remove(endPointAddress);
-                            throw new DeploymentException("Something went wrong while stopping " + entityType);
+                            throw new DeploymentException("exit-status: " + channel.getExitStatus());
                         }
                     }
                     Thread.sleep(500);
                 }
-            } catch (JSchException e) {
-                throw new DeploymentException("Error while stopping " + entityType + " on " + endPointAddress + ", " + e.getMessage());
-            } catch (InterruptedException ie) {
-                /* we just swallow the exception as the thread shouldn't be interrupted*/
             }
-            return false;
-        }
+        } catch (JSchException | IOException | DeploymentException e) {
+                throw new DeploymentException("Error while stopping " + entityType + " on " + endPointAddress + ", " + e.getMessage());
+        } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+        } finally {
+                if (session != null && channel != null) {
+                    channel.disconnect();
+                    session.disconnect();
+                }
+            }
+        return true;
     }
 
     @Override

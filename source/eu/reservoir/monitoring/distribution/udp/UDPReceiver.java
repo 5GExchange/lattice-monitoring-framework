@@ -34,7 +34,7 @@ public class UDPReceiver implements Runnable {
      */
     //InetSocketAddress address;
 
-    InetAddress dstAddr;
+    InetAddress address;
 
     /*
      * The port
@@ -88,7 +88,7 @@ public class UDPReceiver implements Runnable {
 	//address = ipAddr;
 
 	this.receiver = receiver;
-	this.dstAddr = ipAddr.getAddress();
+	this.address = ipAddr.getAddress();
 	this.port = ipAddr.getPort();
         
 	setUpSocket();
@@ -119,7 +119,10 @@ public class UDPReceiver implements Runnable {
      * and also a pre-prepared DatagramPacket.
      */
     void setUpSocket() throws IOException {
-	socket = new DatagramSocket(port);
+        if (this.address == null)
+            socket = new DatagramSocket(port);
+        else
+            socket = new DatagramSocket(port, address);
 
 	// allocate an emtpy packet for use later
 	packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
@@ -223,7 +226,7 @@ public class UDPReceiver implements Runnable {
             
 	    if (receive()) {
 		// construct the transmission meta data
-		UDPTransmissionMetaData metaData = new UDPTransmissionMetaData(length, srcAddr, dstAddr, srcPort);
+		UDPTransmissionMetaData metaData = new UDPTransmissionMetaData(length, srcAddr, address, srcPort);
 
 		// now notify the receiver with the replyMessage
 		// and the address it came in on

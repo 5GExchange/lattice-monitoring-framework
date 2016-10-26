@@ -3,12 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.control.deployment;
+package eu.fivegex.monitoring.control.deployment.ssh;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
+import eu.fivegex.monitoring.control.deployment.DeploymentException;
 import eu.fivegex.monitoring.im.delegate.DCNotFoundException;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import eu.reservoir.monitoring.core.ID;

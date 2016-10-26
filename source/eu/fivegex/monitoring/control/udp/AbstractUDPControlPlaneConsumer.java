@@ -105,12 +105,12 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, R
     
     @Override
     public void error(Exception e) {
-        LOGGER.error("UDP Control Plane Consumer error: " + e.getMessage());
+        LOGGER.error("Error: " + e.getMessage());
     }
 
     @Override
     public boolean transmitted(int id) {
-        LOGGER.info("UDP Control Plane Consumer: just sent Announce/Deannounce message");
+        LOGGER.info("Just sent Announce/Deannounce message");
         return true;
     }
     

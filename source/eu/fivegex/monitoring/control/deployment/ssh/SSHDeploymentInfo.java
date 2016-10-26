@@ -1,4 +1,4 @@
-package eu.fivegex.monitoring.control.deployment;
+package eu.fivegex.monitoring.control.deployment.ssh;
 
 import eu.reservoir.monitoring.core.ID;
 

@@ -55,6 +55,16 @@ public class IMNode implements AnnounceEventListener {
 	remoteHost = remHost;
 	remotePort = remPort;
     }
+    
+    /**
+     * Construct an IMNode, given a local port and a remote port.
+     */
+    
+    public IMNode(int myPort, int remPort) {
+	localPort = myPort;
+	remoteHost = null; // for readibility
+	remotePort = remPort;
+    }
 
     /**
      * Connect to the DHT peers.
@@ -64,9 +74,12 @@ public class IMNode implements AnnounceEventListener {
 	    // only connect if we don't already have a DHT
 	    if (dht == null) {
 		dht = new DistributedHashTable(localPort);
-		dht.connect(remoteHost, remotePort);
+                if (remoteHost != null)
+                    dht.connect(remoteHost, remotePort);
+                else
+                    remoteHost = dht.connect(remotePort);
 
-		LOGGER.info("Connecting " + localPort + " to " + remoteHost + "/" + remotePort);
+		LOGGER.info("Connecting port " + localPort + " to " + remoteHost + "/" + remotePort);
 
                 //setting this IMNode as a AnnounceEventListener in the DHT
                 dht.addAnnounceEventListener(this);

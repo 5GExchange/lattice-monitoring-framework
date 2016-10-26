@@ -49,6 +49,14 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
 
 	imNode = new IMNode(localPort, remoteHostname, remotePort);
     }
+    
+    public DHTDataConsumerInfoPlane(int remotePort, int localPort) {
+	rootPort = remotePort;
+	port = localPort;
+
+	imNode = new IMNode(localPort, remotePort);
+    }
+    
 
     /**
      * Connect to a delivery mechansim.

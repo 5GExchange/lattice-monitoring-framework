@@ -23,6 +23,10 @@ import eu.reservoir.monitoring.core.ControllableDataConsumer;
 public class UDPDataConsumerControlPlaneXDRConsumer extends AbstractUDPControlPlaneXDRConsumer implements DataConsumerControlPlane, DataConsumerInteracter {
     ControllableDataConsumer dataConsumer;
     
+    public UDPDataConsumerControlPlaneXDRConsumer(InetSocketAddress localAddress) {
+        super(localAddress);
+    }
+    
     public UDPDataConsumerControlPlaneXDRConsumer(InetSocketAddress localAddress, InetSocketAddress controllerAddress) {
         super(localAddress, controllerAddress);
     }
@@ -30,7 +34,7 @@ public class UDPDataConsumerControlPlaneXDRConsumer extends AbstractUDPControlPl
 
     @Override
     public boolean announce() {
-        LOGGER.debug("invoking announce for Data Consumer" + dataConsumer.getID());
+        LOGGER.debug("Invoking announce for Data Consumer" + dataConsumer.getID());
         AbstractAnnounceMessage message = new AnnounceMessage(dataConsumer.getID(), AbstractAnnounceMessage.EntityType.DATACONSUMER);
         
         try {
@@ -44,7 +48,7 @@ public class UDPDataConsumerControlPlaneXDRConsumer extends AbstractUDPControlPl
 
     @Override
     public boolean dennounce() {
-        LOGGER.debug("invoking deannounce for Data Consumer" + dataConsumer.getID());
+        LOGGER.debug("Invoking deannounce for Data Consumer" + dataConsumer.getID());
         AbstractAnnounceMessage message = new DeannounceMessage(dataConsumer.getID(), AbstractAnnounceMessage.EntityType.DATACONSUMER);
         
         try {

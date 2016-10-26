@@ -60,7 +60,7 @@ public final class SimpleDataSourceTest extends Thread {
         InetSocketAddress ctrlAddress = new InetSocketAddress(InetAddress.getByName(localControlEndPoint), controlPlaneLocalPort);
         
         //  we are assuming here that the infoplane and control plane host of the controller are the same
-        InetSocketAddress ctrlRemoteAddress = new InetSocketAddress(InetAddress.getByName(infoPlaneRootName), controlRemotePort);
+        //InetSocketAddress ctrlRemoteAddress = new InetSocketAddress(InetAddress.getByName(infoPlaneRootName), controlRemotePort);
         
 	// set up data plane
 	ds.setDataPlane(new UDPDataPlaneProducer(DataAddress));
@@ -68,12 +68,14 @@ public final class SimpleDataSourceTest extends Thread {
         // set up control plane: a data source is a consumer of Control Messages 
         // ctrlAddress is the address:port where this DS will listen for ctrl messages
         // ctrlRemoteAddress is the port where the controller is listening for announce messages
-        ControlPlane controlPlane = new UDPDataSourceControlPlaneXDRConsumer(ctrlAddress, ctrlRemoteAddress);
+        //ControlPlane controlPlane = new UDPDataSourceControlPlaneXDRConsumer(ctrlAddress, ctrlRemoteAddress);
+        ControlPlane controlPlane = new UDPDataSourceControlPlaneXDRConsumer(ctrlAddress);
         
         ds.setControlPlane(controlPlane);
         
         //the root of the DHT is by default on infoPlaneRootName 6699
-        ds.setInfoPlane(new DHTDataSourceInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
+        //ds.setInfoPlane(new DHTDataSourceInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort));
+        ds.setInfoPlane(new DHTDataSourceInfoPlane(infoPlaneRootPort, infoPlaneLocalPort));
         
 	ds.connect();
     }
