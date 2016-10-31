@@ -6,7 +6,7 @@
 package eu.fivegex.monitoring.control.controller;
 
 import cc.clayman.console.BasicRequestHandler;
-import eu.fivegex.monitoring.control.JSONControlInterface;
+import eu.fivegex.monitoring.control.ControlInterface;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Scanner;
@@ -25,7 +25,7 @@ import us.monoid.json.JSONObject;
  */
 class ProbeRestHandler extends BasicRequestHandler {
 
-    JSONControlInterface controllerInterface;
+    ControlInterface<JSONObject, JSONException> controllerInterface;
     private Logger LOGGER = LoggerFactory.getLogger(ProbeRestHandler.class);
     
     public ProbeRestHandler() {
@@ -34,7 +34,7 @@ class ProbeRestHandler extends BasicRequestHandler {
     @Override
     public boolean handle(Request request, Response response) {
         // get Controller
-        controllerInterface = (JSONControlInterface) getManagementConsole().getAssociated();
+        controllerInterface = (ControlInterface<JSONObject, JSONException>) getManagementConsole().getAssociated();
         
         LOGGER.debug("-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         

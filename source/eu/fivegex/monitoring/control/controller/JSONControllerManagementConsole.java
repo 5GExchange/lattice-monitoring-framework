@@ -5,14 +5,16 @@
  */
 package eu.fivegex.monitoring.control.controller;
 
-import eu.fivegex.monitoring.control.JSONControlInterface;
+import eu.fivegex.monitoring.control.ControlInterface;
+import us.monoid.json.JSONException;
+import us.monoid.json.JSONObject;
 
 /**
  *
  * @author uceeftu
  */
 public final class JSONControllerManagementConsole extends RestConsole{
-    public JSONControllerManagementConsole(JSONControlInterface controller, int port) {
+    public JSONControllerManagementConsole(ControlInterface<JSONObject, JSONException> controller, int port) {
 
         setAssociated(controller);
         initialise(port);

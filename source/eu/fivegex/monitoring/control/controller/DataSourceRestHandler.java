@@ -6,7 +6,7 @@
 package eu.fivegex.monitoring.control.controller;
 
 import cc.clayman.console.BasicRequestHandler;
-import eu.fivegex.monitoring.control.JSONControlInterface;
+import eu.fivegex.monitoring.control.ControlInterface;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Scanner;
@@ -25,7 +25,7 @@ import us.monoid.json.JSONObject;
  */
 class DataSourceRestHandler extends BasicRequestHandler {
 
-    JSONControlInterface controllerInterface;
+    ControlInterface<JSONObject, JSONException> controllerInterface;
     private Logger LOGGER = LoggerFactory.getLogger(DataSourceRestHandler.class);
     
     public DataSourceRestHandler() {
@@ -35,7 +35,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
      @Override
     public boolean handle(Request request, Response response) {
         // get Controller
-        controllerInterface = (JSONControlInterface) getManagementConsole().getAssociated();
+        controllerInterface = (ControlInterface<JSONObject, JSONException>) getManagementConsole().getAssociated();
         
         LOGGER.debug("-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
@@ -81,7 +81,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
                         notFound(response, "POST bad request");
                     break;
                 case "DELETE":
-                    if (name == null && segments.length == 1) {
+                    if (name != null && segments.length == 2) {
                         stopDS(request,response);
                     }
                     break;
@@ -186,6 +186,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         Query query = request.getQuery();
         
         String endPoint;
+        String port;
         String userName;
         String rawArgs="";
         
@@ -193,6 +194,14 @@ class DataSourceRestHandler extends BasicRequestHandler {
             endPoint = query.get("endpoint");
         else {
             badRequest(response, "missing endpoint arg");
+            response.close();
+            return;
+        }
+        
+        if (query.containsKey("port"))
+            port = query.get("port");
+        else {
+            badRequest(response, "missing port arg");
             response.close();
             return;
         }
@@ -215,7 +224,7 @@ class DataSourceRestHandler extends BasicRequestHandler {
         String failMessage = null;
         JSONObject jsobj = null;
         
-        jsobj = controllerInterface.startDS(endPoint, userName, rawArgs);
+        jsobj = controllerInterface.startDS(endPoint, port, userName, rawArgs);
         
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
@@ -238,16 +247,25 @@ class DataSourceRestHandler extends BasicRequestHandler {
     
     private void stopDS(Request request, Response response) throws JSONException, IOException {
         Path path = request.getPath();
-        String[] segments = path.getSegments(); 
-        Query query = request.getQuery();
+        //String[] segments = path.getSegments();
         
-        String endPoint;
-        String userName;
+        //String endPoint;
+        //String port;
+        //String userName;
         
+        /*
         if (query.containsKey("endpoint"))
             endPoint = query.get("endpoint");
         else {
             badRequest(response, "missing endpoint arg");
+            response.close();
+            return;
+        }
+        
+        if (query.containsKey("port"))
+            port = query.get("port");
+        else {
+            badRequest(response, "missing port arg");
             response.close();
             return;
         }
@@ -259,12 +277,28 @@ class DataSourceRestHandler extends BasicRequestHandler {
             response.close();
             return;
         }
+        */
+        
+        String dsID;
+        
+        Scanner scanner = new Scanner(path.getName());
+        
+        if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
+            dsID = scanner.next();
+            scanner.close();
+        }
+        else {
+            LOGGER.error("dsID is not valid");
+            scanner.close();
+            complain(response, "data source ID is not a valid UUID: " + path.getName());
+            return;
+        }
         
         boolean success = true;
         String failMessage = null;
         JSONObject jsobj = null;
         
-        jsobj = controllerInterface.stopDS(endPoint, userName);
+        jsobj = controllerInterface.stopDS(dsID);
         
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");

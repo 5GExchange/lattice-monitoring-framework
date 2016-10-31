@@ -14,12 +14,17 @@ import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 import eu.fivegex.monitoring.control.deployment.DeploymentException;
 import eu.fivegex.monitoring.control.deployment.EntityDeploymentDelegate;
+import eu.fivegex.monitoring.control.deployment.DataConsumerInfo;
+import eu.fivegex.monitoring.control.deployment.DataSourceInfo;
+import eu.fivegex.monitoring.control.deployment.LatticeEntityInfo;
+import eu.fivegex.monitoring.control.deployment.MonitorableEntityInfo;
+import eu.fivegex.monitoring.im.delegate.DCNotFoundException;
+import eu.fivegex.monitoring.im.delegate.DSNotFoundException;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
+import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
 import java.io.File;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -29,144 +34,309 @@ import org.slf4j.LoggerFactory;
  *
  * @author uceeftu
  */
-public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
-    protected final EntityType entityType;
-    protected final String entityFileName;
-    protected final String localJarFilePath;
-    protected final String remoteJarFilePath;
-    protected final String jarFileName;
-    protected final JSch jsch;
-    protected final Map<String, Boolean> deploymentMonitor;
-    protected final Map<String, Boolean> runMonitor;
-    protected final Map<String, Long> entityDeployedOnEndPoint;
-    protected final Map<String, SSHDeploymentInfo> entityRunningOnEndPoint;
+public class SSHDeploymentManager implements EntityDeploymentDelegate {
+    final String localJarFilePath;
+    final String remoteJarFilePath;
+    final String jarFileName;
+    final JSch jsch;
     
-    protected final InfoPlaneDelegate infoPlaneDelegate;
+    final Map<InetSocketAddress, DataSourceInfo> resourcesDataSources;
+    final Map<InetSocketAddress, DataConsumerInfo> resourcesDataConsumers;
+    final Map<InetSocketAddress, MonitorableEntityInfo> resources;
+    
+    final Map<ID, InetSocketAddress> dsIDsAddresses;
+    final Map<ID, InetSocketAddress> dcIDsAddresses;
+    
+    
+    final InfoPlaneDelegate infoPlaneDelegate;
+    
+    String identityFile = System.getProperty("user.home") + "/.ssh/id_rsa";
     
     Logger LOGGER = LoggerFactory.getLogger(SSHDeploymentManager.class);
 
-    public SSHDeploymentManager(String localJarFilePath, String jarFileName, String remoteJarFilePath, String entityFileName, EntityType entityType, InfoPlaneDelegate info) {
-        this.entityType = entityType;
-        this.entityFileName = entityFileName;
+    public SSHDeploymentManager(String localJarFilePath, String jarFileName, String remoteJarFilePath, InfoPlaneDelegate info) {
         this.localJarFilePath = localJarFilePath;
         this.remoteJarFilePath = remoteJarFilePath;
         this.jarFileName = jarFileName;
         this.jsch = new JSch();
-
-        this.deploymentMonitor = new ConcurrentHashMap<>();
-        this.runMonitor = new ConcurrentHashMap<>();
         
-        this.entityDeployedOnEndPoint = new ConcurrentHashMap<>();
-        this.entityRunningOnEndPoint = new ConcurrentHashMap<>(); 
+        this.resourcesDataSources = new ConcurrentHashMap<>(); 
+        this.resourcesDataConsumers = new ConcurrentHashMap<>();
+        this.resources = new ConcurrentHashMap();
+        
+        this.dsIDsAddresses = new ConcurrentHashMap();
+        this.dcIDsAddresses = new ConcurrentHashMap();
         
         this.infoPlaneDelegate = info;
     }
-
-    /*
-    protected Session connect(String endPoint, String userName) throws JSchException {
-        Session session = this.jsch.getSession(userName, endPoint, 22);
-        //this is just for testing: using the same password here regardless of the actual userName
-        session.setPassword("osboxes.org");
-        session.setConfig("StrictHostKeyChecking", "no"); //ignore unknown hosts
-        session.connect(3000);
-        return session;
+    
+    public SSHDeploymentManager(String identityFile, String localJarFilePath, String jarFileName, String remoteJarFilePath, String entityFileName, EntityType entityType, InfoPlaneDelegate info) {
+        this(localJarFilePath, jarFileName, remoteJarFilePath, info);
+        this.identityFile = identityFile;
     }
-    */
+   
 
-    protected Session connectWithKey(String endPoint, String userName) throws JSchException {
-        String privateKeyFile = System.getProperty("user.home") + "/.ssh/id_rsa";
-        LOGGER.debug("Using identity from file: " + privateKeyFile);
-        jsch.addIdentity(privateKeyFile);
-        Session session = jsch.getSession(userName, endPoint, 22); // @TODO: port should be also a parameter
-        session.setConfig("PreferredAuthentications", "publickey");
-        session.setConfig("StrictHostKeyChecking", "no"); //ignore unknown hosts
-        session.connect(3000);
-        return session;
-    }
-
+    
     @Override
-    public boolean deployEntity(String endPoint, String userName) throws DeploymentException {
-        String endPointAddress;
-        try {
-            endPointAddress = InetAddress.getByName(endPoint).getHostAddress();
-        } catch (UnknownHostException e) {
-            throw new DeploymentException("Error while resolving endPoint address " + e.getMessage());
-        }
-        deploymentMonitor.putIfAbsent(endPointAddress, true);
-        synchronized (deploymentMonitor.get(endPointAddress)) {
-            LOGGER.debug("Deploying " + entityType);
-            File jarFile = new File(this.localJarFilePath + "/" + this.jarFileName);
-                if (!jarFile.exists()) {
-                    throw new DeploymentException("Error: file " + this.localJarFilePath + "/" + this.jarFileName + " does not exist");
-                }
+    public ID startDataSource(MonitorableEntityInfo resource, DataSourceInfo dataSource) throws DeploymentException {
+        DataSourceInfo existingDataSource;
+        Session session = null;
+        Channel channel = null;
+         
+        // adding the current resource to the map if not already present
+        resources.putIfAbsent(resource.getAddress(), resource);
+        
+        // checking if a Data Source is already running/being started on that Resource address/port
+        existingDataSource = this.resourcesDataSources.putIfAbsent(resource.getAddress(), dataSource);
 
-            if (this.isEntityDeployed(endPointAddress) && jarFile.lastModified() <= getJarModificationDate(endPointAddress)) {
-                return false;
-            }
-            Session session = null;
-            ChannelSftp channelSftp = null;
-            try {
-                session = this.connectWithKey(endPointAddress, userName);
-                Channel channel = session.openChannel("sftp");
+        if (existingDataSource != null)
+           dataSource = existingDataSource; // there is a DS on that resource - using that one
+        
+        synchronized(dataSource)
+            {
+             try {
+                if (dataSource.isRunning())
+                    return dataSource.getId(); // a DS is already up and running - exit immediately
+
+                session = this.connectWithKey(resource);
+                
+                this.deployJarOnResource(resource, session);
+
+                LOGGER.debug("Future " + dataSource.getEntityType() + " ID: " + dataSource.getId());
+
+                String jvm = "java"; //we assume the executable is in the PATH
+                String command = jvm + 
+                                 " -cp " + this.remoteJarFilePath + "/" + this.jarFileName + " " + 
+                                 dataSource.getEntityClassName() + " " +   
+                                 dataSource.getId() + " " +
+                                 dataSource.getArguments();
+
+                channel = session.openChannel("exec");
+                ((ChannelExec) channel).setCommand(command);
                 channel.connect(3000);
-                channelSftp = (ChannelSftp) channel;
-                channelSftp.put(this.localJarFilePath + "/" + this.jarFileName, this.remoteJarFilePath + "/" + this.jarFileName, ChannelSftp.OVERWRITE);
-                LOGGER.debug("Copying: " + this.localJarFilePath + "/" + this.jarFileName 
-                                         + "to: " + this.remoteJarFilePath + "/" + this.jarFileName);
-                //adding info to the map
-                entityDeployedOnEndPoint.putIfAbsent(endPointAddress, jarFile.lastModified());
-            } catch (JSchException | SftpException e) {
-                throw new DeploymentException("Error while deploying " + entityType + " on " + endPointAddress + ", " + e.getMessage());
-            } finally {
-                if (session != null && channelSftp != null) {
-                    channelSftp.disconnect();
-                    session.disconnect();
-                }
-            }
-        }
-        deploymentMonitor.remove(endPointAddress);
-        return true;
-    }
 
+                // we are supposed to wait here until either the announce message sent by the DS 
+                // is received from the Announcelistener thread or the timeout is reached (5 secs)
+                infoPlaneDelegate.addDataSource(dataSource.getId(), 5000);
+
+                // if there is no Exception before we can now try to get the Data Source PID
+                dataSource.setpID(infoPlaneDelegate.getDSPIDFromID(dataSource.getId()));
+                dataSource.setRunning();
+                
+                dsIDsAddresses.put(dataSource.getId(), resource.getAddress());
+
+                // has to catch DeploymentException    
+                } catch (JSchException | DSNotFoundException e) {
+                    // we are here if there was an error while starting the remote Data Source
+                    String errorMessage = "Error while starting " + dataSource.getEntityType() + " on " + resource + " " + e.getMessage();
+                    if (channel != null) {
+                        if (!channel.isClosed())
+                            errorMessage += ". The SSH remote channel is still open - the DS may be up and running. ";
+                        else
+                            errorMessage += "Remote process exit-status " + channel.getExitStatus();
+                    }
+
+                    // TODO we may now collect the error log file to report back the issue 
+                    throw new DeploymentException(errorMessage);
+
+                } catch (InterruptedException ie) {
+                    LOGGER.info("Interrupted " + ie.getMessage());
+                }
+                  catch (DeploymentException de) {
+                    throw de;
+                  }
+             
+                  finally {
+                    // as the command was started without a pty when we close the channel 
+                    // and session the remote command will continue to run
+                    if (channel != null && session != null) {
+                        channel.disconnect();
+                        session.disconnect();
+                    }
+                  }
+            return dataSource.getId();
+            }
+    }
     
 
     @Override
-    public boolean stopEntity(String endPoint, String userName) throws DeploymentException {
+    public boolean stopDataSource(ID dataSourceID) throws DeploymentException {
         Session session = null;
         Channel channel = null;
-        String endPointAddress = endPoint;
+       
+        InetSocketAddress resourceAddressFromDSID;
+        DataSourceInfo dataSource = null;
+        
+        resourceAddressFromDSID = this.dsIDsAddresses.get(dataSourceID);
         
         try {
-            endPointAddress = InetAddress.getByName(endPoint).getHostAddress();
+            if (resourceAddressFromDSID == null)
+                throw new DSNotFoundException("Data Source with ID " + dataSourceID + " not found");
         
-            synchronized (this.entityRunningOnEndPoint.get(endPointAddress)) {
-                SSHDeploymentInfo endPointInfo = this.entityRunningOnEndPoint.get(endPointAddress);
-                if (endPointInfo == null) {
+            dataSource = this.resourcesDataSources.get(resourceAddressFromDSID);
+            synchronized (dataSource) {
+                if (dataSource == null) {
                     return false;
                 }
 
-                session = this.connectWithKey(endPointAddress, userName);
-                LOGGER.debug("Stopping " + entityType);
-                String command = "kill " + endPointInfo.getEntityPID();
+                session = this.connectWithKey(resources.get(resourceAddressFromDSID));
+                LOGGER.debug("Stopping " + dataSource.getEntityType());
+                String command = "kill " + dataSource.getpID();
                 channel = session.openChannel("exec");
                 ((ChannelExec) channel).setCommand(command);
                 channel.connect(3000);
                 while (true) {
                     if (channel.isClosed()) {
                         if (channel.getExitStatus() == 0) {
-                            this.entityRunningOnEndPoint.remove(endPointAddress);
+                            this.resourcesDataSources.remove(resourceAddressFromDSID);
                             break;
                         } else {
                             // the process is likely to be already stopped: removing from the map
-                            this.entityRunningOnEndPoint.remove(endPointAddress);
+                            this.resourcesDataSources.remove(resourceAddressFromDSID);
                             throw new DeploymentException("exit-status: " + channel.getExitStatus());
                         }
                     }
                     Thread.sleep(500);
                 }
             }
-        } catch (JSchException | IOException | DeploymentException e) {
-                throw new DeploymentException("Error while stopping " + entityType + " on " + endPointAddress + ", " + e.getMessage());
+        } catch (JSchException | DSNotFoundException | DeploymentException e) {
+                throw new DeploymentException("Error while stopping " + dataSource.getEntityType() + " on " + resourceAddressFromDSID + ", " + e.getMessage());
+        } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+        } finally {
+                if (session != null && channel != null) {
+                    channel.disconnect();
+                    session.disconnect();
+                }
+            }
+        return true;
+    }
+    
+    
+    @Override
+    public ID startDataConsumer(MonitorableEntityInfo resource, DataConsumerInfo dataConsumer) throws DeploymentException {
+        DataConsumerInfo existingDataConsumer;
+        Session session = null;
+        Channel channel = null;
+         
+        // adding the current resource to the map if not already present
+        resources.putIfAbsent(resource.getAddress(), resource);
+        
+        // checking if a Data Source is already running/being started on that Resource address/port
+        existingDataConsumer = this.resourcesDataConsumers.putIfAbsent(resource.getAddress(), dataConsumer);
+
+        if (existingDataConsumer != null)
+           dataConsumer = existingDataConsumer; // there is a DS on that resource - using that one
+        
+        synchronized(dataConsumer)
+            {
+             try {
+                if (dataConsumer.isRunning())
+                    return dataConsumer.getId(); // a DS is already up and running - exit immediately
+
+                session = this.connectWithKey(resource);
+                
+                this.deployJarOnResource(resource, session);
+
+                LOGGER.debug("Future " + dataConsumer.getEntityType() + " ID: " + dataConsumer.getId());
+
+                String jvm = "java"; //we assume the executable is in the PATH
+                String command = jvm + 
+                                 " -cp " + this.remoteJarFilePath + "/" + this.jarFileName + " " + 
+                                 dataConsumer.getEntityClassName() + " " +   
+                                 dataConsumer.getId() + " " +
+                                 dataConsumer.getArguments();
+
+                channel = session.openChannel("exec");
+                ((ChannelExec) channel).setCommand(command);
+                channel.connect(3000);
+
+                // we are supposed to wait here until either the announce message sent by the DS 
+                // is received from the Announcelistener thread or the timeout is reached (5 secs)
+                infoPlaneDelegate.addDataConsumer(dataConsumer.getId(), 5000);
+
+                // if there is no Exception before we can now try to get the Data Source PID
+                dataConsumer.setpID(infoPlaneDelegate.getDCPIDFromID(dataConsumer.getId()));
+                dataConsumer.setRunning();
+                
+                dcIDsAddresses.put(dataConsumer.getId(), resource.getAddress());
+
+                // has to catch DeploymentException    
+                } catch (JSchException | DCNotFoundException e) {
+                    // we are here if there was an error while starting the remote Data Source
+                    String errorMessage = "Error while starting " + dataConsumer.getEntityType() + " on " + resource + " " + e.getMessage();
+                    if (channel != null) {
+                        if (!channel.isClosed())
+                            errorMessage += ". The SSH remote channel is still open - the DS may be up and running. ";
+                        else
+                            errorMessage += "Remote process exit-status " + channel.getExitStatus();
+                    }
+
+                    // TODO we may now collect the error log file to report back the issue 
+                    throw new DeploymentException(errorMessage);
+
+                } catch (InterruptedException ie) {
+                    LOGGER.info("Interrupted " + ie.getMessage());
+                }
+                  catch (DeploymentException de) {
+                    throw de;
+                  }
+             
+                  finally {
+                    // as the command was started without a pty when we close the channel 
+                    // and session the remote command will continue to run
+                    if (channel != null && session != null) {
+                        channel.disconnect();
+                        session.disconnect();
+                    }
+                  }
+            return dataConsumer.getId();
+            }
+    }
+    
+
+    @Override
+    public boolean stopDataConsumer(ID dataConsumerID) throws DeploymentException {
+        Session session = null;
+        Channel channel = null;
+       
+        InetSocketAddress resourceAddressFromDCID;
+        DataConsumerInfo dataConsumer = null;    
+        
+        resourceAddressFromDCID = this.dcIDsAddresses.get(dataConsumerID); 
+        
+        try {
+            if (resourceAddressFromDCID == null)
+                throw new DCNotFoundException("Data Consumer with ID " + dataConsumerID + " not found");
+            
+            dataConsumer = this.resourcesDataConsumers.get(resourceAddressFromDCID);
+            synchronized (dataConsumer) {
+                if (dataConsumer == null) {
+                    return false;
+                }
+
+                session = this.connectWithKey(resources.get(resourceAddressFromDCID));
+                LOGGER.debug("Stopping " + dataConsumer.getEntityType());
+                String command = "kill " + dataConsumer.getpID();
+                channel = session.openChannel("exec");
+                ((ChannelExec) channel).setCommand(command);
+                channel.connect(3000);
+                while (true) {
+                    if (channel.isClosed()) {
+                        if (channel.getExitStatus() == 0) {
+                            this.resourcesDataSources.remove(resourceAddressFromDCID);
+                            break;
+                        } else {
+                            // the process is likely to be already stopped: removing from the map
+                            this.resourcesDataSources.remove(resourceAddressFromDCID);
+                            throw new DeploymentException("exit-status: " + channel.getExitStatus());
+                        }
+                    }
+                    Thread.sleep(500);
+                }
+            }
+        } catch (JSchException | DCNotFoundException | DeploymentException e) {
+                throw new DeploymentException("Error while stopping " + dataConsumer.getEntityType() + " on " + resourceAddressFromDCID + ", " + e.getMessage());
         } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
         } finally {
@@ -178,18 +348,55 @@ public abstract class SSHDeploymentManager implements EntityDeploymentDelegate {
         return true;
     }
 
-    @Override
-    public boolean isEntityDeployed(String endPoint) {
-        return entityDeployedOnEndPoint.containsKey(endPoint);
-    }
+    
+    boolean deployJarOnResource(MonitorableEntityInfo resource, Session session) throws DeploymentException {
+        synchronized (resource) 
+            {
+            File jarFile = new File(this.localJarFilePath + "/" + this.jarFileName);
+                if (!jarFile.exists()) {
+                    throw new DeploymentException("Error: file " + this.localJarFilePath + "/" + this.jarFileName + " does not exist");
+                }
 
-    @Override
-    public boolean isEntityRunning(String endPoint) {
-        return entityRunningOnEndPoint.containsKey(endPoint);
+            if (resource.isJarDeployed() && jarFile.lastModified() <= resource.getJarDeploymentDate()) {
+                return false;
+            }
+            
+            LOGGER.debug("Deploying " + jarFile.getName() + " on" + resource.getAddress());
+            
+            ChannelSftp channelSftp = null;
+            
+            try {
+                Channel channel = session.openChannel("sftp");
+                channel.connect(3000);
+                channelSftp = (ChannelSftp) channel;
+                channelSftp.put(this.localJarFilePath + "/" + this.jarFileName, this.remoteJarFilePath + "/" + this.jarFileName, ChannelSftp.OVERWRITE);
+                LOGGER.debug("Copying: " + this.localJarFilePath + "/" + this.jarFileName 
+                                         + "to: " + this.remoteJarFilePath + "/" + this.jarFileName);
+                
+                resource.setJarDeploymentDate(jarFile.lastModified());
+                resource.setJarDeployed();
+                
+            } catch (JSchException | SftpException e) {
+                throw new DeploymentException("Error while deploying " + jarFile.getName() + " on " + resource.getAddress() + ", " + e.getMessage());
+            } finally {
+                if (channelSftp != null)
+                    channelSftp.disconnect();
+            }
+        }
+        return true;
     }
     
-    private Long getJarModificationDate(String endPoint) {
-        return entityDeployedOnEndPoint.get(endPoint);
+    
+    Session connectWithKey(MonitorableEntityInfo resource) throws JSchException {
+        LOGGER.debug("Using identity from file: " + identityFile);
+        jsch.addIdentity(identityFile);
+        Session session = jsch.getSession(resource.getCredentials(), resource.getAddress().getHostName(), resource.getAddress().getPort());
+        session.setConfig("PreferredAuthentications", "publickey");
+        session.setConfig("StrictHostKeyChecking", "no"); //ignore unknown hosts
+        session.connect(3000);
+        return session;
     }
+    
+    
     
 }

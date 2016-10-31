@@ -130,9 +130,9 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
 
                 if (replyMessageSeqNo == seqNo)
                     if (result instanceof Exception )
-                        LOGGER.error("Reply for request with seqNo: " + replyMessageSeqNo + " Operation: " + ctrlOperationName + " Result: " + result.toString());
+                        LOGGER.error("Exception received as reply for request with seqNo: " + replyMessageSeqNo + " - Operation: " + ctrlOperationName + " - Result: " + result.toString());
                     else
-                        LOGGER.info("Reply for request with seqNo: " + replyMessageSeqNo + " Operation: " + ctrlOperationName + " Result: " + result.toString());
+                        LOGGER.info("Received reply for request with seqNo: " + replyMessageSeqNo + " - Operation: " + ctrlOperationName + " - Result: " + result.toString());
                 else
                     // we should not likely arrive here
                     throw new IOException("Message Sequence number mismatch! " + replyMessageSeqNo + " not equal to " + seqNo);

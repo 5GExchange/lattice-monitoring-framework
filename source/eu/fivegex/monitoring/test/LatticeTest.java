@@ -1,6 +1,6 @@
 package eu.fivegex.monitoring.test;
 
-import eu.fivegex.monitoring.control.JSONControlInterface;
+import eu.fivegex.monitoring.control.ControlInterface;
 import eu.reservoir.monitoring.core.ID;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -25,7 +25,7 @@ import static us.monoid.web.Resty.form;
 /**
  * Makes REST calls to the Lattice Controller through the REST API using Resty
  **/
-public class LatticeTest implements JSONControlInterface {
+public class LatticeTest implements ControlInterface<JSONObject, JSONException> {
     // A URI for a Lattice Controller to interact with
     String vimURI;
     Resty rest;
@@ -34,10 +34,12 @@ public class LatticeTest implements JSONControlInterface {
     //general attributes
     String DSEndPointAddress;
     String DSEndPointName;
+    String DSEndPointPort;
     String DSEndPointUserName;
     
     String DCEndPointAddress;
     String DCEndPointName;
+    String DCEndPointPort;
     String DCEndPointUserName;
 
     String DCDataPlaneAddress;
@@ -100,6 +102,9 @@ public class LatticeTest implements JSONControlInterface {
         mongoPort = "27017";
         mongoDBName = "test";
         mongoCollection = "cs";
+        
+        DSEndPointPort = "22";
+        DCEndPointPort= "22";
     }
 
  
@@ -131,9 +136,9 @@ public class LatticeTest implements JSONControlInterface {
     
     //curl -X POST http://localhost:6666/datasource/?endpoint=<endpoint>\&username=<username>\&args=arg1+arg2+argN
     @Override
-    public JSONObject startDS(String endPoint, String userName, String args) throws JSONException {
+    public JSONObject startDS(String endPoint, String port, String userName, String args) throws JSONException {
         try {
-            String uri = vimURI + "/datasource/?endpoint=" + endPoint + "&username=" + userName + "&args=" + args;
+            String uri = vimURI + "/datasource/?endpoint=" + endPoint + "&port=" + port + "&username=" + userName + "&args=" + args;
             //System.out.println(uri);
             JSONObject jsobj = rest.json(uri, form("")).toObject();
 
@@ -146,9 +151,9 @@ public class LatticeTest implements JSONControlInterface {
     
     //curl -X DELETE http://localhost:6666/datasource/?endpoint=<endpoint>\&username=<username>
     @Override
-    public JSONObject stopDS(String endPoint, String userName) throws JSONException {
+    public JSONObject stopDS(String dataSourceID) throws JSONException {
         try {
-            String uri = vimURI + "/datasource/?endpoint=" + endPoint + "&username=" + userName;
+            String uri = vimURI + "/datasource/" + dataSourceID;
             
             JSONObject jsobj = rest.json(uri, delete()).toObject();
 
@@ -262,9 +267,9 @@ public class LatticeTest implements JSONControlInterface {
     }
 
     @Override
-    public JSONObject startDC(String endPoint, String userName, String args) throws JSONException {
+    public JSONObject startDC(String endPoint, String port, String userName, String args) throws JSONException {
         try {
-            String uri = vimURI + "/dataconsumer/?endpoint=" + endPoint + "&username=" + userName + "&args=" + args;
+            String uri = vimURI + "/dataconsumer/?endpoint=" + endPoint + "&port=" + port +  "&username=" + userName + "&args=" + args;
             //System.out.println(uri);
             JSONObject jsobj = rest.json(uri, form("")).toObject();
 
@@ -276,9 +281,9 @@ public class LatticeTest implements JSONControlInterface {
 
     
     @Override
-    public JSONObject stopDC(String endPoint, String userName) throws JSONException {
+    public JSONObject stopDC(String dataConsumerID) throws JSONException {
         try {
-            String uri = vimURI + "/dataconsumer/?endpoint=" + endPoint + "&username=" + userName;
+            String uri = vimURI + "/dataconsumer/" + dataConsumerID;
             
             JSONObject jsobj = rest.json(uri, delete()).toObject();
 
@@ -426,12 +431,13 @@ public class LatticeTest implements JSONControlInterface {
         System.out.println("Deploying DS on endpoint: " + DSEndPointName);
         
         try {
-            out = startDS(DSEndPointAddress, DSEndPointUserName, DCDataPlaneAddress + "+" + 
-                                                                 DCDataPlanePort + "+" +
-                                                                 controllerInfoPlaneAddress + "+" +
-                                                                 controllerInfoPlanePort + "+" +
-                                                                 DSInfoPlanePort + "+" +
-                                                                 DSControlPlanePort
+            out = startDS(DSEndPointAddress, DSEndPointPort, DSEndPointUserName, 
+                                                                                 DCDataPlaneAddress + "+" + 
+                                                                                 DCDataPlanePort + "+" +
+                                                                                 controllerInfoPlaneAddress + "+" +
+                                                                                 controllerInfoPlanePort + "+" +
+                                                                                 DSInfoPlanePort + "+" +
+                                                                                 DSControlPlanePort
                          );
             
             return out.getString("ID");
@@ -446,7 +452,7 @@ public class LatticeTest implements JSONControlInterface {
         JSONObject out;
         System.out.println("Stopping DS on endpoint: "  + DSEndPointAddress + " - DS id: " + dsID);
         try {
-            out = stopDS(DSEndPointAddress, DSEndPointUserName);  
+            out = stopDS(dsID);  
 
             if (!out.getBoolean("success"))
                 throw new Exception("Error while stopping DS: " + dsID + out.getString("msg")); 
@@ -463,7 +469,7 @@ public class LatticeTest implements JSONControlInterface {
         System.out.println("Deploying DC on endpoint: " + DCEndPointName);
         
         try {
-            out = startDC(DCEndPointAddress, DCEndPointUserName, DCDataPlanePort + "+" +
+            out = startDC(DCEndPointAddress, DCEndPointPort, DCEndPointUserName, DCDataPlanePort + "+" +
                                                                  controllerInfoPlaneAddress + "+" +
                                                                  controllerInfoPlanePort + "+" +
                                                                  DCInfoPlanePort + "+" +
@@ -482,7 +488,7 @@ public class LatticeTest implements JSONControlInterface {
         JSONObject out;
         System.out.println("Stopping DC on endpoint: "  + DCEndPointAddress + " - DC id: " + dcID);
         try {
-            out = stopDC(DCEndPointAddress, DCEndPointUserName);  
+            out = stopDC(dcID);  
 
             if (!out.getBoolean("success"))
                 throw new Exception("Error while stopping DC: " + dcID + out.getString("msg")); 
@@ -604,8 +610,10 @@ public class LatticeTest implements JSONControlInterface {
                     if (dsID != null)
                         client.unloadDS(dsID);
                     if (dcID != null)  {
-                        if (reporterID != null) 
+                        if (reporterID != null) {
+                            System.out.println("Unloading Reporter " + reporterID);
                             client.unloadReporter(reporterID);
+                        }
                         client.unloadDC(dcID);
                     }
                 }

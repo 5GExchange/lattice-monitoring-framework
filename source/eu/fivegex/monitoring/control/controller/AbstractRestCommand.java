@@ -4,7 +4,9 @@ import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
 
 import cc.clayman.console.ManagementConsole;
-import eu.fivegex.monitoring.control.JSONControlInterface;
+import eu.fivegex.monitoring.control.ControlInterface;
+import us.monoid.json.JSONException;
+import us.monoid.json.JSONObject;
 
 /**
  * A Command object processes a command handled by the ManagementConsole
@@ -18,7 +20,7 @@ public abstract class AbstractRestCommand implements RestCommand {
     ManagementConsole managementConsole;
 
     // The Lattice controller
-    JSONControlInterface controller = null;
+    ControlInterface<JSONObject, JSONException> controller = null;
     
 
     /**
@@ -65,7 +67,7 @@ public abstract class AbstractRestCommand implements RestCommand {
     @Override
 	public void setManagementConsole(ManagementConsole mc) {
         managementConsole = mc;
-        controller = (JSONControlInterface)managementConsole.getAssociated();
+        controller = (ControlInterface<JSONObject, JSONException>)managementConsole.getAssociated();
     }
     
     
@@ -83,7 +85,7 @@ public abstract class AbstractRestCommand implements RestCommand {
     protected String leadin() {
         final String MC = "MC: ";
         ManagementConsole mc = getManagementConsole();
-        JSONControlInterface controller = (JSONControlInterface)mc.getAssociated();
+        ControlInterface<JSONObject, JSONException> controller = (ControlInterface<JSONObject, JSONException>)mc.getAssociated();
 
         if (controller == null) {
             return MC;

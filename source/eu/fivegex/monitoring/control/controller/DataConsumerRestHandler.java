@@ -6,7 +6,7 @@
 package eu.fivegex.monitoring.control.controller;
 
 import cc.clayman.console.BasicRequestHandler;
-import eu.fivegex.monitoring.control.JSONControlInterface;
+import eu.fivegex.monitoring.control.ControlInterface;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Scanner;
@@ -25,7 +25,7 @@ import us.monoid.json.JSONObject;
  */
 class DataConsumerRestHandler extends BasicRequestHandler {
     
-    JSONControlInterface controllerInterface;
+    ControlInterface<JSONObject, JSONException> controllerInterface;
     private Logger LOGGER = LoggerFactory.getLogger(DataConsumerRestHandler.class);
 
     public DataConsumerRestHandler() {
@@ -34,7 +34,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
      @Override
     public boolean handle(Request request, Response response) {
         // get Controller
-        controllerInterface = (JSONControlInterface) getManagementConsole().getAssociated();
+        controllerInterface = (ControlInterface<JSONObject, JSONException>) getManagementConsole().getAssociated();
         
         LOGGER.debug("-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
@@ -80,7 +80,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
                         notFound(response, "POST bad request");
                     break;
                 case "DELETE":
-                    if (name == null && segments.length == 1) {
+                    if (name != null && segments.length == 2) {
                         stopDC(request,response);
                     }
                     break;    
@@ -121,6 +121,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         Query query = request.getQuery();
         
         String endPoint;
+        String port;
         String userName;
         String rawArgs="";
         
@@ -128,6 +129,14 @@ class DataConsumerRestHandler extends BasicRequestHandler {
             endPoint = query.get("endpoint");
         else {
             badRequest(response, "missing endpoint arg");
+            response.close();
+            return;
+        }
+        
+        if (query.containsKey("port"))
+            port = query.get("port");
+        else {
+            badRequest(response, "missing port arg");
             response.close();
             return;
         }
@@ -150,7 +159,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         String failMessage = null;
         JSONObject jsobj = null;
         
-        jsobj = controllerInterface.startDC(endPoint, userName, rawArgs);
+        jsobj = controllerInterface.startDC(endPoint, port, userName, rawArgs);
         
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
@@ -172,9 +181,11 @@ class DataConsumerRestHandler extends BasicRequestHandler {
     
     
     private void stopDC(Request request, Response response) throws JSONException, IOException {
-        Query query = request.getQuery();
+        Path path = request.getPath();
         
+        /*
         String endPoint;
+        String port;
         String userName;
         
         if (query.containsKey("endpoint"))
@@ -185,11 +196,34 @@ class DataConsumerRestHandler extends BasicRequestHandler {
             return;
         }
         
+        if (query.containsKey("port"))
+            port = query.get("port");
+        else {
+            badRequest(response, "missing port arg");
+            response.close();
+            return;
+        }
+        
         if (query.containsKey("username"))
             userName = query.get("username");
         else {
             badRequest(response, "missing username args");
             response.close();
+            return;
+        }*/
+        
+        String dcID;
+        
+        Scanner scanner = new Scanner(path.getName());
+        
+        if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
+            dcID = scanner.next();
+            scanner.close();
+        }
+        else {
+            LOGGER.error("dcID is not valid");
+            scanner.close();
+            complain(response, "data consumer ID is not a valid UUID: " + path.getName());
             return;
         }
         
@@ -197,7 +231,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         String failMessage = null;
         JSONObject jsobj = null;
         
-        jsobj = controllerInterface.stopDC(endPoint, userName);
+        jsobj = controllerInterface.stopDC(dcID);
         
         if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");

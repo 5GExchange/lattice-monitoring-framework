@@ -12,13 +12,11 @@ import eu.reservoir.monitoring.core.ID;
  * @author uceeftu
  */
 public interface EntityDeploymentDelegate {
-    public ID startEntity(String endPoint, String userName, String params) throws DeploymentException;
+    public ID startDataSource(MonitorableEntityInfo resource, DataSourceInfo dataSource) throws DeploymentException;
     
-    public boolean stopEntity(String endPoint, String userName) throws DeploymentException;
+    public boolean stopDataSource(ID dataSourceID) throws DeploymentException;
     
-    public boolean deployEntity(String endPoint, String userName) throws DeploymentException;
-
-    boolean isEntityDeployed(String endPoint);
+    public ID startDataConsumer(MonitorableEntityInfo resource, DataConsumerInfo dataConsumer) throws DeploymentException; 
     
-    boolean isEntityRunning(String endPoint);    
+    public boolean stopDataConsumer(ID dataConsumerID) throws DeploymentException;
 }

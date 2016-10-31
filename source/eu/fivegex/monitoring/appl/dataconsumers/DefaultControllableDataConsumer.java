@@ -93,7 +93,7 @@ public final class DefaultControllableDataConsumer extends AbstractDataConsumer 
         this.measurementsCounter = measurementCounter;
     }
     
-    // creates a thread to measure the number of meaurements taken off the queue
+    // creates a thread to calculate the number of meaurements taken off the queue
     // in the mReportingInterval time interval
     private void startMeasurementsRateThread() {
         Thread t = new Thread(new Runnable () {

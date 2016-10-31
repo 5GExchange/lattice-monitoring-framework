@@ -6,12 +6,13 @@
 package eu.fivegex.monitoring.control.controller;
 
 import cc.clayman.console.ManagementConsole;
-import eu.fivegex.monitoring.control.JSONControlInterface;
+import eu.fivegex.monitoring.control.ControlInterface;
 import eu.fivegex.monitoring.control.ControlServiceException;
+import eu.fivegex.monitoring.control.deployment.DataConsumerInfo;
+import eu.fivegex.monitoring.control.deployment.DataSourceInfo;
 import eu.fivegex.monitoring.control.deployment.DeploymentException;
 import eu.fivegex.monitoring.control.probescatalogue.CatalogueException;
 import eu.fivegex.monitoring.control.probescatalogue.JSONProbeCatalogue;
-import eu.fivegex.monitoring.control.deployment.ssh.SSHDataSourcesDeploymentManager;
 import eu.reservoir.monitoring.appl.datarate.EveryNSeconds;
 import eu.fivegex.monitoring.control.udp.UDPControlPlaneXDRProducer;
 import eu.reservoir.monitoring.core.AbstractPlaneInteracter;
@@ -26,7 +27,8 @@ import java.util.Properties;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 import eu.fivegex.monitoring.control.deployment.EntityDeploymentDelegate;
-import eu.fivegex.monitoring.control.deployment.ssh.SSHDataConsumersDeploymentManager;
+import eu.fivegex.monitoring.control.deployment.ssh.SSHServerEntityInfo;
+import eu.fivegex.monitoring.control.deployment.ssh.SSHDeploymentManager;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import java.net.InetAddress;
 import org.slf4j.Logger;
@@ -38,16 +40,18 @@ import eu.reservoir.monitoring.core.plane.ControlPlane;
  *
  * @author uceeftu
  */
-public class Controller extends AbstractPlaneInteracter implements JSONControlInterface {
+public class Controller extends AbstractPlaneInteracter implements ControlInterface<JSONObject, JSONException> {
     
     private static final Controller CONTROLLER = new Controller();
     private InfoPlaneDelegate controlInformationManager;
     
     private ManagementConsole JSONManagementConsole = null;
-    private EntityDeploymentDelegate DSDeploymentManager; 
-    private EntityDeploymentDelegate DCDeploymentManager; 
-    private Boolean usingDSDeploymentManager;
-    private Boolean usingDCDeploymentManager;
+    private EntityDeploymentDelegate deploymentManager;
+    private Boolean usingDeploymentManager;
+    
+    private String dsClassName;
+    private String dcClassName;
+    
     private JSONProbeCatalogue probeCatalogue;
     private static Logger LOGGER;
 
@@ -55,14 +59,13 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
      
     private void init(String infoPlaneAddr, int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {  
         
-        this.usingDSDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.ds.enabled", "false"));
-        this.usingDCDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.ds.enabled", "false"));
+        this.usingDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.enabled", "false"));
         
         String localJarPath = pr.getProperty("deployment.localJarPath");
         String jarFileName = pr.getProperty("deployment.jarFileName");
         String remoteJarPath = pr.getProperty("deployment.remoteJarPath");
-        String dsClassName = pr.getProperty("deployment.ds.className");
-        String dcClassName = pr.getProperty("deployment.dc.className");
+        dsClassName = pr.getProperty("deployment.ds.className");
+        dcClassName = pr.getProperty("deployment.dc.className");
         
         //Integer announceListeningPort = (Integer) pr.getOrDefault("control.announceport", 8888);
         Integer transmitterPoolSize = (Integer) pr.getOrDefault("control.poolsize", 8);
@@ -93,22 +96,13 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
         connect();
         
         if (localJarPath != null && jarFileName != null && remoteJarPath != null) {
-            if (this.usingDSDeploymentManager && dsClassName != null) {
-                DSDeploymentManager = new SSHDataSourcesDeploymentManager(localJarPath, jarFileName, remoteJarPath, dsClassName, controlInformationManager);
-                LOGGER.info("Data Sources Deployment Manager was started");
+            if (this.usingDeploymentManager) {
+                deploymentManager = new SSHDeploymentManager(localJarPath, jarFileName, remoteJarPath, controlInformationManager);
+                LOGGER.info("Deployment Manager was started");
             }
             else {
-                LOGGER.warn("Data Sources Deployment Manager was not started");
-                this.usingDSDeploymentManager = false;
-            }
-            
-            if (this.usingDCDeploymentManager && dcClassName != null) {
-                DCDeploymentManager = new SSHDataConsumersDeploymentManager(localJarPath, jarFileName, remoteJarPath, dcClassName, controlInformationManager);
-                LOGGER.info("Data Consumers Deployment Manager was started");
-            }
-            else {
-                LOGGER.warn("Data Consumers Deployment Manager was not started");
-                this.usingDCDeploymentManager = false;
+                LOGGER.warn("Deployment Manager was not started");
+                this.usingDeploymentManager = false;
             }
         }
         
@@ -137,7 +131,7 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
     /* TODO: recheck and complete all the result.put msg in each method */
     
     @Override
-    public JSONObject startDS(String endPoint, String userName, String args) throws JSONException {
+    public JSONObject startDS(String endPoint, String port, String userName, String args) throws JSONException {
         JSONObject result = new JSONObject();
         
         ID startedDsID;
@@ -145,9 +139,10 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
         result.put("operation", "startDS");
         result.put("endpoint",endPoint);
 
-        if (this.usingDSDeploymentManager) {
+        if (this.usingDeploymentManager) {
             try {
-                startedDsID = this.DSDeploymentManager.startEntity(endPoint, userName, args);
+                startedDsID = this.deploymentManager.startDataSource(new SSHServerEntityInfo(endPoint, Integer.valueOf(port), userName), 
+                                                                       new DataSourceInfo(dsClassName, args));
 
                 if (startedDsID == null) {
                     result.put("msg", "en error occured while starting the DS on the specified endpoint");
@@ -173,15 +168,17 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
     
     
     @Override
-    public JSONObject stopDS(String endPoint, String userName) throws JSONException {
+    //public JSONObject stopDS(String endPoint, String port, String userName) throws JSONException {
+    public JSONObject stopDS(String dataSourceID) throws JSONException {
+            
         JSONObject result = new JSONObject();
         
         result.put("operation", "stopDS");
-        result.put("endpoint",endPoint);
+        result.put("ID", dataSourceID);
         
-        if (this.usingDSDeploymentManager) {
+        if (this.usingDeploymentManager) {
             try {
-                Boolean returnValue = this.DSDeploymentManager.stopEntity(endPoint, userName);
+                Boolean returnValue = this.deploymentManager.stopDataSource(ID.fromString(dataSourceID));
                 result.put("success", returnValue);
             } catch (DeploymentException ex) {
                 result.put("success", false);
@@ -372,7 +369,7 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
 
     
     @Override
-    public JSONObject startDC(String endPoint, String userName, String args) throws JSONException {
+    public JSONObject startDC(String endPoint, String port, String userName, String args) throws JSONException {
         JSONObject result = new JSONObject();
         
         ID startedDcID;
@@ -380,10 +377,11 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
         result.put("operation", "startDC");
         result.put("endpoint",endPoint);
 
-        if (this.usingDCDeploymentManager) {
+        if (this.usingDeploymentManager) {
             try {
                 //this.DCDeploymentManager.deployEntity(endPoint, userName); // possible side-effect: updated jars will not be overwritten
-                startedDcID = this.DCDeploymentManager.startEntity(endPoint, userName, args);
+                startedDcID = this.deploymentManager.startDataConsumer(new SSHServerEntityInfo(endPoint, Integer.valueOf(port), userName), 
+                                                                         new DataConsumerInfo(dcClassName, args));
 
                 if (startedDcID == null) {
                     result.put("msg", "en error occured while starting the DC on the specified endpoint");
@@ -409,15 +407,15 @@ public class Controller extends AbstractPlaneInteracter implements JSONControlIn
     
 
     @Override
-    public JSONObject stopDC(String endPoint, String userName) throws JSONException {
+    public JSONObject stopDC(String dataConsumerID) throws JSONException {
         JSONObject result = new JSONObject();
         
         result.put("operation", "stopDC");
-        result.put("endpoint", endPoint);
+        result.put("ID", dataConsumerID);
         
-        if (this.usingDCDeploymentManager) {
+        if (this.usingDeploymentManager) {
             try {
-                Boolean returnValue = this.DCDeploymentManager.stopEntity(endPoint, userName);
+                Boolean returnValue = this.deploymentManager.stopDataConsumer(ID.fromString(dataConsumerID));
                 result.put("success", returnValue);
             } catch (DeploymentException ex) {
                 result.put("success", false);
