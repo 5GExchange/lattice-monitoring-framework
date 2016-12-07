@@ -84,6 +84,8 @@ class DataSourceRestHandler extends BasicRequestHandler {
                     if (name != null && segments.length == 2) {
                         stopDS(request,response);
                     }
+                    else
+                        notFound(response, "POST bad request");
                     break;
                 case "GET":
                     if (name == null && segments.length == 1)

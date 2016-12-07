@@ -11,4 +11,5 @@ package eu.reservoir.monitoring.core.plane;
  * This has the common methods for all 
  */
 public interface InfoPlane extends Plane, InfoService {
+    public String getInfoRootHostname();
 }

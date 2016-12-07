@@ -57,7 +57,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
 
     private Controller() {}
      
-    private void init(String infoPlaneAddr, int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {  
+    private void init(/*String infoPlaneAddr,*/ int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {  
         
         this.usingDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.enabled", "false"));
         
@@ -71,7 +71,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         Integer transmitterPoolSize = (Integer) pr.getOrDefault("control.poolsize", 8);
         
         // Controller is the root of the infoPlane - other nodes use it to perform bootstrap
-        InfoPlane infoPlane = new DHTInfoPlaneRoot(infoPlaneAddr, infoPlanePort);
+        InfoPlane infoPlane = new DHTInfoPlaneRoot(/*infoPlaneAddr,*/ infoPlanePort);
         
         // we get the ControlInformationManager from the InfoPlane
         controlInformationManager = ((InfoPlaneDelegateInteracter) infoPlane).getInfoPlaneDelegateInteracter();
@@ -178,8 +178,8 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         
         if (this.usingDeploymentManager) {
             try {
-                Boolean returnValue = this.deploymentManager.stopDataSource(ID.fromString(dataSourceID));
-                result.put("success", returnValue);
+                this.deploymentManager.stopDataSource(ID.fromString(dataSourceID));
+                result.put("success", true);
             } catch (DeploymentException ex) {
                 result.put("success", false);
                 result.put("msg", "DeploymentException while performing stopDS operation: " + ex.getMessage());
@@ -415,8 +415,8 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         
         if (this.usingDeploymentManager) {
             try {
-                Boolean returnValue = this.deploymentManager.stopDataConsumer(ID.fromString(dataConsumerID));
-                result.put("success", returnValue);
+                this.deploymentManager.stopDataConsumer(ID.fromString(dataConsumerID));
+                result.put("success", true);
             } catch (DeploymentException ex) {
                 result.put("success", false);
                 result.put("msg", "DeploymentException while performing stopDC operation: " + ex.getMessage());
@@ -571,8 +571,8 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         String propertiesFile = null;
         
         // setting some default values
-        String remoteInfoHost = "localhost";
-        int infoPlanePort = 6699; // the same port is used as remote and local by DHTInfoPlaneRoot
+        String remoteInfoHost = InetAddress.getLoopbackAddress().getHostName();
+        int infoPlanePort = 6969; // the same port is used as remote and local by DHTInfoPlaneRoot
         int restConsolePort = 6666;
         String probePackage = "eu.fivegex.monitoring.appl.probes";
         String probeSuffix = "Probe";
@@ -590,7 +590,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         }
         
 	try {
-            remoteInfoHost = InetAddress.getLocalHost().getHostName();
+            //remoteInfoHost = InetAddress.getLocalHost().getHostName();
             input = new FileInputStream(propertiesFile);
 
             // load a properties file
@@ -618,6 +618,6 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         }
         
         Controller myController = Controller.getInstance();
-        myController.init(remoteInfoHost, infoPlanePort, restConsolePort, probePackage, probeSuffix, prop);
+        myController.init(/*remoteInfoHost,*/ infoPlanePort, restConsolePort, probePackage, probeSuffix, prop);
     }
 }

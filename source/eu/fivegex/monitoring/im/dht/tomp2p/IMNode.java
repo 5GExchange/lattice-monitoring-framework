@@ -13,6 +13,7 @@ import java.util.Collection;
 import eu.reservoir.monitoring.core.ControllableDataConsumer;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.AnnounceEventListener;
+import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,7 @@ public class IMNode implements AnnounceEventListener {
 
     // the remote host
     String remoteHost;
-
+    
     // the remote port
     int remotePort = 0;
     
@@ -62,8 +63,14 @@ public class IMNode implements AnnounceEventListener {
     
     public IMNode(int myPort, int remPort) {
 	localPort = myPort;
-	remoteHost = null; // for readibility
 	remotePort = remPort;
+        remoteHost = null; // will be initialized after connection
+    }
+    
+    public IMNode(int myPort) {
+	localPort = myPort;
+	remotePort = localPort;
+        remoteHost = null; // will be initialized after connection
     }
 
     /**
@@ -73,11 +80,14 @@ public class IMNode implements AnnounceEventListener {
 	try {
 	    // only connect if we don't already have a DHT
 	    if (dht == null) {
-		dht = new DistributedHashTable(localPort);
-                if (remoteHost != null)
-                    dht.connect(remoteHost, remotePort);
-                else
+                if (localPort == remotePort) {
+                    dht = new DistributedHashTable(localPort);
+                    remoteHost = dht.connect();
+                }
+                else {
+                    dht = new DistributedHashTable(localPort, InetAddress.getLocalHost());
                     remoteHost = dht.connect(remotePort);
+                }
 
 		LOGGER.info("Connecting port " + localPort + " to " + remoteHost + "/" + remotePort);
 
@@ -118,12 +128,15 @@ public class IMNode implements AnnounceEventListener {
         return true;
     }
 
+    public String getRootHostname() {
+        return this.remoteHost;
+    }
+    
     public IMNode addDataConsumer(ControllableDataConsumer dc) throws IOException {
         putDHT("/dataconsumer/" + dc.getID() + "/name", dc.getName());        
         putDHT("/dataconsumer/" + dc.getID() + "/inetSocketAddress", dc.getControlPlane().getControlEndPoint());
         
-        Object [] reporters = dc.getReporters();
-        for (Object r: reporters) {
+        for (ControllableReporter r: dc.getReportersCollection()) {
             if (r instanceof ControllableReporter)
                 addReporter((ControllableReporter)r);
         }
@@ -296,16 +309,12 @@ public class IMNode implements AnnounceEventListener {
         remDHT("/dataconsumer/name/" + dc.getName()); 
         
         if (dc instanceof DefaultControllableDataConsumer)
-            remDHT("/dataconsumer/" + dc.getID() + "/pid"); 
-        
-        
-	Object[] reporters = dc.getReporters();
+            remDHT("/dataconsumer/" + dc.getID() + "/pid");
 
 	// skip through all reporters
-	for (Object r : reporters) {
+	for (ControllableReporter r : dc.getReportersCollection()) {
 	    removeReporter((ControllableReporter)r);
-	}
-	    
+	}        
 	return this;
     }
     

@@ -43,6 +43,13 @@ public abstract class AbstractDHTInfoPlane implements InfoPlane  {
 	return imNode.disconnect();
     }
 
+    @Override
+    public String getInfoRootHostname() {
+        return imNode.getRootHostname();
+    }
+
+    
+    
     // lookup some info in the InfoPlane
     public Object lookupDataSourceInfo(DataSource dataSource, String info) {
 	return imNode.getDataSourceInfo(dataSource.getID(), info);

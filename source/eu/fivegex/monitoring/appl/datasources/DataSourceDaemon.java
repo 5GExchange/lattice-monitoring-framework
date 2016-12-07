@@ -29,7 +29,7 @@ public final class DataSourceDaemon extends Thread {
     InetSocketAddress localCtrlPair;
     InetSocketAddress remoteCtrlPair;
     
-    String remoteInfoHost;
+    //String remoteInfoHost;
     int localInfoPort;
     int remoteInfoPort;
     
@@ -42,7 +42,7 @@ public final class DataSourceDaemon extends Thread {
      * @param myDSName the Name of the Data Source
      * @param dataConsumerName the host name of the Data Consumer to connect to
      * @param dataConsumerPort the port of the Data Consumer to connect to
-     * @param infoPlaneRootName the host name of the Info Plane node to bootstrap to (i.e., the Controller)
+     //* @param infoPlaneRootName the host name of the Info Plane node to bootstrap to (i.e., the Controller)
      * @param infoPlaneRootPort the port of the Info Plane node to bootstrap to (i.e., the Controller)
      * @param infoPlaneLocalPort the port to be used locally to connect to the Info Plane
      * @param localControlEndPoint the Control Plane address visible to the other nodes
@@ -54,7 +54,7 @@ public final class DataSourceDaemon extends Thread {
                            String myDSName, 
                            String dataConsumerName, 
                            int dataConsumerPort,
-                           String infoPlaneRootName,   
+                           //String infoPlaneRootName,   
                            int infoPlaneRootPort,
                            int infoPlaneLocalPort,
                            String localControlEndPoint,
@@ -68,7 +68,7 @@ public final class DataSourceDaemon extends Thread {
         this.dataConsumerPair = new InetSocketAddress(InetAddress.getByName(dataConsumerName), dataConsumerPort);
         this.localCtrlPair = new InetSocketAddress(InetAddress.getByName(localControlEndPoint), controlPlaneLocalPort);
         
-        this.remoteInfoHost = infoPlaneRootName;
+        //this.remoteInfoHost = infoPlaneRootName;
         this.localInfoPort = infoPlaneLocalPort;
         this.remoteInfoPort = infoPlaneRootPort;
     }
@@ -82,7 +82,7 @@ public final class DataSourceDaemon extends Thread {
     * @param myDSName the Name of the Data Source
     * @param dataConsumerName the host name of the Data Consumer to connect to
     * @param dataConsumerPort the port of the Data Consumer to connect to
-    * @param infoPlaneRootName the host name of the Info Plane node to bootstrap to (i.e., the Controller)
+    //* @param infoPlaneRootName the host name of the Info Plane node to bootstrap to (i.e., the Controller)
     * @param infoPlaneRootPort the port of the Info Plane node to bootstrap to (i.e., the Controller)
     * @param infoPlaneLocalPort the port to be used locally to connect to the Info Plane
     * @param localControlEndPoint the Control Plane address visible to the other nodes
@@ -95,15 +95,15 @@ public final class DataSourceDaemon extends Thread {
                            String myDSName, 
                            String dataConsumerName, 
                            int dataConsumerPort,
-                           String infoPlaneRootName,   
+                           //String infoPlaneRootName,   
                            int infoPlaneRootPort,
                            int infoPlaneLocalPort,
                            String localControlEndPoint,
                            int controlPlaneLocalPort,
                            int controlRemotePort) throws UnknownHostException {
     
-        this(myID, myDSName, dataConsumerName, dataConsumerPort, infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort,localControlEndPoint, controlPlaneLocalPort);
-        this.remoteCtrlPair = new InetSocketAddress(InetAddress.getByName(infoPlaneRootName), controlRemotePort);
+        this(myID, myDSName, dataConsumerName, dataConsumerPort, /*infoPlaneRootName,*/ infoPlaneRootPort, infoPlaneLocalPort,localControlEndPoint, controlPlaneLocalPort);
+        //this.remoteCtrlPair = new InetSocketAddress(InetAddress.getLocalHost(), controlRemotePort);
     }
 
 
@@ -117,11 +117,11 @@ public final class DataSourceDaemon extends Thread {
         LOGGER.info("Process ID: " + dataSource.getMyPID());
         LOGGER.info("Using Data Source name: " + dataSourceName);
         LOGGER.info("Sending measurements to Data Consumer: " + dataConsumerPair.getHostName() + ":" + dataConsumerPair.getPort());
-        LOGGER.info("Connecting to the Info Plane using: " + localInfoPort + ":" + remoteInfoHost + ":" + remoteInfoPort);
         LOGGER.info("Connecting to the Control Plane using: " + localCtrlPair.getPort() + ":" + localCtrlPair.getHostName());
         
 	// set up the planes
 	dataSource.setDataPlane(new UDPDataPlaneProducer(dataConsumerPair));
+        
         //dataSource.setInfoPlane(new DHTDataSourceInfoPlane(remoteInfoHost, remoteInfoPort, localInfoPort));
         dataSource.setInfoPlane(new DHTDataSourceInfoPlane(remoteInfoPort, localInfoPort)); // announcing to broadcast
         
@@ -134,6 +134,8 @@ public final class DataSourceDaemon extends Thread {
             LOGGER.error("Error while connecting to the Planes");
             System.exit(1); //terminating as there was an error while connecting to the planes
         }
+        
+        LOGGER.info("Connected to the Info Plane using: " + localInfoPort + ":" + dataSource.getInfoPlane().getInfoRootHostname() + ":" + remoteInfoPort);
     }
     
     
@@ -184,7 +186,7 @@ public final class DataSourceDaemon extends Thread {
             String dsName = null;
             String dataConsumerAddr = null;
             int dataConsumerPort = 22997;
-            String infoHost = null;
+            //String infoHost = null;
             int infoRemotePort= 6699;
             int infoLocalPort = 9999;
             String controlEndPoint = null;
@@ -197,13 +199,27 @@ public final class DataSourceDaemon extends Thread {
                 case 0:
                     // use existing settings
                     String loopBack = InetAddress.getLoopbackAddress().getHostName();
-                    dsName = dataConsumerAddr = infoHost = controlEndPoint = loopBack;
+                    dsName = dataConsumerAddr = controlEndPoint = loopBack;
                     break;
-                case 6:
+                case 5:
                     dataConsumerAddr = args[0];
                     sc = new Scanner(args[1]);
                     dataConsumerPort = sc.nextInt();
-                    infoHost = args[2];
+                    //infoHost = args[2];
+                    sc = new Scanner(args[2]);
+                    infoRemotePort = sc.nextInt();
+                    sc= new Scanner(args[3]);
+                    infoLocalPort = sc.nextInt();
+                    sc= new Scanner(args[4]);
+                    controlLocalPort = sc.nextInt();
+                    dsName = controlEndPoint = InetAddress.getLocalHost().getHostName();
+                    break;
+                case 6:
+                    dsID = args[0];
+                    dataConsumerAddr = args[1];
+                    sc = new Scanner(args[2]);
+                    dataConsumerPort = sc.nextInt();
+                    //infoHost = args[3];
                     sc = new Scanner(args[3]);
                     infoRemotePort = sc.nextInt();
                     sc= new Scanner(args[4]);
@@ -211,23 +227,9 @@ public final class DataSourceDaemon extends Thread {
                     sc= new Scanner(args[5]);
                     controlLocalPort = sc.nextInt();
                     dsName = controlEndPoint = InetAddress.getLocalHost().getHostName();
-                    break;
-                case 7:
-                    dsID = args[0];
-                    dataConsumerAddr = args[1];
-                    sc = new Scanner(args[2]);
-                    dataConsumerPort = sc.nextInt();
-                    infoHost = args[3];
-                    sc = new Scanner(args[4]);
-                    infoRemotePort = sc.nextInt();
-                    sc= new Scanner(args[5]);
-                    infoLocalPort = sc.nextInt();
-                    sc= new Scanner(args[6]);
-                    controlLocalPort = sc.nextInt();
-                    dsName = controlEndPoint = InetAddress.getLocalHost().getHostName();
                     break;    
                 default:
-                    LOGGER.error("use: SimpleDataSourceDaemon dsID dcAddress dcPort infoHost infoRemotePort infoLocalPort controlLocalPort");
+                    LOGGER.error("use: SimpleDataSourceDaemon [dsID] dcAddress dcPort infoRemotePort infoLocalPort controlLocalPort");
                     System.exit(1);
             }
             
@@ -236,7 +238,7 @@ public final class DataSourceDaemon extends Thread {
                                                             dsName, 
                                                             dataConsumerAddr, 
                                                             dataConsumerPort, 
-                                                            infoHost, 
+                                                            //infoHost, 
                                                             infoRemotePort, 
                                                             infoLocalPort, 
                                                             controlEndPoint, 

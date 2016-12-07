@@ -54,7 +54,7 @@ public final class ControllableDataConsumerDaemon extends Thread {
     
     public ControllableDataConsumerDaemon(String myID,
                                           int dataPort, 
-                                          String infoPlaneRootName,   
+                                          //String infoPlaneRootName,   
                                           int infoPlaneRootPort,
                                           int infoPlaneLocalPort,
                                           String controlAddr,
@@ -66,7 +66,7 @@ public final class ControllableDataConsumerDaemon extends Thread {
         
         this.localCtrlPair = new InetSocketAddress(InetAddress.getByName(controlAddr), controlPort);
         
-        this.remoteInfoHost = infoPlaneRootName;
+        //this.remoteInfoHost = infoPlaneRootName;
         this.localInfoPort = infoPlaneLocalPort;
         this.remoteInfoPort = infoPlaneRootPort;
     }
@@ -75,15 +75,16 @@ public final class ControllableDataConsumerDaemon extends Thread {
     
     public ControllableDataConsumerDaemon(String myID,
                                           int dataPort, 
-                                          String infoPlaneRootName,   
+                                          //String infoPlaneRootName,   
                                           int infoPlaneRootPort,
                                           int infoPlaneLocalPort,
                                           String controlAddr,
                                           int controlPort,
                                           int controlRemotePort) throws UnknownHostException {
     
-        this(myID, dataPort, infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort, controlAddr, controlPort);
-        this.remoteCtrlPair = new InetSocketAddress(InetAddress.getByName(infoPlaneRootName), controlRemotePort);
+        this(myID, dataPort, /*infoPlaneRootName,*/ infoPlaneRootPort, infoPlaneLocalPort, controlAddr, controlPort);
+        // commeting out this as the infoPlaneRootName is no longer passed as parameter
+        //this.remoteCtrlPair = new InetSocketAddress(InetAddress.getByName(infoPlaneRootName), controlRemotePort);
     }
     
     
@@ -163,12 +164,17 @@ public final class ControllableDataConsumerDaemon extends Thread {
     }
     
     
+    public void mockDisconnect() {
+        consumer.disconnect();
+    }
+    
+    
     public static void main(String [] args) {
         try {
             String dcID = ID.generate().toString();
             //String dcAddr = null; listening on all the addresses
             int dataPort = 22997;
-            String infoHost = null;
+            //String infoHost = null;
             int infoRemotePort= 6699;
             int infoLocalPort = 10000;
             String controlEndPoint = null;
@@ -180,12 +186,25 @@ public final class ControllableDataConsumerDaemon extends Thread {
             switch (args.length) {
                 case 0:
                     String loopBack = InetAddress.getLoopbackAddress().getHostName();
-                    infoHost = controlEndPoint = loopBack;
+                    /*infoHost = */ controlEndPoint = loopBack;
                     break;
-                case 5:
+                case 4:
                     sc = new Scanner(args[0]);
                     dataPort = sc.nextInt();
-                    infoHost = args[1];
+                    // infoHost = args[1];
+                    sc = new Scanner(args[1]);
+                    infoRemotePort = sc.nextInt();
+                    sc= new Scanner(args[2]);
+                    infoLocalPort = sc.nextInt();
+                    sc= new Scanner(args[3]);
+                    controlLocalPort = sc.nextInt();
+                    controlEndPoint = InetAddress.getLocalHost().getHostName();
+                    break;
+                case 5:
+                    dcID = args[0];
+                    sc = new Scanner(args[1]);
+                    dataPort = sc.nextInt();
+                    // infoHost = args[2];
                     sc = new Scanner(args[2]);
                     infoRemotePort = sc.nextInt();
                     sc= new Scanner(args[3]);
@@ -194,32 +213,22 @@ public final class ControllableDataConsumerDaemon extends Thread {
                     controlLocalPort = sc.nextInt();
                     controlEndPoint = InetAddress.getLocalHost().getHostName();
                     break;
-                case 6:
-                    dcID = args[0];
-                    sc = new Scanner(args[1]);
-                    dataPort = sc.nextInt();
-                    infoHost = args[2];
-                    sc = new Scanner(args[3]);
-                    infoRemotePort = sc.nextInt();
-                    sc= new Scanner(args[4]);
-                    infoLocalPort = sc.nextInt();
-                    sc= new Scanner(args[5]);
-                    controlLocalPort = sc.nextInt();
-                    controlEndPoint = InetAddress.getLocalHost().getHostName();
-                    break;
                 default:
-                    LOGGER.error("usage: ControllableDataConsumerDaemon dcID localdataPort infoHost infoRemotePort infoLocalPort controlLocalPort");
+                    LOGGER.error("usage: ControllableDataConsumerDaemon [dcID] localdataPort infoRemotePort infoLocalPort controlLocalPort");
                     System.exit(1);
             }
             ControllableDataConsumerDaemon dataConsumer = new ControllableDataConsumerDaemon(dcID, 
                                                                                    dataPort, 
-                                                                                   infoHost, 
+                                                                                   //infoHost, 
                                                                                    infoRemotePort, 
                                                                                    infoLocalPort, 
                                                                                    controlEndPoint, 
                                                                                    controlLocalPort);
-                                                                                   //controllerRemotePort);
+                                                                                   //controllerRemotePort); //not using announce on the Control Plane
             dataConsumer.init();
+            
+            //System.in.read();
+            //dataConsumer.mockDisconnect();
             
         } catch (Exception e) {
             LOGGER.error("Error " + e.getMessage());

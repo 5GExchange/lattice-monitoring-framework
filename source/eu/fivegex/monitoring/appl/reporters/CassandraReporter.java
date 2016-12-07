@@ -25,6 +25,7 @@ public class CassandraReporter extends AbstractReporter {
     @Override
     public void report(Measurement m) {
         System.out.println("Writing to Cassandra...");
+        // writing information here
     }
     
 }

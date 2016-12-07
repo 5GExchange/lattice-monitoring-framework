@@ -5,6 +5,8 @@
  */
 package eu.reservoir.monitoring.core;
 
+import java.util.Collection;
+
 /**
  *
  * @author uceeftu
@@ -55,7 +57,7 @@ public interface ControllableDataConsumer extends PlaneInteracter {
     /**
      * List all Reporters.
      */
-    public Object[] getReporters();
+    public Collection<ControllableReporter> getReportersCollection();
     
     
     

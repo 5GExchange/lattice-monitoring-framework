@@ -40,7 +40,7 @@
     </jar>
 
     <jar jarfile="${jars}/monitoring-bin-core-${release}.jar" 
-	    basedir="${classes}" includes="eu/**" excludes="**/*.java **/control/controller/**" > 
+	    basedir="${classes}" includes="eu/**" excludes="**/*.java **/control/controller/** **/control/deployment/** **/control/probescatalogue/** **/test/*"> 
 	    <zipgroupfileset dir="../libs/core" includes="*.jar" />
     </jar>
 

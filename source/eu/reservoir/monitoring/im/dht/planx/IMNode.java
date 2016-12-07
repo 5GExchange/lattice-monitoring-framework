@@ -107,8 +107,8 @@ public class IMNode {
         putDHT("/dataconsumer/" + dc.getID() + "/name", dc.getName());        
         putDHT("/dataconsumer/" + dc.getID() + "/inetSocketAddress", dc.getControlPlane().getControlEndPoint());
         
-        Object [] reporters = dc.getReporters();
-        for (Object r: reporters) {
+        //Object [] reporters = dc.getReporters();
+        for (ControllableReporter r: dc.getReportersCollection()) {
             if (r instanceof ControllableReporter)
                 addReporter((ControllableReporter)r);
         }
@@ -285,10 +285,10 @@ public class IMNode {
             remDHT("/dataconsumer/" + dc.getID() + "/pid"); 
         
         
-	Object[] reporters = dc.getReporters();
+	//Object[] reporters = dc.getReporters();
 
 	// skip through all reporters
-	for (Object r : reporters) {
+	for (ControllableReporter r: dc.getReportersCollection()) {
 	    removeReporter((ControllableReporter)r);
 	}
 	    

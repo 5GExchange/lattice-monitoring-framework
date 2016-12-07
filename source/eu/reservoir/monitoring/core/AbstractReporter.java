@@ -19,7 +19,15 @@ public abstract class AbstractReporter implements ControllableReporter {
     * The Data Consumer ID the reporter is bound to
     */
     ID dcId;
-
+        
+    
+    public AbstractReporter(String name) {
+        myId = ID.generate();
+        System.out.println("Reporter ID = " + myId);
+        this.name = name;
+    }
+    
+    
     @Override
     public ID getId() {
         return myId;
@@ -40,12 +48,7 @@ public abstract class AbstractReporter implements ControllableReporter {
     public void setName(String name) {
         this.name = name;
     }
-    
-    public AbstractReporter(String name) {
-        myId = ID.generate();
-        System.out.println("Reporter ID = " + myId);
-        this.name = name;
-    }
+  
     
     @Override
     public ID getDcId() {

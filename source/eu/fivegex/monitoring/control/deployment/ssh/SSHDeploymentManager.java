@@ -16,7 +16,6 @@ import eu.fivegex.monitoring.control.deployment.DeploymentException;
 import eu.fivegex.monitoring.control.deployment.EntityDeploymentDelegate;
 import eu.fivegex.monitoring.control.deployment.DataConsumerInfo;
 import eu.fivegex.monitoring.control.deployment.DataSourceInfo;
-import eu.fivegex.monitoring.control.deployment.LatticeEntityInfo;
 import eu.fivegex.monitoring.control.deployment.MonitorableEntityInfo;
 import eu.fivegex.monitoring.im.delegate.DCNotFoundException;
 import eu.fivegex.monitoring.im.delegate.DSNotFoundException;
@@ -117,7 +116,7 @@ public class SSHDeploymentManager implements EntityDeploymentDelegate {
 
                 // we are supposed to wait here until either the announce message sent by the DS 
                 // is received from the Announcelistener thread or the timeout is reached (5 secs)
-                infoPlaneDelegate.addDataSource(dataSource.getId(), 5000);
+                infoPlaneDelegate.addDataSource(dataSource.getId(), 20000);
 
                 // if there is no Exception before we can now try to get the Data Source PID
                 dataSource.setpID(infoPlaneDelegate.getDSPIDFromID(dataSource.getId()));
@@ -128,7 +127,7 @@ public class SSHDeploymentManager implements EntityDeploymentDelegate {
                 // has to catch DeploymentException    
                 } catch (JSchException | DSNotFoundException e) {
                     // we are here if there was an error while starting the remote Data Source
-                    String errorMessage = "Error while starting " + dataSource.getEntityType() + " on " + resource + " " + e.getMessage();
+                    String errorMessage = "Error while starting " + dataSource.getEntityType() + " on " + resource.getAddress() + " " + e.getMessage();
                     if (channel != null) {
                         if (!channel.isClosed())
                             errorMessage += ". The SSH remote channel is still open - the DS may be up and running. ";
@@ -199,8 +198,8 @@ public class SSHDeploymentManager implements EntityDeploymentDelegate {
                     Thread.sleep(500);
                 }
             }
-        } catch (JSchException | DSNotFoundException | DeploymentException e) {
-                throw new DeploymentException("Error while stopping " + dataSource.getEntityType() + " on " + resourceAddressFromDSID + ", " + e.getMessage());
+        } catch (JSchException | DSNotFoundException e) {
+                throw new DeploymentException("Error while stopping DataSource, " + e.getMessage());
         } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
         } finally {
@@ -222,11 +221,11 @@ public class SSHDeploymentManager implements EntityDeploymentDelegate {
         // adding the current resource to the map if not already present
         resources.putIfAbsent(resource.getAddress(), resource);
         
-        // checking if a Data Source is already running/being started on that Resource address/port
+        // checking if a Data Consumer is already running/being started on that Resource address/port
         existingDataConsumer = this.resourcesDataConsumers.putIfAbsent(resource.getAddress(), dataConsumer);
 
         if (existingDataConsumer != null)
-           dataConsumer = existingDataConsumer; // there is a DS on that resource - using that one
+           dataConsumer = existingDataConsumer; // there is a DC on that resource - using that one
         
         synchronized(dataConsumer)
             {
@@ -253,7 +252,7 @@ public class SSHDeploymentManager implements EntityDeploymentDelegate {
 
                 // we are supposed to wait here until either the announce message sent by the DS 
                 // is received from the Announcelistener thread or the timeout is reached (5 secs)
-                infoPlaneDelegate.addDataConsumer(dataConsumer.getId(), 5000);
+                infoPlaneDelegate.addDataConsumer(dataConsumer.getId(), 20000);
 
                 // if there is no Exception before we can now try to get the Data Source PID
                 dataConsumer.setpID(infoPlaneDelegate.getDCPIDFromID(dataConsumer.getId()));
@@ -264,7 +263,7 @@ public class SSHDeploymentManager implements EntityDeploymentDelegate {
                 // has to catch DeploymentException    
                 } catch (JSchException | DCNotFoundException e) {
                     // we are here if there was an error while starting the remote Data Source
-                    String errorMessage = "Error while starting " + dataConsumer.getEntityType() + " on " + resource + " " + e.getMessage();
+                    String errorMessage = "Error while starting " + dataConsumer.getEntityType() + " on " + resource.getAddress() + " " + e.getMessage();
                     if (channel != null) {
                         if (!channel.isClosed())
                             errorMessage += ". The SSH remote channel is still open - the DS may be up and running. ";
@@ -324,19 +323,19 @@ public class SSHDeploymentManager implements EntityDeploymentDelegate {
                 while (true) {
                     if (channel.isClosed()) {
                         if (channel.getExitStatus() == 0) {
-                            this.resourcesDataSources.remove(resourceAddressFromDCID);
+                            this.resourcesDataConsumers.remove(resourceAddressFromDCID);
                             break;
                         } else {
                             // the process is likely to be already stopped: removing from the map
-                            this.resourcesDataSources.remove(resourceAddressFromDCID);
+                            this.resourcesDataConsumers.remove(resourceAddressFromDCID);
                             throw new DeploymentException("exit-status: " + channel.getExitStatus());
                         }
                     }
                     Thread.sleep(500);
                 }
             }
-        } catch (JSchException | DCNotFoundException | DeploymentException e) {
-                throw new DeploymentException("Error while stopping " + dataConsumer.getEntityType() + " on " + resourceAddressFromDCID + ", " + e.getMessage());
+        } catch (JSchException | DCNotFoundException  e) {
+                throw new DeploymentException("Error while stopping DataConsumer, " + e.getMessage());
         } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
         } finally {

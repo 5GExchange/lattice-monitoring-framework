@@ -575,7 +575,7 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
             dcID = client.instantiateDC();
             
             
-            reporterID = client.loadMongoDBReporter(dcID);
+            //reporterID = client.loadMongoDBReporter(dcID);
             
             // generating service/slice IDs to be associated to all the test probes
             String serviceID = ID.generate().toString();
@@ -583,18 +583,18 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
             String probeName = "testMemoryProbe";
             
             // creating entry in DB
-            MongoDBInteracter m = client.createMongoDBEntry(serviceID, probeName);
+            //MongoDBInteracter m = client.createMongoDBEntry(serviceID, probeName);
             
             // instantiating some test probes on the previous DS
             client.testMemoryInfoProbe(probeName, dsID, serviceID, sliceID);
             //client.testDockerProbe("testDockerProbe", dsID, serviceID, sliceID);
 
-            Document mongoDBEntry = m.getMongoDBEntry(serviceID, probeName); // TODO: incorrect this should also check id the ProbeName element is not empty
+            //Document mongoDBEntry = m.getMongoDBEntry(serviceID, probeName); // TODO: incorrect this should also check id the ProbeName element is not empty
             System.out.println("Reading data (1 measurement) from the DB related to the previous service " + serviceID + " and " + probeName);
-            if (mongoDBEntry != null)
-                System.out.println(mongoDBEntry.toJson(new JsonWriterSettings(true)));
-            else
-                throw new Exception("Cannot find any entries with service ID " + serviceID + " in the DB");
+            //if (mongoDBEntry != null)
+            //    System.out.println(mongoDBEntry.toJson(new JsonWriterSettings(true)));
+            //else
+            //    throw new Exception("Cannot find any entries with service ID " + serviceID + " in the DB");
            
         }
         catch (Exception e) {

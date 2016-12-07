@@ -13,6 +13,7 @@ import eu.reservoir.monitoring.core.Measurement;
 import java.util.HashMap;
 import java.util.Map;
 import eu.reservoir.monitoring.core.ControllableDataConsumer;
+import java.util.Collection;
 
 /**
  * Extends AbstractDataConsumer functionalities adding remote control
@@ -177,7 +178,9 @@ public final class DefaultControllableDataConsumer extends AbstractDataConsumer 
         return reporters.get(reporterID);
     }
     
-    
+    public Collection<ControllableReporter> getReportersCollection() {
+	return reporters.values();
+    }
     
     // this overriden method from the super class only adds a measurementsCounter
     @Override

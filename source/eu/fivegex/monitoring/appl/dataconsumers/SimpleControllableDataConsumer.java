@@ -59,7 +59,8 @@ public final class SimpleControllableDataConsumer extends Thread {
         ((DataConsumerInteracter) controlPlane).setDataConsumer(consumer);
         consumer.setControlPlane(controlPlane);
         
-        InfoPlane infoPlane = new DHTDataConsumerInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort);
+        //InfoPlane infoPlane = new DHTDataConsumerInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort);
+        InfoPlane infoPlane = new DHTDataConsumerInfoPlane(infoPlaneRootPort, infoPlaneLocalPort);
         ((DataConsumerInteracter) infoPlane).setDataConsumer(consumer);
         consumer.setInfoPlane(infoPlane);
 
