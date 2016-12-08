@@ -9,6 +9,7 @@ import eu.reservoir.monitoring.core.ControllableReporter;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -37,21 +38,28 @@ public final class ReporterLoader implements Serializable { // to be refactored 
     
     public void initReporter() throws ReporterLoaderException {
         try {
-            System.out.println("Loading Class: " + reporterClassName);
+            LoggerFactory.getLogger(ReporterLoader.class).info("Loading Class: " + reporterClassName);
             clazz = Class.forName(reporterClassName);
             // check if the class implements the right interface
             reporterClazz = clazz.asSubclass(ControllableReporter.class);
             
-            // we build an array with the Class types of the provided Parameters
-            Class [] paramsTypes = new Class[constructorParameters.length];
+            if (constructorParameters == null) {
+                cons0 = reporterClazz.getConstructor();
+                reporter = cons0.newInstance();
+            }
             
-            for (int i=0; i<constructorParameters.length; i++)
-                paramsTypes[i]=constructorParameters[i].getClass();
-            
-            cons0 = reporterClazz.getConstructor(paramsTypes);
-            
-            // create an instance of the Reporter
-            reporter = cons0.newInstance(constructorParameters);
+            else {
+                // we build an array with the Class types of the provided Parameters
+                Class [] paramsTypes = new Class[constructorParameters.length];
+
+                for (int i=0; i<constructorParameters.length; i++)
+                    paramsTypes[i]=constructorParameters[i].getClass();
+
+                cons0 = reporterClazz.getConstructor(paramsTypes);
+
+                // create an instance of the Reporter
+                reporter = cons0.newInstance(constructorParameters);
+            }
             
             }  catch (ClassNotFoundException | InstantiationException | NoSuchMethodException | IllegalAccessException ex) {
                     throw new ReporterLoaderException(ex);

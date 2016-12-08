@@ -221,9 +221,9 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         result.put("operation", "loadProbe");
         result.put("probeClassName",probeClassName);
         
-        Object [] probeArgsAsObjects = new Object[0];
+        Object [] probeArgsAsObjects = (Object[]) null;//new Object[0];
         
-        if (probeArgs != null) {
+        if (!probeArgs.isEmpty()) {
             probeArgsAsObjects = (Object[])probeArgs.split(" ");
         }
         
@@ -462,9 +462,9 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         result.put("operation", "loadReporter");
         result.put("reporterClassName",reporterClassName);
         
-        Object [] reporterArgsAsObjects = new Object[0];
+        Object [] reporterArgsAsObjects = (Object[]) null; //= new Object[0];
         
-        if (reporterArgs != null) {
+        if (!reporterArgs.isEmpty()) {
             reporterArgsAsObjects = (Object[])reporterArgs.split(" ");
         }
         
