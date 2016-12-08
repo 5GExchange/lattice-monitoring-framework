@@ -5,13 +5,12 @@
 
 package eu.reservoir.monitoring.core.plane;
 
-import eu.reservoir.monitoring.core.DataSourceDelegateInteracter;
 import java.net.InetSocketAddress;
 
 /**
  * A ControlPlane.
  * This has the common methods for all 
  */
-public interface ControlPlane extends Plane, ControlService {
+public interface ControlPlane extends Plane {
     public InetSocketAddress getControlEndPoint();
 }

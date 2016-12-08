@@ -19,7 +19,7 @@ public interface Receiving {
      * has been received from some underlying transport
      * at a particular multicast address.
      */
-    public void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException;
+    public void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException, ReflectiveOperationException;
 
     /**
      * This method is called just after there has been an error

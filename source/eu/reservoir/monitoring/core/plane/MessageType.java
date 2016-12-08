@@ -13,19 +13,20 @@ import java.util.EnumSet;
  */
 public enum MessageType {
     /*
-     * A data source announces its
+     * A data source announces/deannounces its
      * existence, so everyone knows it is available.
      */
-    ANNOUNCE(101),
-
+    ANNOUNCE(100),
+    DEANNOUNCE(101),
+    
     /*
      * A data source sends a measurement.
      */
     MEASUREMENT(102),
     
-    
-    CONTROL(103), 
-    
+    /* control messages 
+    */
+    CONTROL(103),
     CONTROL_REPLY(104);
 
     /*

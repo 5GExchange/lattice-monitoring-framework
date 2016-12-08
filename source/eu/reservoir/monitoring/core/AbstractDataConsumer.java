@@ -8,7 +8,6 @@ package eu.reservoir.monitoring.core;
 import eu.reservoir.monitoring.core.plane.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.List;
-import java.io.IOException;
 
 import javax.swing.event.EventListenerList;  // who knows why this in swing
 
@@ -18,7 +17,7 @@ import javax.swing.event.EventListenerList;  // who knows why this in swing
  * and the info plane and collects measurements.
  * The measurements are passed on to all the Reporters added to the Consumer.
  */
-public abstract class AbstractDataConsumer extends AbstractPlaneInteracter implements MeasurementReceiver, Runnable {
+public abstract class AbstractDataConsumer extends AbstractPlaneInteracter implements MeasurementReceiver, Runnable {  
     /*
      * EventListenerList for Reporters.
      * It behaves similarly to may Java Event distribution mechansims:
@@ -36,7 +35,7 @@ public abstract class AbstractDataConsumer extends AbstractPlaneInteracter imple
      * By using a BlockingQueue we get locking and synchronization built-in,
      * and saves having to build it ourselves.
      */
-    LinkedBlockingQueue measurementQueue;
+    protected LinkedBlockingQueue measurementQueue;
 
     /*
      * My Thread.
@@ -46,7 +45,7 @@ public abstract class AbstractDataConsumer extends AbstractPlaneInteracter imple
     /*
      * Thread running?
      */
-    boolean threadRunning = false;
+    protected boolean threadRunning = false;
 
 
 
@@ -276,7 +275,7 @@ public abstract class AbstractDataConsumer extends AbstractPlaneInteracter imple
      * Notify all listeners that have registered interest for
      * notification on Measurements.
      */
-    void fireEvent(Measurement measurement) {
+    protected void fireEvent(Measurement measurement) {
 	// Guaranteed to return a non-null array
 	Object[] listeners = getReporters();
 	// Process the listeners last to first, notifying

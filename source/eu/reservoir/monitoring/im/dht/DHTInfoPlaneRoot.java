@@ -5,13 +5,11 @@
 
 package eu.reservoir.monitoring.im.dht;
 
-import eu.reservoir.monitoring.core.DataSource;
-import eu.reservoir.monitoring.core.Probe;
-import eu.reservoir.monitoring.core.ProbeAttribute;
-import eu.reservoir.monitoring.core.DataSourceInteracter;
+import eu.fivegex.monitoring.im.dht.tomp2p.IMNode;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
-
 import java.io.IOException;
+import java.net.InetAddress;
+
 
 /**
  * A DHTInfoPlaneRoot is an InfoPlane implementation
@@ -28,6 +26,18 @@ public class DHTInfoPlaneRoot extends DHTInfoPlaneConsumer implements InfoPlane 
 	rootHost = localHostname;
 	rootPort = localPort;
 
+        // from the super class
 	imNode = new IMNode(localPort, localHostname, localPort);
-    }
+        imNode.addAnnounceEventListener(this);
+    } 
+    
+    public DHTInfoPlaneRoot(int localPort) {
+	rootPort = localPort;
+
+        // from the super class
+	imNode = new IMNode(localPort);
+        rootHost = imNode.getRootHostname();
+        
+        imNode.addAnnounceEventListener(this);
+    } 
 }

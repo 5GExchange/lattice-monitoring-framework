@@ -6,13 +6,16 @@
 package eu.fivegex.monitoring.control.controller;
 
 import cc.clayman.console.BasicRequestHandler;
-import cc.clayman.console.RequestHandler;
+import eu.fivegex.monitoring.control.ControlInterface;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Scanner;
 import org.simpleframework.http.Path;
 import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
@@ -22,7 +25,8 @@ import us.monoid.json.JSONObject;
  */
 class DataSourceRestHandler extends BasicRequestHandler {
 
-    Controller controller_;
+    ControlInterface<JSONObject, JSONException> controllerInterface;
+    private Logger LOGGER = LoggerFactory.getLogger(DataSourceRestHandler.class);
     
     public DataSourceRestHandler() {
     }
@@ -31,9 +35,9 @@ class DataSourceRestHandler extends BasicRequestHandler {
      @Override
     public boolean handle(Request request, Response response) {
         // get Controller
-        controller_ = (Controller) getManagementConsole().getAssociated();
+        controllerInterface = (ControlInterface<JSONObject, JSONException>) getManagementConsole().getAssociated();
         
-        System.out.println("REQUEST: " + request.getMethod() + " " +  request.getTarget());
+        LOGGER.debug("-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
         
         long time = System.currentTimeMillis();
@@ -66,47 +70,63 @@ class DataSourceRestHandler extends BasicRequestHandler {
         */
         
         try {
-            if (method.equals("POST")) {
-                if (name == null && segments.length == 3)
-                    createProbe(request, response);
-                else if (name == null && segments.length == 1) {
-                    deployDS(request,response);
-                }
-                else
-                    notFound(response, "POST bad request");
-            } else if (method.equals("DELETE")) {
-                    if (name == null && segments.length == 1) {
+            switch (method) {
+                case "POST":
+                    if (name == null && segments.length == 3)
+                        createProbe(request, response);
+                    else if (name == null && segments.length == 1) {
+                        deployDS(request,response);
+                    }
+                    else
+                        notFound(response, "POST bad request");
+                    break;
+                case "DELETE":
+                    if (name != null && segments.length == 2) {
                         stopDS(request,response);
                     }
-              }
+                    else
+                        notFound(response, "POST bad request");
+                    break;
+                case "GET":
+                    if (name == null && segments.length == 1)
+                        getDataSources(request, response);
+                    else
+                        if (segments.length == 2 && name != null)
+                            getDataSourceInfo(request, response);
+                        else
+                            notFound(response, "GET bad request");
+                    break;   
+                default:
+                    badRequest(response, "Unknown method" + method);
+                    return false;
+            }
+            
             
             return true;
             
             } catch (IOException ex) {
-                System.out.println("IOException" + ex.getMessage());
+                LOGGER.error("IOException" + ex.getMessage());
             } catch (JSONException jex) {
-                System.out.println("JSONException" + jex.getMessage());
-            } catch (DSNotFoundException idEx) {
-                System.out.println("DSNotFoundException --- " + idEx.getMessage());
-            } finally {
+                LOGGER.error("JSONException" + jex.getMessage());
+            }
+             finally {
                         try {
                             response.close();
                             } catch (IOException ex) {
-                                System.out.println("IOException" + ex.getMessage());
+                                LOGGER.error("IOException" + ex.getMessage());
                               }
                       }
      return false;
     }
 
-    private void createProbe(Request request, Response response) throws JSONException, IOException, DSNotFoundException {
+    private void createProbe(Request request, Response response) throws JSONException, IOException {
         Path path = request.getPath();
         String[] segments = path.getSegments(); 
         Query query = request.getQuery();
         
         String dsID;
-        String dsName;
+        //String dsName;
         String className;
-        //String rawArgs="";
         String rawArgs=null;
         
         if (query.containsKey("className")) {
@@ -130,19 +150,21 @@ class DataSourceRestHandler extends BasicRequestHandler {
         
         if (segments[1].matches("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
             dsID = segments[1];
-            jsobj = controller_.loadProbe(dsID, className, rawArgs);
-        }
-        else {
-            dsName = segments[1];
-            System.out.println("dsName: " + dsName);
-            dsID = controller_.getResolver().getDSIDFromName(dsName);
-            System.out.println("dsID: " + dsID);
-            jsobj = controller_.loadProbe(dsID, className, rawArgs);  
+            jsobj = controllerInterface.loadProbe(dsID, className, rawArgs);
         }
         
-        if (jsobj.get("success").equals("false")) {
+//      this was to deploy a DS by name
+//        else {
+//            dsName = segments[1];
+//            System.out.println("dsName: " + dsName);
+//            dsID = controllerInterface.getResolver().getDSIDFromName(dsName);
+//            System.out.println("dsID: " + dsID);
+//            jsobj = controllerInterface.loadProbe(dsID, className, rawArgs);  
+//        }
+        
+        if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.out.println("createProbe: failure detected: " + failMessage);
+            LOGGER.error("createProbe: failure detected: " + failMessage);
             success = false;   
         }   
     
@@ -160,12 +182,13 @@ class DataSourceRestHandler extends BasicRequestHandler {
     }
     
     
-    private void deployDS(Request request, Response response) throws JSONException, IOException, DSNotFoundException {
+    private void deployDS(Request request, Response response) throws JSONException, IOException {
         Path path = request.getPath();
         String[] segments = path.getSegments(); 
         Query query = request.getQuery();
         
         String endPoint;
+        String port;
         String userName;
         String rawArgs="";
         
@@ -173,6 +196,14 @@ class DataSourceRestHandler extends BasicRequestHandler {
             endPoint = query.get("endpoint");
         else {
             badRequest(response, "missing endpoint arg");
+            response.close();
+            return;
+        }
+        
+        if (query.containsKey("port"))
+            port = query.get("port");
+        else {
+            badRequest(response, "missing port arg");
             response.close();
             return;
         }
@@ -195,11 +226,11 @@ class DataSourceRestHandler extends BasicRequestHandler {
         String failMessage = null;
         JSONObject jsobj = null;
         
-        jsobj = controller_.startDS(endPoint, userName, rawArgs);
+        jsobj = controllerInterface.startDS(endPoint, port, userName, rawArgs);
         
-        if (jsobj.get("success").equals("false")) {
+        if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.out.println("startDS: failure detected: " + failMessage);
+            LOGGER.error("startDS: failure detected: " + failMessage);
             success = false;   
         }   
     
@@ -216,18 +247,27 @@ class DataSourceRestHandler extends BasicRequestHandler {
     }
     
     
-    private void stopDS(Request request, Response response) throws JSONException, IOException, DSNotFoundException {
+    private void stopDS(Request request, Response response) throws JSONException, IOException {
         Path path = request.getPath();
-        String[] segments = path.getSegments(); 
-        Query query = request.getQuery();
+        //String[] segments = path.getSegments();
         
-        String endPoint;
-        String userName;
+        //String endPoint;
+        //String port;
+        //String userName;
         
+        /*
         if (query.containsKey("endpoint"))
             endPoint = query.get("endpoint");
         else {
             badRequest(response, "missing endpoint arg");
+            response.close();
+            return;
+        }
+        
+        if (query.containsKey("port"))
+            port = query.get("port");
+        else {
+            badRequest(response, "missing port arg");
             response.close();
             return;
         }
@@ -239,16 +279,32 @@ class DataSourceRestHandler extends BasicRequestHandler {
             response.close();
             return;
         }
+        */
+        
+        String dsID;
+        
+        Scanner scanner = new Scanner(path.getName());
+        
+        if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
+            dsID = scanner.next();
+            scanner.close();
+        }
+        else {
+            LOGGER.error("dsID is not valid");
+            scanner.close();
+            complain(response, "data source ID is not a valid UUID: " + path.getName());
+            return;
+        }
         
         boolean success = true;
         String failMessage = null;
         JSONObject jsobj = null;
         
-        jsobj = controller_.stopDS(endPoint, userName);
+        jsobj = controllerInterface.stopDS(dsID);
         
-        if (jsobj.get("success").equals("false")) {
+        if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.out.println("stopDS: failure detected: " + failMessage);
+            LOGGER.error("stopDS: failure detected: " + failMessage);
             success = false;   
         }   
     
@@ -264,5 +320,73 @@ class DataSourceRestHandler extends BasicRequestHandler {
         }
         
     }
+    
+    private void getDataSources(Request request, Response response) throws JSONException, IOException {
+        boolean success = true;
+        String failMessage = null;
+        JSONObject jsobj = null;
+        
+        jsobj = controllerInterface.getDataSources();
+
+        if (!jsobj.getBoolean("success")) {
+            failMessage = (String)jsobj.get("msg");
+            LOGGER.error("getDataSources: failure detected: " + failMessage);
+            success = false;   
+        }
+
+        if (success) {
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+    }
+
+    private void getDataSourceInfo(Request request, Response response) throws IOException, JSONException {
+        Path path = request.getPath();
+        
+        boolean success = true;
+        String failMessage;
+        JSONObject jsobj;
+        
+        String dsID;
+        
+        Scanner scanner = new Scanner(path.getName());
+        
+        if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
+            dsID = scanner.next();
+            scanner.close();
+        }
+        else {
+            LOGGER.error("dsID is not valid");
+            scanner.close();
+            complain(response, "data source ID is not a valid UUID: " + path.getName());
+            return;
+        }
+        
+        jsobj = controllerInterface.getDataSourceInfo(dsID);
+
+        if (!jsobj.getBoolean("success")) {
+            failMessage = (String)jsobj.get("msg");
+            LOGGER.error("getDataSourceName failure: " + failMessage);
+            success = false;   
+        }
+
+        if (success) {
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+    }
+    
     
 }

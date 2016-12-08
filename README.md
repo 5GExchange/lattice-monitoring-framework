@@ -18,7 +18,7 @@ $ ant dist
 ```
 The above command generates two different jar binary files in the jars directory:
 - `monitoring-bin-controller.jar` containing all the classes and dependencies related to the controller.
-- `monitoring-bin-core-.jar` containing a subset of classes and dependencies that can be used for instantiating Data Sources and Data Consumers.
+- `monitoring-bin-core.jar` containing a subset of classes and dependencies that can be used for instantiating Data Sources and Data Consumers.
 
 and also a jar containing the source code
 - `monitoring-src.jar`
@@ -50,7 +50,7 @@ When generating the probe catalogue, the Controller will look for all the class 
 ```
 deployment.enabled = true
 ```
-Can be either set to `true` or `false` and enables/disables respectively the automated Data Sources remote deployment functionality (current implementation is based on SSH with public key authentication)
+Can be set either to `true` or `false` and enables/disables respectively the automated Data Sources deployment functionality to a remote host (current implementation is based on SSH with public key authentication)
 ```
 deployment.localJarPath = /Users/lattice
 deployment.jarFileName = monitoring-bin-core.jar

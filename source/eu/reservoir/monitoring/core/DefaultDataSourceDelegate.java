@@ -5,6 +5,8 @@
 
 package eu.reservoir.monitoring.core;
 
+import eu.fivegex.monitoring.control.ProbeLoader;
+import eu.fivegex.monitoring.control.ProbeLoaderException;
 import eu.reservoir.monitoring.core.plane.*;
 import java.io.Serializable;
 
@@ -16,6 +18,7 @@ import java.io.Serializable;
  * from the real implementations of the Planes.
  */
 public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implements DataSourceDelegate {
+    
     /**
      * The DataSource this is delegating for.
      */
@@ -504,7 +507,7 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
     /**
      * Get the name of the DataSource
      */
-    public String getDataSourceName() {
+    public String getDataSourceInfo(ID id) {
 	return dataSource.getName();
     }
 
@@ -517,12 +520,17 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
     }
 
     @Override
-    public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) throws Exception {  
-        ProbeLoader p = new ProbeLoader(probeClassName, probeArgs);
-        if (dataSource instanceof ControllableDataSource)
-           return ((ControllableDataSource)dataSource).addProbe(p);
-        else
-           throw new Exception("Probe cannot be loaded on that DS");
+    public ID loadProbe(ID dataSourceID, String probeClassName, Object ... probeArgs) {  
+        try {
+            ProbeLoader p = new ProbeLoader(probeClassName, probeArgs);
+            if (dataSource instanceof ControllableDataSource)
+               return ((ControllableDataSource)dataSource).addProbe(p);
+            else
+               throw new UnsupportedOperationException("Probe cannot be loaded on that DS");
+        } catch (ProbeLoaderException e) {
+            
+            return null;
+          }
         }
 
     @Override
@@ -530,6 +538,46 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
         Probe p = dataSource.getProbeByID(probeID);
         dataSource.removeProbe(p);
         return true;
+    }
+    
+    @Override
+    public Object lookupDataConsumerInfo(ID dataConsumerID, String info) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean addDataConsumerInfo(ControllableDataConsumer dc) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean addReporterInfo(Reporter r) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean removeDataConsumerInfo(ControllableDataConsumer dc) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean removeReporterInfo(Reporter r) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Object lookupReporterInfo(ID reporterID, String info) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean containsDataSource(ID dataSourceID, int timeOut) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean containsDataConsumer(ID dataConsumerID, int timeOut) {
+        throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
     }
     
     

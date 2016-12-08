@@ -49,6 +49,19 @@ public interface InfoService {
      * Mostly used at the management end, as it uses Probe ID.
      */
     public Object lookupProbeAttributeInfo(ID probeID, int field, String info);
+    
+    /**
+     * Lookup some DC info in the InfoPlane.
+     * Mostly used at the management end, as it uses DC ID.
+     */
+    public Object lookupDataConsumerInfo(ID dataConsumerID, String info);
+    
+    /**
+     * Lookup some Reporter info in the InfoPlane.
+     */
+    public Object lookupReporterInfo(ID reporterID, String info);
+    
+    
 
     /*
      * Add things
@@ -68,6 +81,17 @@ public interface InfoService {
      * Add ProbeAttribute Info to a Probe Info.
      */
     public boolean addProbeAttributeInfo(Probe p, ProbeAttribute pa);
+    
+    /**
+     * Add ControllableDataConsumer info.
+     */
+    public boolean addDataConsumerInfo(ControllableDataConsumer dc);
+    
+    /**
+     * Add Reporter info.
+     */
+    public boolean addReporterInfo(Reporter r);
+    
 
     /*
      * Modify things
@@ -106,7 +130,31 @@ public interface InfoService {
      * Remove ProbeAttribute Info for a Probe.
      */
     public boolean removeProbeAttributeInfo(Probe p, ProbeAttribute pa);
+    
+    /**
+     * Remove ControllableDataConsumer Info.
+     */
+    public boolean removeDataConsumerInfo(ControllableDataConsumer dc);
+    
+    
+    /**
+     * Remove Reporter Info.
+     */
+    public boolean removeReporterInfo(Reporter r);
+    
 
+    /**
+     * Check if a Data Source is in the Info Plane
+     */
+    public boolean containsDataSource(ID dataSourceID, int timeOut);
+    
+    
+    /**
+     * Check if a Data Consumer is in the Info Plane
+     */
+    public boolean containsDataConsumer(ID dataConsumerID, int timeOut);
+    
+    
     /*
      * General .
      */

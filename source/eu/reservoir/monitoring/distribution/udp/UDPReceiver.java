@@ -9,7 +9,6 @@ import eu.reservoir.monitoring.distribution.*;
 import eu.reservoir.monitoring.core.TypeException;
 import java.net.*;
 import java.io.*;
-import java.util.*;
 
 /**
  * This is a UDP receiver for monitoring messages.
@@ -35,7 +34,7 @@ public class UDPReceiver implements Runnable {
      */
     //InetSocketAddress address;
 
-    InetAddress dstAddr;
+    InetAddress address;
 
     /*
      * The port
@@ -78,6 +77,8 @@ public class UDPReceiver implements Runnable {
      * The last exception received.
      */
     Exception lastException;
+    
+    private String threadName="UDPReceiver";
 
 
     /**
@@ -87,18 +88,41 @@ public class UDPReceiver implements Runnable {
 	//address = ipAddr;
 
 	this.receiver = receiver;
-	this.dstAddr = ipAddr.getAddress();
+	this.address = ipAddr.getAddress();
 	this.port = ipAddr.getPort();
-
+        
 	setUpSocket();
     }
+    
+    /**
+     * Construct a receiver for a particular port 
+     */
+    public UDPReceiver(Receiving receiver, int port) throws IOException {
+	//address = ipAddr;
+
+	this.receiver = receiver;
+	this.port = port;
+     
+        
+	setUpSocket();
+    }
+    
+    
+    public UDPReceiver(Receiving receiver, int port, String name) throws IOException {
+	this(receiver, port);
+        this.threadName = name;
+    }
+    
 
     /**
      * Set up the socket for the given addr/port,
      * and also a pre-prepared DatagramPacket.
      */
     void setUpSocket() throws IOException {
-	socket = new DatagramSocket(port);
+        if (this.address == null)
+            socket = new DatagramSocket(port);
+        else
+            socket = new DatagramSocket(port, address);
 
 	// allocate an emtpy packet for use later
 	packet = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
@@ -113,7 +137,7 @@ public class UDPReceiver implements Runnable {
 	//socket.bind(address);
         
 	// start the thread
-	myThread = new Thread(this, "UDPReceiver-" + Integer.toString(port));
+	myThread = new Thread(this, this.threadName + "-" + Integer.toString(port));
 
 	myThread.start();
     }
@@ -126,19 +150,15 @@ public class UDPReceiver implements Runnable {
 	// stop the thread
         threadRunning = false;
 
-        //System.err.println("UDPReceiver: about to do socket close");
-
         socket.close();
 
-        //System.err.println("UDPReceiver: about to do socket disconnect");
-
-        // disconnect
+        // disconnect: this shouldn't have any effect
         socket.disconnect();
 
     }
 
     /**
-     * Receive a  message from the multicast address.
+     * Receive a  replyMessage from the multicast address.
      */
     protected boolean receive() {
 	try {
@@ -181,29 +201,17 @@ public class UDPReceiver implements Runnable {
 	}
     }
     
-    public int sendReply(ByteArrayOutputStream byteStream){
-        DatagramPacket reply = new DatagramPacket(byteStream.toByteArray(), byteStream.size(), srcAddr, srcPort);
-        
-        /*
-        packet.setData(byteStream.toByteArray());
-	packet.setLength(byteStream.size());
-        
-        //setting addr and port to the endpoint that initially sent out the message
-        
-        packet.setAddress(srcAddr);
-        
-        packet.setPort(srcPort);
-        */
+    public int sendMessage(ByteArrayOutputStream byteStream){
+        DatagramPacket replyMessage = new DatagramPacket(byteStream.toByteArray(), byteStream.size(), srcAddr, srcPort);
 
         try {
             // now send it
-            socket.send(reply);
+            socket.send(replyMessage);
         } catch (IOException ex) {
             System.out.println("IO error occurred" + ex.getMessage());
             return -1;
         }
-        //System.out.println("FT: UDPReceiver.SendReply - sent REPLY through the socket to :" + srcAddr + " port: " + srcPort + " - " + byteStream.size() + " bytes");
-	return byteStream.size();
+        return byteStream.size();
         
     }
     
@@ -218,10 +226,9 @@ public class UDPReceiver implements Runnable {
             
 	    if (receive()) {
 		// construct the transmission meta data
-		UDPTransmissionMetaData metaData = new UDPTransmissionMetaData(length, srcAddr, dstAddr, srcPort);
+		UDPTransmissionMetaData metaData = new UDPTransmissionMetaData(length, srcAddr, address, srcPort);
 
-
-		// now notify the receiver with the message
+		// now notify the receiver with the replyMessage
 		// and the address it came in on
 		try {
 		    receiver.received(byteStream, metaData);
@@ -229,15 +236,16 @@ public class UDPReceiver implements Runnable {
 		    receiver.error(ioe);
 		} catch (TypeException te) {
 		    receiver.error(te);
-		}
-                  catch (Exception e) {
+		} catch (Exception e) {
                       receiver.error(e);
                 }
                   
 	    } else {
 		// the receive() failed
 		// we find the exception in lastException
-		receiver.error(lastException);
+                // we notify the receiver only if the socket was not explicitly closed
+                if (threadRunning)
+                    receiver.error(lastException);
 	    }
 	}
     }

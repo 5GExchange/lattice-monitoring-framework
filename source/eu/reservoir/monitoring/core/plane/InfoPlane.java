@@ -5,11 +5,11 @@
 
 package eu.reservoir.monitoring.core.plane;
 
-import eu.reservoir.monitoring.core.DataSourceDelegateInteracter;
 
 /**
  * A InfoPlane.
  * This has the common methods for all 
  */
 public interface InfoPlane extends Plane, InfoService {
+    public String getInfoRootHostname();
 }

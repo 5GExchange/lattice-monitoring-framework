@@ -35,7 +35,7 @@ public class JavaRuntimeMonitor {
 	ds.setDataPlane(new MulticastDataPlaneProducer(address));
 
 	// set up info plane
-	ds.setInfoPlane(new DHTInfoPlane(remHost, remPort, localPort));
+	ds.setInfoPlane(new DHTDataSourceInfoPlane(remHost, remPort, localPort));
 
 	ds.connect();
     }

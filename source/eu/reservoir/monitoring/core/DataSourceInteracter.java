@@ -7,7 +7,7 @@ package eu.reservoir.monitoring.core;
 
 /**
  * A DataSourceInteracter is responsible interacting with
- * a DataSource.
+ a DataSource.
  */
 
 public interface DataSourceInteracter {

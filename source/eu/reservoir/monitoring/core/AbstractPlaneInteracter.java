@@ -6,7 +6,6 @@
 package eu.reservoir.monitoring.core;
 
 import eu.reservoir.monitoring.core.plane.*;
-import java.io.IOException;
 
 /**
  * An object that interacts with the data plane, the control plane,
@@ -93,15 +92,6 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
      */
     public boolean connect() {
         
-        /*System.out.println("FT: AbstractPlaneInteracter.connect");
-        
-        if (this.controlPlane == null) 
-            System.out.println("FT: Control Plane is null");
-        
-        if (this.infoPlane == null)
-            System.out.println("FT: Infoplane is null");
-        */
-        
 	boolean failed = false;
 	boolean conn = false;
 
@@ -118,7 +108,21 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 		dataPlaneStatus = PlaneConnectStatus.CONNECTED;
 	    }
 	}
+        
+        // connect to info plane
+	if (infoPlane != null) {
+	    infoPlaneStatus = PlaneConnectStatus.CONNECTING;
 
+	    conn = infoPlane.connect();
+
+	    if (!conn) {
+		failed = true;
+		infoPlaneStatus = PlaneConnectStatus.FAILED;
+	    } else {
+		infoPlaneStatus = PlaneConnectStatus.CONNECTED;
+	    }
+	}
+        
 	// connect to control plane
 	if (controlPlane != null) {
 	    controlPlaneStatus = PlaneConnectStatus.CONNECTING;
@@ -132,28 +136,15 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 		controlPlaneStatus = PlaneConnectStatus.CONNECTED;
 	    }
 	}
-
-	// connect to info plane
-	if (infoPlane != null) {
-	    infoPlaneStatus = PlaneConnectStatus.CONNECTING;
-
-	    conn = infoPlane.connect();
-
-	    if (!conn) {
-		failed = true;
-		infoPlaneStatus = PlaneConnectStatus.FAILED;
-	    } else {
-		infoPlaneStatus = PlaneConnectStatus.CONNECTED;
-	    }
-	}
-
-	
+        
 	if (failed) {
-	    // failed to connect
+	    // failed to connect announced is not performed
 	    return false;
 	} else {
-	    // try and announce
-	    boolean ann = announce();
+            // try and announce on all the plane (currently accounce is supported on Info and Control Planes)
+            // announce is done only if all the three planes are connected
+            // we will do the same for the deannounce
+            boolean ann = announce();
 
 	    if (ann) {
 		// we connected and announced
@@ -187,6 +178,13 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 	    return false;
 	}
     }
+    
+    // for internal use
+    boolean isAllConnected() {
+        return dataPlaneStatus.equals(PlaneConnectStatus.CONNECTED) && 
+                controlPlaneStatus.equals(PlaneConnectStatus.CONNECTED) &&
+                infoPlaneStatus.equals(PlaneConnectStatus.CONNECTED);
+    }
 
     /**
      * Disconnect from the delivery mechanisms.
@@ -194,11 +192,13 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
      * the control plane, and the info plane.
      */
     public boolean disconnect() {
-	boolean failed = true;
+	boolean failed = false;
 	boolean conn = false;
 
 	// de-announce the Data Source
-	dennounce();
+        // deannouncing only if all the three planes are connected
+        if (isAllConnected())
+            dennounce();
 
 	/*
 	 * now try the disconnects.
@@ -217,7 +217,7 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 		dataPlaneStatus = PlaneConnectStatus.DISCONNECTED;
 	    }
 	}
-
+        
 	// connect to control plane
 	if (controlPlane != null) {
 	    controlPlaneStatus = PlaneConnectStatus.DISCONNECTING;
@@ -231,10 +231,8 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 		controlPlaneStatus = PlaneConnectStatus.DISCONNECTED;
 	    }
 	}
-
-	// connect to info plane
-	boolean i = false;
-
+        
+        // connect to info plane
 	if (infoPlane != null) {
 	    infoPlaneStatus = PlaneConnectStatus.DISCONNECTING;
 
@@ -266,14 +264,14 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 		dataPlane.announce();
 	    }
 
+            // announce the DataSource to the infoPlane
+	    if (infoPlane != null) {
+		infoPlane.announce();
+	    }
+            
 	    // announce the DataSource to the controlPlane
 	    if (controlPlane != null) {
 		controlPlane.announce();
-	    }
-
-	    // announce the DataSource to the infoPlane
-	    if (infoPlane != null) {
-		infoPlane.announce();
 	    }
 
 	    return true;
@@ -287,21 +285,20 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
      */
     public boolean dennounce() {
 	try {
-	    // announce the DataSource to the dataPlane
+	    // deannounce the DataSource to the dataPlane
 	    if (dataPlane != null) {
 		dataPlane.dennounce();
 	    }
 
-	    // announce the DataSource to the controlPlane
-	    if (controlPlane != null) {
-		controlPlane.dennounce();
-	    }
-
-	    // announce the DataSource to the infoPlane
+            // deannounce the DataSource to the infoPlane
 	    if (infoPlane != null) {
 		infoPlane.dennounce();
 	    }
-
+            
+	    // deannounce the DataSource to the controlPlane
+	    if (controlPlane != null) {
+		controlPlane.dennounce();
+	    }
 	    return true;
 	} catch (Exception e) {
 	    return false;
