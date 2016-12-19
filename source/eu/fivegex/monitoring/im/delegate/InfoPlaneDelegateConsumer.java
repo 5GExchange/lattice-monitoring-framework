@@ -15,6 +15,9 @@ import us.monoid.json.JSONObject;
  * @author uceeftu
  */
 public interface InfoPlaneDelegateConsumer {
+    public boolean containsDataSource(ID id);
+        
+    public boolean containsDataConsumer(ID id);
     
     public JSONObject getDataSources() throws JSONException;
     

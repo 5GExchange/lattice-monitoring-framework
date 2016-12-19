@@ -234,6 +234,15 @@ public class ControlInformationManager implements InfoPlaneDelegate {
             throw new DCNotFoundException("Data Consumer with ID " + dataConsumer.toString() + " not found in the infoplane or missing pid entry");
     }
     
+    @Override
+    public boolean containsDataSource(ID id) {
+        return dataSources.contains(id);
+    }
+    
+    @Override
+    public boolean containsDataConsumer(ID id) {
+        return dataConsumers.contains(id);
+    }
     
     void addDataSource(ID id) {
         dataSources.add(id);
@@ -249,14 +258,6 @@ public class ControlInformationManager implements InfoPlaneDelegate {
     
     void deleteDataConsumer(ID id) {
         dataConsumers.remove(id);
-    }
-    
-    boolean containsDataSource(ID id) {
-        return dataSources.contains(id);
-    }
-    
-    boolean containsDataConsumer(ID id) {
-        return dataConsumers.contains(id);
     }
     
     List<ID> getDataSourcesList() {

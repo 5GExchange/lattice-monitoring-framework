@@ -6,6 +6,7 @@
 package eu.fivegex.monitoring.control.controller;
 
 import eu.fivegex.monitoring.control.ControlInterface;
+import eu.fivegex.monitoring.control.mapping.MappingsRestHandler;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
@@ -33,6 +34,9 @@ public final class JSONControllerManagementConsole extends RestConsole{
         
         // /dataconsumer/uuid/?<args> 
         defineRequestHandler("/reporter/.*", new ReporterRestHandler());
+        
+        // /mappings/serviceid>
+        defineRequestHandler("/mappings/.*", new MappingsRestHandler());
         
         register(new UnknownCommand());
        }

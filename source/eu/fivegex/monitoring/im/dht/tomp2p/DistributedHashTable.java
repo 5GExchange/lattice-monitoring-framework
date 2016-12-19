@@ -130,7 +130,8 @@ public class DistributedHashTable implements ObjectDataReply {
      * Close the peer connection
      */
     public void close() throws IOException {
-	peer.shutdown();
+        LOGGER.info("DHT Shutdown");
+	peer.shutdown(); 
     }
 
     /**

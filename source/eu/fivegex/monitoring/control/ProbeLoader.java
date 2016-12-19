@@ -38,7 +38,7 @@ public final class ProbeLoader implements Serializable {
     
     public void initProbe() throws ProbeLoaderException {
         try {
-            LoggerFactory.getLogger(ReporterLoader.class).info("Loading Class: " + probeClassName);
+            LoggerFactory.getLogger(ProbeLoader.class).info("Loading Class: " + probeClassName);
             clazz = Class.forName(probeClassName);
             // check if the class implements the right interface
             probeClazz = clazz.asSubclass(Probe.class);
