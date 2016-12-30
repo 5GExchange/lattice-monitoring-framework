@@ -6,6 +6,7 @@
 package eu.fivegex.monitoring.test;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 import us.monoid.json.JSONArray;
@@ -29,6 +30,8 @@ public class MockIMoS {
     String latticeControllerURI;
     Resty resty;
     
+    String serviceID;
+    
     private JSONObject MdOMapping;
     private Map<String, JSONObject> DOMappingRequests = new HashMap<>();
     private Map<String, JSONObject> DOMappingInfo = new HashMap<>();
@@ -38,10 +41,12 @@ public class MockIMoS {
     private LatticeControllerClient lattice;
     
 
-    public MockIMoS(String address, int port) {
+    public MockIMoS(String address, int port, String serviceID) {
         this.address = address;
         this.port = port;
         MdOURI = "http://" + address + ":" + Integer.toString(port);
+        
+        this.serviceID = serviceID;
         
         // we assume only one controller instance exists
         latticeControllerURI = "http://" + latticeControllerAddress + ":" + Integer.toString(latticeControllerPort);
@@ -68,7 +73,7 @@ public class MockIMoS {
             domain2.put("url", "localhost:8887");
             domain2.put("prefix", "ro/v11");
             domain2.put("user", "lattice");
-            domain2.put("ssh", "9024");
+            domain2.put("ssh", "9026");
             fakeDomainsInfo.put("DOCKER-2", domain2);
         } catch (JSONException e) {
             System.out.println("Error while filling in domain information: " + e.getMessage());
@@ -87,7 +92,7 @@ public class MockIMoS {
             domain1.put("ssh", "22");
             fakeDomainsInfo.put("DOCKER-1", domain1);
             
-            domain2.put("url", "docker-2:8888"); // does not exist yet
+            domain2.put("url", "docker2:8888"); // does not exist yet
             domain2.put("prefix", "ro/v11");
             domain2.put("user", "lattice");
             domain2.put("ssh", "22");
@@ -97,10 +102,7 @@ public class MockIMoS {
         }
     }
     
-    
-    
-    
-    public void getServiceMappingInfo(String serviceID) {
+    public void getServiceMappingInfo() {
         try {
             String uri = MdOURI + "/escape/mapping-info/" + serviceID;
             
@@ -219,6 +221,7 @@ public class MockIMoS {
         System.out.println("Created probe ID: " + probeId);
         
         lattice.turnOnProbe(probeId);
+        lattice.setProbeServiceID(probeId, serviceID);
     }
     
     
@@ -230,9 +233,13 @@ public class MockIMoS {
             String dataConsumerID = dataConsumerInfo.getString("ID");
             
             // load a Logger Reporter
-            JSONObject reporterInfo = lattice.loadReporter(dataConsumerID, "eu.fivegex.monitoring.appl.reporters.LoggerReporter", "logger-reporter");
+            //JSONObject reporterInfo = lattice.loadReporter(dataConsumerID, "eu.fivegex.monitoring.appl.reporters.LoggerReporter", "logger-reporter");
+            JSONObject reporterInfo = lattice.loadReporter(dataConsumerID, "eu.fivegex.monitoring.appl.reporters.InfluxDBReporter", "localhost+8086+fgex");
             
             // should check created reporter ID
+            
+            
+            String controllerAddress = InetAddress.getLocalHost().getHostAddress();
             
             for (String domain : DOMappingInfo.keySet()) { // should run in parallel
                 /* start a DS on the Domains (should check if it already exists)
@@ -259,7 +266,7 @@ public class MockIMoS {
                     instantiateProbes(((JSONObject)mappings.get(i)), dataSourceId, DSHostAddress); 
                 }
             }
-        } catch (JSONException e) {
+        } catch (JSONException | IOException e) {
             System.out.println("Error while instantiating monitoring elements: " + e.getMessage());
         }
         return null;
@@ -286,10 +293,10 @@ public class MockIMoS {
     
     
     public static void main(String [] args) {
-        MockIMoS imos = new MockIMoS("localhost", 8889); // connect to the specified ESCAPE instance on address:port
+        MockIMoS imos = new MockIMoS("localhost", 8889, "e961b2e5-90c8-4b7f-a7da-d7d5c0afbc6a"); // connect to the specified ESCAPE instance on address:port
         //MockIMoS imos = new MockIMoS("escape", 8888);
         
-        imos.getServiceMappingInfo("SingleBiSBiS-NFFG"); // serviceID as parameter
+        imos.getServiceMappingInfo();
         imos.parseServiceMappingInfo();
         //imos.printMappings();
         imos.generateResourceMappingRequests();

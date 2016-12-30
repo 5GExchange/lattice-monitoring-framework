@@ -40,29 +40,48 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
     // The local port
     int port;
     
-    
+    int TCPPort;
+    int UDPPort;
 
     /**
      * Construct a DHTInfoPlane.
      * Connect to the DHT root at hostname on port,
      * and start here on localPort.
      */
+    
+    public DHTDataSourceInfoPlane(String remoteHostname, int remotePort, int localUDPPort, int localTCPPort) {
+	rootHost = remoteHostname;
+	rootPort = remotePort;
+	UDPPort = localUDPPort;
+        TCPPort = localTCPPort;
+
+	imNode = new IMNode(UDPPort, TCPPort, rootHost, rootPort);
+    }
+    
+    public DHTDataSourceInfoPlane(int remotePort, int localUDPPort, int localTCPPort) {
+	rootPort = remotePort;
+	UDPPort = localUDPPort;
+        TCPPort = localTCPPort;
+
+	imNode = new IMNode(UDPPort, TCPPort, rootPort);
+    }
+    
     public DHTDataSourceInfoPlane(String remoteHostname, int remotePort, int localPort) {
 	rootHost = remoteHostname;
 	rootPort = remotePort;
 	port = localPort;
 
-	imNode = new IMNode(localPort, remoteHostname, remotePort);
+	imNode = new IMNode(port, rootHost, rootPort);
     }
 
-    
     public DHTDataSourceInfoPlane(int remotePort, int localPort) {
 	rootPort = remotePort;
 	port = localPort;
 
-	imNode = new IMNode(localPort, remotePort);
+	imNode = new IMNode(port, rootPort);
     }
 
+    
     /**
      * Connect to a delivery mechanism.
      * In a DHTDataSourceInfoPlane we call announce.

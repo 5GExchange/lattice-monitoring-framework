@@ -2,6 +2,7 @@ package eu.fivegex.monitoring.appl.datasources;
 
 import eu.reservoir.monitoring.core.DefaultControllableDataSource;
 import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneXDRConsumer;
+import eu.fivegex.monitoring.utils.DockerDataSourceConfigurator;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
@@ -10,7 +11,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
  * This DataSource in a basic control point for probes that uses a Control Plane and an Info Plane and 
  * logs out/err to a file rather than standard streams.
  **/
-public final class DataSourceDaemon extends Thread {
+public final class DataSourceContainerDaemon extends Thread {
     ControllableDataSource dataSource;
     
     ID dataSourceID;
@@ -30,8 +30,11 @@ public final class DataSourceDaemon extends Thread {
     InetSocketAddress remoteCtrlPair;
     
     String remoteInfoHost;
-    int localInfoPort;
+    int localInfoUDPPort;
+    int localInfoTCPPort;
     int remoteInfoPort;
+    
+    DockerDataSourceConfigurator dataSourceConfigurator;
     
     private static Logger LOGGER;
     
@@ -44,72 +47,47 @@ public final class DataSourceDaemon extends Thread {
      * @param dataConsumerPort the port of the Data Consumer to connect to
      * @param infoPlaneRootName the host name of the Info Plane node to bootstrap to (i.e., the Controller)
      * @param infoPlaneRootPort the port of the Info Plane node to bootstrap to (i.e., the Controller)
-     * @param infoPlaneLocalPort the port to be used locally to connect to the Info Plane
      * @param localControlEndPoint the Control Plane address visible to the other nodes
-     * @param controlPlaneLocalPort the Control Plane port visible to the other nodes
+     * @throws java.io.IOException
      **/
     
-    public DataSourceDaemon(
+    public DataSourceContainerDaemon(
                            String myID,
                            String myDSName, 
                            String dataConsumerName, 
                            int dataConsumerPort,
                            String infoPlaneRootName,   
                            int infoPlaneRootPort,
-                           int infoPlaneLocalPort,
-                           String localControlEndPoint,
-                           int controlPlaneLocalPort
-                           ) throws UnknownHostException {
+                           String localControlEndPoint
+                           ) throws IOException {
     
     
         this.dataSourceID = ID.fromString(myID);
         this.dataSourceName = myDSName;
         
+        // dockerHost has to be resolvable from within the container
+        // port can be a standard fixed
+        // the container name is the hostname of the container
+        String dockerHost = "docker"; // the container has to be able to resolve this name
+        
+        setLogger();
+        
+        this.dataSourceConfigurator = new DockerDataSourceConfigurator(dockerHost, 4243, InetAddress.getLocalHost().getHostName());
+        int controlPlaneLocalPort = dataSourceConfigurator.getControlPort();
+        
         this.dataConsumerPair = new InetSocketAddress(InetAddress.getByName(dataConsumerName), dataConsumerPort);
         this.localCtrlPair = new InetSocketAddress(InetAddress.getByName(localControlEndPoint), controlPlaneLocalPort);
         
         this.remoteInfoHost = infoPlaneRootName;
-        this.localInfoPort = infoPlaneLocalPort;
+        this.localInfoUDPPort = dataSourceConfigurator.getInfoUDPPort();
+        this.localInfoTCPPort = dataSourceConfigurator.getInfoTCPPort();
         this.remoteInfoPort = infoPlaneRootPort;
-    }
-     
-    
-    
-    /**
-    * Construct a SimpleDataSource with no pre-loaded probes running as a daemon and sending
-    * Announce Messages on the Control Plane. 
-    * @param myID the UUID of the Data Source
-    * @param myDSName the Name of the Data Source
-    * @param dataConsumerName the host name of the Data Consumer to connect to
-    * @param dataConsumerPort the port of the Data Consumer to connect to
-    * @param infoPlaneRootName the host name of the Info Plane node to bootstrap to (i.e., the Controller)
-    * @param infoPlaneRootPort the port of the Info Plane node to bootstrap to (i.e., the Controller)
-    * @param infoPlaneLocalPort the port to be used locally to connect to the Info Plane
-    * @param localControlEndPoint the Control Plane address visible to the other nodes
-    * @param controlPlaneLocalPort the Control Plane port visible to the other nodes
-    * @param controlRemotePort the Controller port to send the Announce Messages to
-    **/
-    
-    public DataSourceDaemon(
-                           String myID,
-                           String myDSName, 
-                           String dataConsumerName, 
-                           int dataConsumerPort,
-                           String infoPlaneRootName,   
-                           int infoPlaneRootPort,
-                           int infoPlaneLocalPort,
-                           String localControlEndPoint,
-                           int controlPlaneLocalPort,
-                           int controlRemotePort) throws UnknownHostException {
-    
-        this(myID, myDSName, dataConsumerName, dataConsumerPort, infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort,localControlEndPoint, controlPlaneLocalPort);
-        //this.remoteCtrlPair = new InetSocketAddress(InetAddress.getLocalHost(), controlRemotePort);
     }
 
 
     public void init() throws IOException {
         attachShutDownHook();
-        setLogger();
+        //setLogger();
         
 	dataSource = new DefaultControllableDataSource(dataSourceName, dataSourceID);
         
@@ -119,13 +97,15 @@ public final class DataSourceDaemon extends Thread {
         LOGGER.info("Sending measurements to Data Consumer: " + dataConsumerPair.getHostName() + ":" + dataConsumerPair.getPort());
         LOGGER.info("Connecting to the Control Plane using: " + localCtrlPair.getPort() + ":" + localCtrlPair.getHostName());
         
+        dataSource.setDataSourceConfigurator(dataSourceConfigurator);
+        
 	// set up the planes
 	dataSource.setDataPlane(new UDPDataPlaneProducer(dataConsumerPair));
         
         if (remoteInfoHost != null)
-            dataSource.setInfoPlane(new DHTDataSourceInfoPlane(remoteInfoHost, remoteInfoPort, localInfoPort));
+            dataSource.setInfoPlane(new DHTDataSourceInfoPlane(remoteInfoHost, remoteInfoPort, localInfoUDPPort, localInfoTCPPort));
         else
-            dataSource.setInfoPlane(new DHTDataSourceInfoPlane(remoteInfoPort, localInfoPort)); // bootstraping using broadcast
+            dataSource.setInfoPlane(new DHTDataSourceInfoPlane(remoteInfoPort, localInfoUDPPort, localInfoTCPPort)); // bootstraping using broadcast
         
         if (this.remoteCtrlPair != null)
             dataSource.setControlPlane(new UDPDataSourceControlPlaneXDRConsumer(localCtrlPair, remoteCtrlPair));
@@ -137,7 +117,7 @@ public final class DataSourceDaemon extends Thread {
             System.exit(1); //terminating as there was an error while connecting to the planes
         }
         
-        LOGGER.info("Connected to the Info Plane using: " + localInfoPort + ":" + dataSource.getInfoPlane().getInfoRootHostname() + ":" + remoteInfoPort);
+        //LOGGER.info("Connected to the Info Plane using: " + localInfoUDPPort + "/udp " + localInfoTCPPort + "/tcp" + ":" + dataSource.getInfoPlane().getInfoRootHostname() + ":" + remoteInfoPort);
     }
     
     
@@ -161,7 +141,7 @@ public final class DataSourceDaemon extends Thread {
         System.setProperty(org.slf4j.impl.SimpleLogger.SHOW_SHORT_LOG_NAME_KEY, "true");
         System.setProperty(org.slf4j.impl.SimpleLogger.SHOW_THREAD_NAME_KEY, "false");
         
-        LOGGER = LoggerFactory.getLogger(DataSourceDaemon.class);
+        LOGGER = LoggerFactory.getLogger(DataSourceContainerDaemon.class);
     }
     
     
@@ -204,31 +184,31 @@ public final class DataSourceDaemon extends Thread {
                     dsName = dataConsumerAddr = controlEndPoint = loopBack;
                     infoHost = InetAddress.getLocalHost().getHostName();
                     break;
-                case 5:
+                case 4:
                     dataConsumerAddr = args[0];
                     sc = new Scanner(args[1]);
                     dataConsumerPort = sc.nextInt();
-                    //infoHost = args[2];
-                    sc = new Scanner(args[2]);
+                    infoHost = args[2];
+                    sc = new Scanner(args[3]);
                     infoRemotePort = sc.nextInt();
-                    sc= new Scanner(args[3]);
-                    infoLocalPort = sc.nextInt();
-                    sc= new Scanner(args[4]);
-                    controlLocalPort = sc.nextInt();
+                    //sc= new Scanner(args[4]);
+                    //infoLocalPort = sc.nextInt();
+                    //sc= new Scanner(args[5]);
+                    //controlLocalPort = sc.nextInt();
                     dsName = controlEndPoint = InetAddress.getLocalHost().getHostName();
                     break;
-                case 6:
+                case 5:
                     dsID = args[0];
                     dataConsumerAddr = args[1];
                     sc = new Scanner(args[2]);
                     dataConsumerPort = sc.nextInt();
-                    //infoHost = args[3];
-                    sc = new Scanner(args[3]);
+                    infoHost = args[3];
+                    sc = new Scanner(args[4]);
                     infoRemotePort = sc.nextInt();
-                    sc= new Scanner(args[4]);
-                    infoLocalPort = sc.nextInt();
-                    sc= new Scanner(args[5]);
-                    controlLocalPort = sc.nextInt();
+                    //sc= new Scanner(args[5]);
+                    //infoLocalPort = sc.nextInt();
+                    //sc= new Scanner(args[6]);
+                    //controlLocalPort = sc.nextInt();
                     dsName = controlEndPoint = InetAddress.getLocalHost().getHostName();
                     break;
                 default:
@@ -236,16 +216,16 @@ public final class DataSourceDaemon extends Thread {
                     System.exit(1);
             }
             
-            DataSourceDaemon dataSourceDaemon = new DataSourceDaemon(
+            DataSourceContainerDaemon dataSourceDaemon = new DataSourceContainerDaemon(
                                                             dsID,
                                                             dsName, 
                                                             dataConsumerAddr, 
                                                             dataConsumerPort, 
                                                             infoHost, 
                                                             infoRemotePort, 
-                                                            infoLocalPort, 
-                                                            controlEndPoint, 
-                                                            controlLocalPort);
+                                                            //infoLocalPort, 
+                                                            controlEndPoint); 
+                                                            //controlLocalPort);
                                                             //controllerRemotePort);
             dataSourceDaemon.init();
             

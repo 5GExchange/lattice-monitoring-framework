@@ -7,6 +7,7 @@ package eu.reservoir.monitoring.core;
 
 import eu.reservoir.monitoring.appl.BasicDataSource;
 import eu.fivegex.monitoring.control.ProbeLoader;
+import eu.fivegex.monitoring.utils.DockerDataSourceConfigurator;
 
 /**
  *
@@ -14,7 +15,8 @@ import eu.fivegex.monitoring.control.ProbeLoader;
  */
 public class DefaultControllableDataSource extends BasicDataSource implements ControllableDataSource {
    private int myPID;
-    
+   private DockerDataSourceConfigurator dataSourceConfigurator;
+   
    public DefaultControllableDataSource (String dsName) {
        super(dsName);
    } 
@@ -39,4 +41,15 @@ public class DefaultControllableDataSource extends BasicDataSource implements Co
     public void setMyPID(int myPID) {
         this.myPID = myPID;
     }
+
+   @Override
+    public DockerDataSourceConfigurator getDataSourceConfigurator() {
+        return dataSourceConfigurator;
+    }
+
+   @Override
+    public void setDataSourceConfigurator(DockerDataSourceConfigurator dataSourceConfigurator) {
+        this.dataSourceConfigurator = dataSourceConfigurator;
+    }
+    
 }

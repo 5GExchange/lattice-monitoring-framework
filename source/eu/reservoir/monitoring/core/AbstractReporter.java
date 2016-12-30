@@ -5,6 +5,8 @@
  */
 package eu.reservoir.monitoring.core;
 
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author uceeftu
@@ -23,7 +25,7 @@ public abstract class AbstractReporter implements ControllableReporter {
     
     public AbstractReporter(String name) {
         myId = ID.generate();
-        System.out.println("Reporter ID = " + myId);
+        LoggerFactory.getLogger(AbstractReporter.class).debug("Reporter ID: " + myId);
         this.name = name;
     }
     

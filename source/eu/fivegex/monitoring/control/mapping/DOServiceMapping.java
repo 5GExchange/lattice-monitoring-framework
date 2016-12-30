@@ -30,9 +30,6 @@ import us.monoid.json.JSONObject;
 import us.monoid.web.Resty;
 import us.monoid.web.XMLResource;
 import static us.monoid.web.Resty.content;
-import static us.monoid.web.Resty.content;
-import static us.monoid.web.Resty.content;
-import static us.monoid.web.Resty.content;
 
 /**
  *

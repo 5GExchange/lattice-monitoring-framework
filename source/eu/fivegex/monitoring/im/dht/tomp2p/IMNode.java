@@ -14,6 +14,7 @@ import eu.reservoir.monitoring.core.ControllableDataConsumer;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.AnnounceEventListener;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +39,9 @@ public class IMNode implements AnnounceEventListener {
 
     // the local port
     int localPort = 0;
+    
+    int localUDPPort = 0;
+    int localTCPPort = 0;
 
     // the remote host
     String remoteHost;
@@ -54,6 +58,31 @@ public class IMNode implements AnnounceEventListener {
     public IMNode(int myPort, String remHost, int remPort) {
 	localPort = myPort;
 	remoteHost = remHost;
+	remotePort = remPort;
+    }
+    
+    /**
+     * Construct an IMNode, given local TCP and UDP ports and a remote port.
+     */
+    
+    public IMNode(int myUDPPort, int myTCPPort, int remPort) {
+	localUDPPort = myUDPPort;
+        localTCPPort = myTCPPort;
+        
+	remotePort = remPort;
+        remoteHost = null; // will be initialized after connection
+    }
+    
+    
+    /**
+     * Construct an IMNode, given local TCP and UDP ports and a remote port.
+     */
+    
+    public IMNode(int myUDPPort, int myTCPPort, String remHost, int remPort) {
+	localUDPPort = myUDPPort;
+        localTCPPort = myTCPPort;
+        remoteHost = remHost;
+        
 	remotePort = remPort;
     }
     
@@ -77,6 +106,8 @@ public class IMNode implements AnnounceEventListener {
      * Connect to the DHT peers.
      */
     public boolean connect() {
+        String remoteConnectedHost = null;
+        
 	try {
 	    // only connect if we don't already have a DHT
 	    if (dht == null) {
@@ -85,15 +116,20 @@ public class IMNode implements AnnounceEventListener {
                     remoteHost = dht.connect();
                 }
                 else {
-                    dht = new DistributedHashTable(localPort, InetAddress.getLocalHost());
-                    remoteHost = dht.connect(remotePort);
+                    if (localPort != 0)
+                        dht = new DistributedHashTable(localPort, InetAddress.getLocalHost());
+                    else
+                        dht = new DistributedHashTable(localUDPPort, localTCPPort, InetAddress.getLocalHost());
+                    if (remoteHost == null)
+                       remoteConnectedHost = dht.connect(remotePort);
+                    else
+                       remoteConnectedHost = dht.connect(remoteHost, remotePort);
                 }
-
-		LOGGER.info("Connecting port " + localPort + " to " + remoteHost + "/" + remotePort);
 
                 //setting this IMNode as a AnnounceEventListener in the DHT
                 dht.addAnnounceEventListener(this);
-		return true;
+                
+		return remoteConnectedHost != null;
 	    } else {
 		return true;
 	    }
@@ -165,8 +201,17 @@ public class IMNode implements AnnounceEventListener {
      * Add data for a DataSource
      */
     public IMNode addDataSource(DataSource ds) throws IOException {
-	putDHT("/datasource/" + ds.getID() + "/name", ds.getName());        
-        putDHT("/datasource/" + ds.getID() + "/inetSocketAddress", ds.getControlPlane().getControlEndPoint());
+	putDHT("/datasource/" + ds.getID() + "/name", ds.getName());     
+        
+        if (ds instanceof ControllableDataSource && ((ControllableDataSource) ds).getDataSourceConfigurator() != null) {
+            String externalHost = ((ControllableDataSource) ds).getDataSourceConfigurator().getDockerHost();
+            int controlPort = ((ControllableDataSource) ds).getDataSourceConfigurator().getControlForwardedPort();
+            
+            putDHT("/datasource/" + ds.getID() + "/inetSocketAddress", new InetSocketAddress(externalHost, controlPort));
+        }
+            
+        else    
+            putDHT("/datasource/" + ds.getID() + "/inetSocketAddress", ds.getControlPlane().getControlEndPoint());
         
 	Collection<Probe> probes = ds.getProbes();
 
