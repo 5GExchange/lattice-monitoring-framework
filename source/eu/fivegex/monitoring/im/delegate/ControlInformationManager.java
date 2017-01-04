@@ -67,7 +67,7 @@ public class ControlInformationManager implements InfoPlaneDelegate {
             if (!info.containsDataSource(id, 0)) //wait some more time
                 throw new DSNotFoundException("Announce Message was not received by the ControlInformationManager");
             else
-                ControlInformationManager.this.addDataSource(id); //we may have lost the message but the DS might be up and running
+                addDataSource(id); //we may have lost the message but the DS might be up and running
             
         }
     }
@@ -88,7 +88,7 @@ public class ControlInformationManager implements InfoPlaneDelegate {
             if (!info.containsDataConsumer(id, 0))
                 throw new DCNotFoundException("Announce Message was not received by the ControlInformationManager");
             else
-                ControlInformationManager.this.addDataConsumer(id); //we may have lost the message but the DC is up and running
+                addDataConsumer(id); //we may have lost the message but the DC is up and running
             
         }
     }
@@ -156,15 +156,28 @@ public class ControlInformationManager implements InfoPlaneDelegate {
     @Override
     public InetSocketAddress getDSAddressFromID(ID dataSource) throws DSNotFoundException {
         if (!containsDataSource(dataSource))
-            throw new DSNotFoundException("Data Source with ID " + dataSource.toString() + " was de-announced");
+            throw new DSNotFoundException("Data Source with ID " + dataSource.toString() + " was not found in the infoplane");
         
-        InetSocketAddress dsAddress = (InetSocketAddress)info.lookupDataSourceInfo(dataSource, "inetSocketAddress");
-        if (dsAddress != null)
+        JSONObject controlEndPoint;
+        Object lookupDataSourceInfo = info.lookupDataSourceInfo(dataSource, "controlendpoint");
+        
+        try {
+            if (lookupDataSourceInfo instanceof String) 
+                controlEndPoint = new JSONObject((String) lookupDataSourceInfo);
+            
+            else
+                controlEndPoint = (JSONObject)info.lookupDataSourceInfo(dataSource, "controlendpoint");
+       
+            LOGGER.debug(controlEndPoint.toString());
+            InetSocketAddress dsAddress = new InetSocketAddress(controlEndPoint.getString("address"), controlEndPoint.getInt("port"));
             return dsAddress;
-        else 
-            throw new DSNotFoundException("Data Source with ID " + dataSource.toString() + " not found in the infoplane");
+        } 
+        catch(Exception e) {
+            throw new DSNotFoundException("error while retrieving controlEndPoint for Data Source with ID " + dataSource.toString() + e.getMessage());
+        }
+        
     }
-
+        
     @Override
     public String getDSIDFromName(String dsName) throws DSNotFoundException {
         //using generic getInfo method for getting DS ID from DS name
@@ -181,13 +194,25 @@ public class ControlInformationManager implements InfoPlaneDelegate {
     @Override
     public InetSocketAddress getDCAddressFromID(ID dataConsumer) throws DCNotFoundException {
         if (!containsDataConsumer(dataConsumer))
-            throw new DCNotFoundException("Data Consumer with ID " + dataConsumer.toString() + " was de-announced");
+            throw new DCNotFoundException("Data Consumer with ID " + dataConsumer.toString() + " was not found in the infoplane");
         
-        InetSocketAddress dsAddress = (InetSocketAddress)info.lookupDataConsumerInfo(dataConsumer, "inetSocketAddress");
-        if (dsAddress != null)
+        JSONObject controlEndPoint;
+        Object lookupDataConsumerInfo = info.lookupDataConsumerInfo(dataConsumer, "controlendpoint");
+        
+        try {
+            if (lookupDataConsumerInfo instanceof String)
+                controlEndPoint = new JSONObject((String)lookupDataConsumerInfo);
+        
+            else
+                controlEndPoint = (JSONObject)info.lookupDataConsumerInfo(dataConsumer, "controlendpoint");
+            
+            LOGGER.debug(controlEndPoint.toString());
+            InetSocketAddress dsAddress = new InetSocketAddress(controlEndPoint.getString("address"), controlEndPoint.getInt("port"));
             return dsAddress;
-        else 
-            throw new DCNotFoundException("Data Consumer with ID " + dataConsumer.toString() + " not found in the infoplane");
+        } 
+        catch(Exception e) {
+            throw new DCNotFoundException("error while retrieving controlEndPoint for Data Consumer with ID " + dataConsumer.toString() + e.getMessage());
+        }    
     }
     
     @Override
@@ -276,12 +301,12 @@ public class ControlInformationManager implements InfoPlaneDelegate {
     void addAnnouncedEntity(ID id, EntityType type) {
         if (type == EntityType.DATASOURCE && !containsDataSource(id)) {
             LOGGER.info("Adding Data Source " + id.toString());
-            ControlInformationManager.this.addDataSource(id);
+            addDataSource(id);
             notifyDataSource(id); // notify any pending deployment threads
         }
         else if (type == EntityType.DATACONSUMER && !containsDataConsumer(id)) {
                 LOGGER.info("Adding Data Consumer " + id.toString());
-                ControlInformationManager.this.addDataConsumer(id);
+                addDataConsumer(id);
                 notifyDataConsumer(id);
         }
     }

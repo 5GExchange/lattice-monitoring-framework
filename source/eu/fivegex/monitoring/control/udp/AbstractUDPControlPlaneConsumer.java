@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import us.monoid.json.JSONException;
+import us.monoid.json.JSONObject;
 
 /**
  *
@@ -115,7 +117,15 @@ public abstract class AbstractUDPControlPlaneConsumer implements ControlPlane, R
     }
     
     @Override
-    public InetSocketAddress getControlEndPoint() {
-        return this.localAddress;
+    public JSONObject getControlEndPoint() {
+        JSONObject controlEndPoint = new JSONObject();
+        try {
+        controlEndPoint.put("address", localAddress.getAddress().getHostAddress());
+        controlEndPoint.put("port", localAddress.getPort());
+        controlEndPoint.put("type", "socket");
+        } catch (JSONException e) {
+            return null;
+        }
+        return controlEndPoint;
     }
 }

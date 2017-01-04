@@ -34,6 +34,7 @@ import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegateInteracter;
+import eu.fivegex.monitoring.im.zmq.ZMQInfoPlaneConsumer;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 
 /**
@@ -57,7 +58,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
 
     private Controller() {}
      
-    private void init(/*String infoPlaneAddr,*/ int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {  
+    private void init(int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {  
         
         this.usingDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.enabled", "false"));
         
@@ -71,13 +72,15 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         Integer transmitterPoolSize = (Integer) pr.getOrDefault("control.poolsize", 8);
         
         // Controller is the root of the infoPlane - other nodes use it to perform bootstrap
-        InfoPlane infoPlane = new DHTInfoPlaneRoot(/*infoPlaneAddr,*/ infoPlanePort);
+        InfoPlane infoPlane = new DHTInfoPlaneRoot(infoPlanePort);
+        //InfoPlane infoPlane = new ZMQInfoPlaneConsumer(infoPlanePort);
         
         // we get the ControlInformationManager from the InfoPlane
         controlInformationManager = ((InfoPlaneDelegateInteracter) infoPlane).getInfoPlaneDelegateInteracter();
         
         // setting the InfoPlane to send announce events to the ControlInformationManager
         ((DHTInfoPlaneRoot) infoPlane).addAnnounceEventListener(controlInformationManager);
+        
 	setInfoPlane(infoPlane);
         
         // create a control plane producer 

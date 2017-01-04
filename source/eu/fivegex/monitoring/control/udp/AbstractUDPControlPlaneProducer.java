@@ -16,10 +16,10 @@ import eu.reservoir.monitoring.distribution.MetaData;
 import eu.reservoir.monitoring.distribution.Receiving;
 import eu.reservoir.monitoring.distribution.udp.UDPReceiver;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.io.ByteArrayInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import us.monoid.json.JSONObject;
 
 /**
  *
@@ -107,7 +107,7 @@ public abstract class AbstractUDPControlPlaneProducer implements
     
     
     @Override
-    public InetSocketAddress getControlEndPoint() {
+    public JSONObject getControlEndPoint() {
         throw new UnsupportedOperationException("Abstract UDP Control Plane Producer: getting control endpoint is not supported");
     }
     

@@ -60,7 +60,7 @@ public class DockerDataSourceConfigurator {
     }
     
     
-    public void getInfo() throws IOException {
+    private void getInfo() throws IOException {
         try {
             JSONObject allInfo = rest.json(dockerURI).toObject();
             containerInfo = allInfo.getJSONObject("HostConfig").getJSONObject("PortBindings");

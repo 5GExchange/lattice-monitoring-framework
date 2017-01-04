@@ -9,10 +9,8 @@ import java.util.Random;
 import net.tomp2p.connection.Bindings;
 import net.tomp2p.futures.FutureBootstrap;
 import net.tomp2p.futures.FutureDHT;
-import net.tomp2p.futures.FutureDiscover;
 import net.tomp2p.p2p.Peer;
 import net.tomp2p.p2p.PeerMaker;
-import net.tomp2p.p2p.builder.DiscoverBuilder;
 import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.PeerAddress;
 import net.tomp2p.rpc.ObjectDataReply;
@@ -210,10 +208,6 @@ public class DistributedHashTable implements ObjectDataReply {
             FutureDHT futureSend = peer.send(rootPeer.getID()).setObject(AbstractAnnounceMessage.toString(m)).start();
             futureSend.awaitUninterruptibly();
             LOGGER.debug(m.getMessageType() + " message sent for this " + m.getEntity());
-            
-            // waiting for ACK here - should re-transmit in case
-            //for (Object o: futureSend.getRawDirectData2().values())
-            //    System.out.println(" ----- " + o + " ----- ");
             
         } catch (IOException e) {
             LOGGER.error("Error while sending " + m.getMessageType() + "message " + e.getMessage());

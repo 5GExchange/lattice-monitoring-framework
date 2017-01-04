@@ -14,9 +14,10 @@ import eu.reservoir.monitoring.core.ControllableDataConsumer;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.AnnounceEventListener;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import us.monoid.json.JSONException;
+import us.monoid.json.JSONObject;
 
 /**
  * An IMNode is responsible for converting  DataSource, ControllableDataConsumer and Probe
@@ -170,7 +171,7 @@ public class IMNode implements AnnounceEventListener {
     
     public IMNode addDataConsumer(ControllableDataConsumer dc) throws IOException {
         putDHT("/dataconsumer/" + dc.getID() + "/name", dc.getName());        
-        putDHT("/dataconsumer/" + dc.getID() + "/inetSocketAddress", dc.getControlPlane().getControlEndPoint());
+        putDHT("/dataconsumer/" + dc.getID() + "/controlendpoint", dc.getControlPlane().getControlEndPoint().toString());
         
         for (ControllableReporter r: dc.getReportersCollection()) {
             if (r instanceof ControllableReporter)
@@ -207,11 +208,20 @@ public class IMNode implements AnnounceEventListener {
             String externalHost = ((ControllableDataSource) ds).getDataSourceConfigurator().getDockerHost();
             int controlPort = ((ControllableDataSource) ds).getDataSourceConfigurator().getControlForwardedPort();
             
-            putDHT("/datasource/" + ds.getID() + "/inetSocketAddress", new InetSocketAddress(externalHost, controlPort));
+            JSONObject controlEndPoint = new JSONObject();
+            try {
+            controlEndPoint.put("address", externalHost);
+            controlEndPoint.put("port", controlPort);
+            controlEndPoint.put("type", "socket/NAT");
+            } catch (JSONException e) {
+                return null;
+            }
+            
+            putDHT("/datasource/" + ds.getID() + "/controlendpoint", controlEndPoint.toString());
         }
             
         else    
-            putDHT("/datasource/" + ds.getID() + "/inetSocketAddress", ds.getControlPlane().getControlEndPoint());
+            putDHT("/datasource/" + ds.getID() + "/controlendpoint", ds.getControlPlane().getControlEndPoint().toString());
         
 	Collection<Probe> probes = ds.getProbes();
 
@@ -297,7 +307,7 @@ public class IMNode implements AnnounceEventListener {
      */
     public IMNode removeDataSource(DataSource ds) throws IOException {
 	remDHT("/datasource/" + ds.getID() + "/name");
-        remDHT("/datasource/" + ds.getID() + "/inetSocketAddress");
+        remDHT("/datasource/" + ds.getID() + "/controlendpoint");
         remDHT("/datasource/name/" + ds.getName()); 
         
         if (ds instanceof ControllableDataSource)
@@ -350,7 +360,7 @@ public class IMNode implements AnnounceEventListener {
     
     public IMNode removeDataConsumer(ControllableDataConsumer dc) throws IOException {
 	remDHT("/dataconsumer/" + dc.getID() + "/name");
-        remDHT("/dataconsumer/" + dc.getID() + "/inetSocketAddress"); //we also need to remove the control end point
+        remDHT("/dataconsumer/" + dc.getID() + "/controlendpoint"); //we also need to remove the control end point
         remDHT("/dataconsumer/name/" + dc.getName()); 
         
         if (dc instanceof DefaultControllableDataConsumer)
@@ -436,7 +446,7 @@ public class IMNode implements AnnounceEventListener {
      */
     public boolean putDHT(String aKey, Serializable aValue) {
 	try {
-	    LOGGER.debug("put " + aKey + " => " + aValue);
+	    LOGGER.info("put " + aKey + " => " + aValue);
 	    dht.put(aKey, aValue);
 	    return true;
 	} catch (IOException ioe) {

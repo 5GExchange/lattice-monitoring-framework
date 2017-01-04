@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 import us.monoid.json.JSONArray;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
@@ -260,7 +261,7 @@ public class MockIMoS {
                 JSONArray mappings = DOMappingInfo.get(domain).getJSONObject("mapping").getJSONArray("instances");
                 
                 for (int i=0; i<mappings.length(); i++) {
-                    // we are assuming all the probes are loaded on the only
+                    // we are assuming all the probes will be loaded on the only
                     // single DS running in the Domain (i.e., on DSHostAddress)
                     
                     instantiateProbes(((JSONObject)mappings.get(i)), dataSourceId, DSHostAddress); 
@@ -293,12 +294,21 @@ public class MockIMoS {
     
     
     public static void main(String [] args) {
-        MockIMoS imos = new MockIMoS("localhost", 8889, "e961b2e5-90c8-4b7f-a7da-d7d5c0afbc6a"); // connect to the specified ESCAPE instance on address:port
-        //MockIMoS imos = new MockIMoS("escape", 8888);
+        MockIMoS imos;
+        
+        if (args.length != 3)
+           imos = new MockIMoS("localhost", 8889, "e961b2e5-90c8-4b7f-a7da-d7d5c0afbc6a");
+        else {
+            String resOrchHost = args[0];
+            Scanner sc = new Scanner(args[1]);
+            int resOrchPort = sc.nextInt();
+            String serviceID = args[2];
+            imos = new MockIMoS(resOrchHost, resOrchPort, serviceID);
+        }
         
         imos.getServiceMappingInfo();
         imos.parseServiceMappingInfo();
-        //imos.printMappings();
+        imos.printMappings();
         imos.generateResourceMappingRequests();
         imos.printDOMappings();
         

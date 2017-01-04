@@ -105,7 +105,7 @@ public class IMNode {
 
     public IMNode addDataConsumer(ControllableDataConsumer dc) throws IOException {
         putDHT("/dataconsumer/" + dc.getID() + "/name", dc.getName());        
-        putDHT("/dataconsumer/" + dc.getID() + "/inetSocketAddress", dc.getControlPlane().getControlEndPoint());
+        putDHT("/dataconsumer/" + dc.getID() + "/controlEndPoint", dc.getControlPlane().getControlEndPoint().toString());
         
         //Object [] reporters = dc.getReporters();
         for (ControllableReporter r: dc.getReportersCollection()) {
@@ -138,7 +138,7 @@ public class IMNode {
      */
     public IMNode addDataSource(DataSource ds) throws IOException {
 	putDHT("/datasource/" + ds.getID() + "/name", ds.getName());        
-        putDHT("/datasource/" + ds.getID() + "/inetSocketAddress", ds.getControlPlane().getControlEndPoint());
+        putDHT("/datasource/" + ds.getID() + "/controlEndPoint", ds.getControlPlane().getControlEndPoint().toString());
         
 	Collection<Probe> probes = ds.getProbes();
 
@@ -224,7 +224,7 @@ public class IMNode {
      */
     public IMNode removeDataSource(DataSource ds) throws IOException {
 	remDHT("/datasource/" + ds.getID() + "/name");
-        remDHT("/datasource/" + ds.getID() + "/inetSocketAddress");
+        remDHT("/datasource/" + ds.getID() + "/controlEndPoint");
         remDHT("/datasource/name/" + ds.getName()); 
         
         if (ds instanceof ControllableDataSource)
@@ -278,7 +278,7 @@ public class IMNode {
     
     public IMNode removeDataConsumer(ControllableDataConsumer dc) throws IOException {
 	remDHT("/dataconsumer/" + dc.getID() + "/name");
-        remDHT("/dataconsumer/" + dc.getID() + "/inetSocketAddress"); //we also need to remove the control end point
+        remDHT("/dataconsumer/" + dc.getID() + "/controlEndPoint"); //we also need to remove the control end point
         remDHT("/dataconsumer/name/" + dc.getName()); 
         
         if (dc instanceof DefaultControllableDataConsumer)

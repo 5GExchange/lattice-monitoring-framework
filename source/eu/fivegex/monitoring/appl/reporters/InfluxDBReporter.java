@@ -38,13 +38,14 @@ public class InfluxDBReporter extends AbstractReporter {
         this.serverAddress = address;
         this.serverPort = port;
         this.database= database;
-        this.influxDBURI = "http://" + serverAddress + ":" + serverPort + "/write?db=" + database;
+        this.influxDBURI = "http://" + serverAddress + ":" + serverPort + "/write?db=" + database + "&precision=ms";
                 
         // should check it the DB exists and create it in case        
     }
     
     @Override
     public void report(Measurement m) {
+        //should create a buffer and flushing it every N received measurements
         LOGGER.debug("Received measurement: " + m.toString());
         
         Timestamp timestamp = ((ConsumerMeasurementWithMetadataAndProbeName)m).getTimestamp();
@@ -64,7 +65,7 @@ public class InfluxDBReporter extends AbstractReporter {
                                 .append(" " + "value=")
                                 .append(attribute.getValue())
                                 .append(" ")
-                                .append(timestamp) // FIXME: weird value in the DB
+                                .append(timestamp)
                                 .append("\n");
             }
         

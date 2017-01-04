@@ -5,12 +5,12 @@
 
 package eu.reservoir.monitoring.core.plane;
 
-import java.net.InetSocketAddress;
+import us.monoid.json.JSONObject;
 
 /**
  * A ControlPlane.
  * This has the common methods for all 
  */
 public interface ControlPlane extends Plane {
-    public InetSocketAddress getControlEndPoint();
+    public JSONObject getControlEndPoint();
 }

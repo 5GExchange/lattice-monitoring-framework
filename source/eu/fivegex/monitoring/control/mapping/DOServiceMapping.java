@@ -120,79 +120,8 @@ public class DOServiceMapping {
             throw new IOException("Error while converting XML document to byte array" + e.getMessage());
         }
         return array;
-    }    
-    
-//    public JSONObject getServiceMapping() throws IOException {
-//        Document doc;
-//        
-//        String bisbisID=null;
-//        String nfID=null;
-//        
-//        String objectID;
-//        String domainType;
-//        
-//        try {
-//            mappingInfo = rest.xml(mappingURI, content(getRequestBodyAsBytes(createRequestBody())));
-//            doc = mappingInfo.doc();
-//            doc.getDocumentElement().normalize();
-//            
-//            NodeList mappings = doc.getElementsByTagName("mapping");
-//            for (int i = 0; i < mappings.getLength(); i++) {
-//                JSONObject bisbisMappings = new JSONObject();
-//                Node mapping = mappings.item(i);
-//                
-//                if (mapping.getNodeType() == Node.ELEMENT_NODE) {
-//                    Element eElement = (Element) mapping; 
-//                    String rawObject = eElement.getElementsByTagName("object").item(0).getTextContent();
-//                    
-//                    Pattern p = Pattern.compile("id=([^\\]]*)");
-//                    Matcher m = p.matcher(rawObject);
-//                    
-//                    if(m.find()) {
-//                        bisbisID = m.group(1);
-//                    }
-//                    
-//                    if (m.find()) {
-//                        nfID = m.group(1);
-//                    }
-//                    
-//                    JSONObject NFMappings = new JSONObject();
-//                    NodeList target = eElement.getElementsByTagName("target");
-//                    for (int j = 0; j < target.getLength(); j++) {
-//                        Node targetElement = target.item(j);
-//
-//                        if (targetElement.getNodeType() == Node.ELEMENT_NODE) {
-//                           Element tElement = (Element) targetElement;
-//                           objectID = tElement.getElementsByTagName("object").item(0).getTextContent();
-//                           
-//                           if (!objectID.contains("ERROR")) {
-//                               NFMappings.put("id", objectID);
-//                               
-//                               domainType = tElement.getElementsByTagName("domain").item(0).getTextContent();
-//                               NFMappings.put("domain", domainType);
-//                           }
-//                           else
-//                               NFMappings.put("id", "not found");
-//                        }
-//                    }
-//                    
-//                    bisbisMappings.put(nfID, NFMappings);
-//                    
-//                    
-//                    if (bisbisID != null && nfID != null) {
-//                       DOMappings.append(bisbisID, bisbisMappings); //creates a JSONArray
-//                       //System.out.println(DOMappings.toString(1));
-//                    }
-//                    else
-//                       throw new IOException("Cannot find bisbis ID and/or NF IDs in the DO mapping info");
-//                }        
-//            }
-//            
-//        } catch (IOException | DOMException | JSONException | NullPointerException e) {
-//            throw new IOException("Error while gathering mapping info from the DO: " + e.getMessage());
-//        }
-//        return DOMappings;
-//    }
+    }        
+
     
 
 public JSONObject getServiceMapping() throws IOException {
