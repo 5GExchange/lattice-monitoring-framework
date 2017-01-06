@@ -5,7 +5,6 @@ import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
 import eu.reservoir.monitoring.core.DataSourceDelegate;
 import eu.reservoir.monitoring.core.DataSourceDelegateInteracter;
-import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Reporter;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 
@@ -13,21 +12,18 @@ import java.io.IOException;
 import eu.reservoir.monitoring.core.ControllableDataConsumer;
 
 /**
- * A DHTDataSourceInfoPlane is an InfoPlane implementation
- that sends the Information Model data.
+ * A ZMQDataSourceInfoPlane is an InfoPlane implementation
+ that sends the Information Model data for a Data Source.
  * It is also a DataSourceInteracter so it can, if needed,
  * talk to the DataSource object it gets bound to.
  */
 public class ZMQDataSourceInfoPlane extends AbstractZMQInfoPlane implements InfoPlane, DataSourceDelegateInteracter {
-    // DataSourceDelegate
     DataSourceDelegate dataSourceDelegate;
     
-    ZMQInformationPublisher zmqInformationPublisher;
-
-    // The hostname of the DHT root.
+    // The hostname of the Subscriber.
     String remoteHost;
 
-    // The port to connect to
+    // The port of the Subscriber
     int remotePort;
     
     /**
@@ -40,7 +36,7 @@ public class ZMQDataSourceInfoPlane extends AbstractZMQInfoPlane implements Info
 	remoteHost = remoteHostname;
 	this.remotePort = remotePort;
 
-	zmqInformationPublisher = new ZMQInformationPublisher(remoteHost, this.remotePort);
+	zmqPublisher = new ZMQPublisher(remoteHost, this.remotePort);
     }
      
      
@@ -48,51 +44,37 @@ public class ZMQDataSourceInfoPlane extends AbstractZMQInfoPlane implements Info
      * Connect to a delivery mechanism.
      */
     public boolean connect() {
-	return zmqInformationPublisher.connect();
+	return zmqPublisher.connect();
     }
 
     /**
      * Disconnect from a delivery mechanism.
      */
     public boolean disconnect() {
-	return zmqInformationPublisher.disconnect();
+	return zmqPublisher.disconnect();
     }
 
     @Override
     public String getInfoRootHostname() {
-        return zmqInformationPublisher.getRootHostname();
+        return zmqPublisher.getRootHostname();
     }
     
-
     /**
      * Announce that the Data Source is up and running
      */
     public boolean announce() {
-	try {
-	    DataSource dataSource = dataSourceDelegate.getDataSource();
-	    zmqInformationPublisher.addDataSource(dataSource);
-
-	    LOGGER.info("just announced this Data Source " + dataSource.getID());
-	    return true;
-	} catch (IOException ioe) {
-	    return false;
-	}
+        DataSource dataSource = dataSourceDelegate.getDataSource();
+        LOGGER.info("Announced this Data Source " + dataSource.getID());
+        return addDataSourceInfo(dataSource);
     }
 
     /**
      * Un-announce that the Data Source is up and running
      */
     public boolean dennounce() {
-        try {
-            DataSource dataSource = dataSourceDelegate.getDataSource();
-            zmqInformationPublisher.removeDataSource(dataSource);
-            
-            //infoFormatter.announce(new DeannounceMessage(dataSource.getID(), EntityType.DATASOURCE));
-            LOGGER.info("just deannounced this Data Source " + dataSource.getID());
-            return true;
-        } catch (IOException ioe) {
-            return false;
-        }
+        DataSource dataSource = dataSourceDelegate.getDataSource();
+        LOGGER.info("Deannouncing Data Source " + dataSource.getID());
+        return removeDataSourceInfo(dataSource);
     }
 
 
@@ -115,7 +97,14 @@ public class ZMQDataSourceInfoPlane extends AbstractZMQInfoPlane implements Info
      * Add a DataSource
      */
     public boolean addDataSourceInfo(DataSource ds) {
-	return true;
+        try {
+            zmqPublisher.addDataSource(ds);
+            LOGGER.info("just added Data Source " + ds);
+            return true;
+        } catch (IOException e) 
+            {
+            return false;
+            }
     }
 
     /**
@@ -123,7 +112,7 @@ public class ZMQDataSourceInfoPlane extends AbstractZMQInfoPlane implements Info
      */
     public boolean addProbeInfo(Probe p) {
 	try {
-	    zmqInformationPublisher.addProbe(p);
+	    zmqPublisher.addProbe(p);
 
 	    LOGGER.info("just added Probe " + p.getClass());
             LOGGER.debug(p.toString());
@@ -140,7 +129,7 @@ public class ZMQDataSourceInfoPlane extends AbstractZMQInfoPlane implements Info
      */
     public boolean addProbeAttributeInfo(Probe p, ProbeAttribute pa) {
 	try {
-	    zmqInformationPublisher.addProbeAttribute(p, pa);
+	    zmqPublisher.addProbeAttribute(p, pa);
 
 	    LOGGER.debug("just added ProbeAttribute " + p + "." + pa);
 	    return true;
@@ -154,7 +143,7 @@ public class ZMQDataSourceInfoPlane extends AbstractZMQInfoPlane implements Info
      */
     public boolean modifyDataSourceInfo(DataSource ds) {
 //	try {
-//	    zmqInformationPublisher.modifyDataSource(ds);
+//	    zmqPublisher.modifyDataSource(ds);
 //
 //	    LOGGER.info("just modified DataSource " + ds);
 //	    return true;
@@ -169,7 +158,7 @@ public class ZMQDataSourceInfoPlane extends AbstractZMQInfoPlane implements Info
      */
     public boolean modifyProbeInfo(Probe p) {
 //	try {
-//	    zmqInformationPublisher.modifyProbe(p);
+//	    zmqPublisher.modifyProbe(p);
 //
 //	    LOGGER.info("just modified Probe " + p.getClass());
 //	    return true;
@@ -184,7 +173,7 @@ public class ZMQDataSourceInfoPlane extends AbstractZMQInfoPlane implements Info
      */
     public boolean modifyProbeAttributeInfo(Probe p, ProbeAttribute pa) {
 //	try {
-//	    zmqInformationPublisher.modifyProbeAttribute(p, pa);
+//	    zmqPublisher.modifyProbeAttribute(p, pa);
 //
 //	    LOGGER.debug("just modified ProbeAttribute " + p + "." + pa);
 //	    return true;
@@ -199,47 +188,47 @@ public class ZMQDataSourceInfoPlane extends AbstractZMQInfoPlane implements Info
      * Remove a DataSource
      */
     public boolean removeDataSourceInfo(DataSource ds) {
-//	try {
-//	    zmqInformationPublisher.removeDataSource(ds);
-//
-//	    LOGGER.info("just removed Data Source " + ds);
-//	    return true;
-//	} catch (IOException ioe) {
-//	    return false;
-//	}
-        return false;
+	try {
+	    zmqPublisher.removeDataSource(ds);
+
+	    LOGGER.info("just removed Data Source " + ds);
+	    return true;
+	} catch (IOException ioe) {
+	    return false;
+	}
     }
 
     /**
      * Remove a Probe
      */
     public boolean removeProbeInfo(Probe p) {
-//	try {
-//	    zmqInformationPublisher.removeProbe(p);
-//
-//	    LOGGER.info("just removed Probe " + p.getClass());
-//	    return true;
-//	} catch (IOException ioe) {
-//	    return false;
-//	}
-        return false;
+	try {
+	    zmqPublisher.removeProbe(p);
+
+	    LOGGER.info("just removed Probe " + p.getClass());
+	    return true;
+	} catch (IOException ioe) {
+	    return false;
+	}
     }
 
     /**
      * Remove a ProbeAttribute from a Probe
      */
     public boolean removeProbeAttributeInfo(Probe p, ProbeAttribute pa) {
-//	try {
-//	    zmqInformationPublisher.removeProbeAttribute(p, pa);
-//
-//	    LOGGER.debug("just removed ProbeAttribute " + p + "." + pa);
-//	    return true;
-//	} catch (IOException ioe) {
-//	    return false;
-//	}
-        return false;
+	try {
+	    zmqPublisher.removeProbeAttribute(p, pa);
+
+	    LOGGER.debug("just removed ProbeAttribute " + p + "." + pa);
+	    return true;
+	} catch (IOException ioe) {
+	    return false;
+	}
     }
 
+    /* these methods always return false here as they are meant to be used by 
+     * a Data Consumer */
+    
     @Override
     public boolean addDataConsumerInfo(ControllableDataConsumer dc) {
         return false;
@@ -258,65 +247,5 @@ public class ZMQDataSourceInfoPlane extends AbstractZMQInfoPlane implements Info
     @Override
     public boolean removeReporterInfo(Reporter r) {
         return false;
-    }
-
-    @Override
-    public boolean containsDataSource(ID dataSourceID, int timeOut) {
-        return false;
-    }
-
-    @Override
-    public boolean containsDataConsumer(ID dataConsumerID, int timeOut) {
-        return false;
-    }
-    
-    
-    // TESTING
-
-    @Override
-    public Object lookupDataSourceInfo(DataSource dataSource, String info) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Object lookupDataSourceInfo(ID dataSourceID, String info) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Object lookupProbeInfo(Probe probe, String info) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Object lookupProbeInfo(ID probeID, String info) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Object lookupProbeAttributeInfo(Probe probe, int field, String info) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Object lookupProbeAttributeInfo(ID probeID, int field, String info) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Object lookupDataConsumerInfo(ID dataConsumerID, String info) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Object lookupReporterInfo(ID reporterID, String info) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-    
-    
-    
-    
-    
-    
-    
+    }   
 }

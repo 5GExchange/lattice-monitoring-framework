@@ -3,7 +3,6 @@ package eu.fivegex.monitoring.im.zmq;
 import eu.fivegex.monitoring.im.delegate.ControlInformationManager;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import eu.reservoir.monitoring.core.DataSource;
-import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
@@ -14,23 +13,23 @@ import eu.reservoir.monitoring.core.plane.AnnounceEventListener;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegateInteracter;
 
 /**
- * A ZMQInfoPlaneConsumer is an InfoPlane implementation
- * that collects data from the Information Model data.
+ * A ZMQControllerInfoPlane is an InfoPlane implementation
+ that mainly collects data from the Information Model data.
  */
-public class ZMQInfoPlaneConsumer extends AbstractZMQInfoPlane implements InfoPlane, InfoPlaneDelegateInteracter, AnnounceEventListener  {
+public class ZMQControllerInfoPlane extends AbstractZMQInfoPlane implements InfoPlane, InfoPlaneDelegateInteracter, AnnounceEventListener  {
     private InfoPlaneDelegate infoPlaneDelegate;
     
     AnnounceEventListener listener;
     
-    ZMQInformationSubscriber zmqInformationSubscriber;
-    
     // The local port
     int port;
 
+    ZMQProxy zmqProxy;
+    
     /**
      * Constructor for subclasses.
      */
-    private ZMQInfoPlaneConsumer() {
+    private ZMQControllerInfoPlane() {
         setInfoPlaneDelegateInteracter(new ControlInformationManager(this));
         // setting the announce listener to the InfoPlaneDelegate
         listener = infoPlaneDelegate;
@@ -40,11 +39,12 @@ public class ZMQInfoPlaneConsumer extends AbstractZMQInfoPlane implements InfoPl
     /**
      * Construct a ZMQInfoPlaneConsumer.
      */
-    public ZMQInfoPlaneConsumer(int localPort) {
+    public ZMQControllerInfoPlane(int localPort) {
         this();
 	port = localPort;
-        zmqInformationSubscriber = new ZMQInformationSubscriber(port);
-        zmqInformationSubscriber.addAnnounceEventListener(listener);
+        zmqProxy = new ZMQProxy(port);
+        zmqSubscriber = new ZMQSubscriber(zmqProxy.getInternalURI(), "info.", zmqProxy.getContext());
+        zmqSubscriber.addAnnounceEventListener(listener);
     }
     
 
@@ -53,7 +53,7 @@ public class ZMQInfoPlaneConsumer extends AbstractZMQInfoPlane implements InfoPl
      */
     @Override
     public boolean connect() {
-	return zmqInformationSubscriber.bindAndListen();
+	return zmqProxy.startProxy() && zmqSubscriber.connectAndListen();
     }
 
     
@@ -62,13 +62,13 @@ public class ZMQInfoPlaneConsumer extends AbstractZMQInfoPlane implements InfoPl
      */
     @Override
     public boolean disconnect() {
-	return zmqInformationSubscriber.disconnect();
+	return zmqSubscriber.disconnect() && zmqProxy.stopProxy();
     }
 
     
     @Override
     public String getInfoRootHostname() {
-        return zmqInformationSubscriber.getRootHostname();
+        return zmqSubscriber.getRootHostname();
     }
    
     
@@ -173,59 +173,6 @@ public class ZMQInfoPlaneConsumer extends AbstractZMQInfoPlane implements InfoPl
         return false;
     }
     
-    // Lookup methods
-    @Override
-    public boolean containsDataSource(ID dataSourceID, int timeout) {
-        return zmqInformationSubscriber.containsDataSource(dataSourceID); 
-    }
-    
-    @Override
-    public boolean containsDataConsumer(ID dataConsumerID, int timeout) {
-        return zmqInformationSubscriber.containsDataConsumer(dataConsumerID);
-    }
-    
-    
-    @Override
-    public Object lookupDataSourceInfo(DataSource dataSource, String info) {
-        return zmqInformationSubscriber.getDataSourceInfo(dataSource.getID(), info);
-    }
-
-    @Override
-    public Object lookupDataSourceInfo(ID dataSourceID, String info) {
-        return zmqInformationSubscriber.getDataSourceInfo(dataSourceID, info);
-    }
-
-    @Override
-    public Object lookupProbeInfo(Probe probe, String info) {
-        return zmqInformationSubscriber.getProbeInfo(probe.getID(), info);
-    }
-
-    @Override
-    public Object lookupProbeInfo(ID probeID, String info) {
-        return zmqInformationSubscriber.getProbeInfo(probeID, info);
-    }
-
-    @Override
-    public Object lookupProbeAttributeInfo(Probe probe, int field, String info) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Object lookupProbeAttributeInfo(ID probeID, int field, String info) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Object lookupDataConsumerInfo(ID dataConsumerID, String info) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Object lookupReporterInfo(ID reporterID, String info) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-    
-    
     @Override
     public void receivedAnnounceEvent(AbstractAnnounceMessage m) {
         infoPlaneDelegate.receivedAnnounceEvent(m);
@@ -240,6 +187,7 @@ public class ZMQInfoPlaneConsumer extends AbstractZMQInfoPlane implements InfoPl
     public InfoPlaneDelegate getInfoPlaneDelegateInteracter() {
         return this.infoPlaneDelegate;
     }
+    
     
     public void addAnnounceEventListener(AnnounceEventListener l) {
         this.listener=l;

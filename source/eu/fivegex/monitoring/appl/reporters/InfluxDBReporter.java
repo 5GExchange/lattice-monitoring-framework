@@ -10,7 +10,6 @@ import eu.reservoir.monitoring.core.Measurement;
 import eu.reservoir.monitoring.core.ProbeValue;
 import eu.reservoir.monitoring.core.ProbeValueWithName;
 import eu.reservoir.monitoring.core.Timestamp;
-import eu.reservoir.monitoring.distribution.ConsumerMeasurementWithMetadataAndProbeName;
 import java.io.IOException;
 import java.util.Iterator;
 import org.slf4j.Logger;
@@ -48,7 +47,7 @@ public class InfluxDBReporter extends AbstractReporter {
         //should create a buffer and flushing it every N received measurements
         LOGGER.debug("Received measurement: " + m.toString());
         
-        Timestamp timestamp = ((ConsumerMeasurementWithMetadataAndProbeName)m).getTimestamp();
+        Timestamp timestamp = m.getTimestamp();
         
         StringBuilder formattedMeasurement = new StringBuilder(); 
         

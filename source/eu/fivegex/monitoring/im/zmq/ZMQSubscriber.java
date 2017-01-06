@@ -15,18 +15,21 @@ import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
 /**
- * An ZMQInformationProducer is responsible for sending information about  DataSource, ControllableDataConsumer and Probe
- attributes on the InfoPlane using ZMQ.
+ * An ZMQSubscriber is responsible for receiving information about  
+ * DataSources, DataConsumers, Probes and probes attributes on the InfoPlane 
+ * using ZMQ.
 **/
 
-public class ZMQInformationSubscriber extends Thread {
+public class ZMQSubscriber extends Thread {
     String remoteHost;
     int remotePort = 0;
     int localPort = 0;
     
-    ZMQ.Context context = ZMQ.context(1);
-    ZMQ.Socket subscriber = context.socket(ZMQ.SUB);
+    ZMQ.Context context;
+    ZMQ.Socket subscriberSocket;
     
+    String internalURI;
+    String messageFilter;
     
     Map<ID, JSONObject> dataSources = new HashMap<>();
     Map<ID, JSONObject> probes = new HashMap<>();
@@ -37,22 +40,65 @@ public class ZMQInformationSubscriber extends Thread {
     
     AnnounceEventListener listener;
     
-    static Logger LOGGER = LoggerFactory.getLogger(ZMQInformationSubscriber.class);
+    static Logger LOGGER = LoggerFactory.getLogger(ZMQSubscriber.class);
 
-    /**
-     * Construct a ZMQInformationConsumer given a local port where binding to.
-     */
-    public ZMQInformationSubscriber(int localPort) {
-	this.localPort = localPort;
-    }
     
     /**
-     * Construct a ZMQInformationConsumer given a remote host and remote 
-     * port where connecting to.
+     * Construct a ZMQSubscriber given a remote host, a remote 
+     * port where connecting to and a message filter.
      */
-    public ZMQInformationSubscriber(String remHost, int remPort) {
+    public ZMQSubscriber(String remHost, int remPort, String filter) {
+        this(remHost, remPort, filter, ZMQ.context(1));
+    } 
+    
+    /**
+     * Construct a ZMQInformationConsumer given a remote host, a remote 
+     * port where connecting to, a message filter and an existing ZMQ.Context.
+     */
+    public ZMQSubscriber(String remHost, int remPort, String filter, ZMQ.Context context) {
 	remoteHost = remHost;
 	remotePort = remPort;
+        messageFilter = filter;
+        
+        this.context = context;
+        subscriberSocket = this.context.socket(ZMQ.SUB);
+    }
+    
+    
+    /**
+     * Construct a ZMQInformationConsumer given a remote host, a remote 
+     * port where connecting to, a message filter and an existing ZMQ.Context.
+     */
+    public ZMQSubscriber(String internalURI, String filter, ZMQ.Context context) {
+	this.internalURI = internalURI;
+        messageFilter = filter;
+        
+        this.context = context;
+        subscriberSocket = this.context.socket(ZMQ.SUB);
+    }
+    
+    
+    
+    /**
+     * Construct a ZMQSubscriber given a local port where connecting to 
+     * and a message filter.
+     */
+    public ZMQSubscriber(int port, String filter) {
+        this(port, filter, ZMQ.context(1));
+    }
+    
+    
+    /**
+     * Construct a ZMQSubscriber given a local port where connecting to, 
+     * a message filter and an existing ZMQ.Context.
+     */
+    
+    public ZMQSubscriber(int port, String filter, ZMQ.Context context) {
+	localPort = port;
+        messageFilter = filter; 
+        
+        this.context = context;
+        subscriberSocket = this.context.socket(ZMQ.SUB);
     }
     
 
@@ -60,25 +106,32 @@ public class ZMQInformationSubscriber extends Thread {
      * Connect to the proxy Subscriber.
      */
     public boolean connectAndListen() {
-        String uri = "tcp://" + remoteHost + ":" + remotePort;
-        subscriber.connect(uri);
+        String uri;
+        if (remoteHost != null && remotePort != 0)
+            uri = "tcp://" + remoteHost + ":" + remotePort;
+        else {
+            uri = internalURI;
+            // sleeping before connecting to the inproc socket
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {}
+        }
+        
+        subscriberSocket.connect(uri);
         this.start();
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ex) {   
-            }
         return true;
     }
     
     
     public boolean bindAndListen() {
-        subscriber.bind("tcp://*:" + localPort);
+        subscriberSocket.bind("tcp://*:" + localPort);
         this.start();
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ex) {   
-            }
         return true;
+    }
+
+    
+    public ZMQ.Socket getSubscriberSocket() {
+        return subscriberSocket;
     }
     
 
@@ -86,7 +139,7 @@ public class ZMQInformationSubscriber extends Thread {
      * Disconnect from the DHT peers.
      */
     public boolean disconnect() {
-        subscriber.close();
+        subscriberSocket.close();
         context.term();
         return true;
     }
@@ -125,18 +178,48 @@ public class ZMQInformationSubscriber extends Thread {
     }
     
     
+    
+    public Object getProbeAttributeInfo(ID probeID, Integer field, String info) {
+        try {
+            return probeAttributes.get(probeID).getJSONObject(field.toString()).get(info);
+        } catch (JSONException e) {
+            LOGGER.error("Error while retrieving Attribute info '" + info + "': " + e.getMessage());
+            return null;
+        }
+    }
+    
+    
+    public Object getDataConsumerInfo(ID dataConsumerID, String info) {
+        try {
+            return dataConsumers.get(dataConsumerID).get(info);
+        } catch (JSONException e) {
+            LOGGER.error("Error while retrieving Data Consumer info '" + info + "': " + e.getMessage());
+            return null;
+        }
+    }
+    
+    
+    public Object getReporterInfo(ID reporterID, String info) {
+        try {
+            return reporters.get(reporterID).get(info);
+        } catch (JSONException e) {
+            LOGGER.error("Error while retrieving Probe info '" + info + "': " + e.getMessage());
+            return null;
+        }
+    }
+    
+    
     @Override
     public void run() {
-        String filter = "info.";
-        
-        subscriber.subscribe(filter.getBytes());
+        this.setName("zmq-subscriber");
+        subscriberSocket.subscribe(messageFilter.getBytes());
         
         LOGGER.info("Listening for messages");
         
         while (!Thread.currentThread ().isInterrupted()) {
-            String header = subscriber.recvStr ();
-            String content = subscriber.recvStr ();
-            LOGGER.info(header + " : " + content);
+            String header = subscriberSocket.recvStr ();
+            String content = subscriberSocket.recvStr ();
+            LOGGER.debug(header + " : " + content);
             messageHandler(content);
         }
     }
@@ -148,7 +231,7 @@ public class ZMQInformationSubscriber extends Thread {
         try {
             msgObj = new JSONObject(message);
             ID entityID = null;
-            Integer field = -1;
+            String field = null;
             
             String entityType = msgObj.getString("entity");
             String operation = msgObj.getString("operation");
@@ -157,7 +240,7 @@ public class ZMQInformationSubscriber extends Thread {
                 entityID = ID.fromString(msgObj.getJSONObject("info").getString("id"));
             }
             else
-                field = msgObj.getJSONObject("info").getInt("field");
+                field = msgObj.getJSONObject("info").getString("field");
             
             switch(entityType) {
                 case "datasource":  
@@ -170,9 +253,9 @@ public class ZMQInformationSubscriber extends Thread {
                         fireEvent(new DeannounceMessage(entityID, EntityType.DATASOURCE));
                     }
                     
-                    LOGGER.info("datasource map:\n");
+                    LOGGER.trace("datasource map:\n");
                     for (ID id: dataSources.keySet())
-                        LOGGER.info(dataSources.get(id).toString(1));
+                        LOGGER.trace(dataSources.get(id).toString(1));
                     
                     break;
                         
@@ -185,9 +268,9 @@ public class ZMQInformationSubscriber extends Thread {
                     }
                     
                     
-                    LOGGER.info("probe map:\n");
+                    LOGGER.trace("probe map:\n");
                     for (ID id: probes.keySet())
-                        LOGGER.info(probes.get(id).toString(1));
+                        LOGGER.trace(probes.get(id).toString(1));
                     
                     break;
                         
@@ -199,12 +282,12 @@ public class ZMQInformationSubscriber extends Thread {
                         
                         if (!probeAttributes.containsKey(probeID)) { 
                            attributes = new JSONObject();
-                           attributes.put(field.toString(), msgObj.getJSONObject("info").getJSONObject("properties"));
+                           attributes.put(field, msgObj.getJSONObject("info").getJSONObject("properties"));
                            probeAttributes.put(probeID, attributes);
                         }
                         else {
                             attributes = probeAttributes.get(probeID);
-                            attributes.accumulate(field.toString(), msgObj.getJSONObject("info").getJSONObject("properties"));
+                            attributes.accumulate(field, msgObj.getJSONObject("info").getJSONObject("properties"));
                             probeAttributes.put(probeID, attributes);
                         }
                         
@@ -212,14 +295,17 @@ public class ZMQInformationSubscriber extends Thread {
                     
                     else if (operation.equals("remove")) {
                         attributes = probeAttributes.get(probeID);
-                        attributes.remove(field.toString());
+                        if (attributes == null)
+                            break;
+                        if (attributes.has(field))
+                            attributes.remove(field);
                         if (!attributes.keys().hasNext())
                             probeAttributes.remove(probeID);
                     }
                     
-                    LOGGER.info("probeattribute map:\n");
+                    LOGGER.trace("probeattribute map:\n");
                     for (ID id: probeAttributes.keySet())
-                        LOGGER.info(probeAttributes.get(id).toString(1));
+                        LOGGER.trace(probeAttributes.get(id).toString(1));
                     
                     break;
                     
@@ -227,17 +313,28 @@ public class ZMQInformationSubscriber extends Thread {
                 case "dataconsumer":  
                     if (operation.equals("add")) {
                         dataConsumers.put(entityID, msgObj.getJSONObject("info"));
-                        // trigger announce event
+                        fireEvent(new AnnounceMessage(entityID, EntityType.DATACONSUMER));
                     }
                     else if (operation.equals("remove")) {
                         dataConsumers.remove(entityID);
-                        // trigger deannounce event
+                        fireEvent(new DeannounceMessage(entityID, EntityType.DATACONSUMER));
                     }
                     break;
                         
                 case "reporter":  
-                    break;        
-                        
+                    if (operation.equals("add")) {
+                        reporters.put(entityID, msgObj.getJSONObject("info"));
+                    }
+                    else if (operation.equals("remove")) {
+                        reporters.remove(entityID);
+                    }
+                    
+                    
+                    LOGGER.debug("reporters map:\n");
+                    for (ID id: reporters.keySet())
+                        LOGGER.debug(reporters.get(id).toString(1));
+                    
+                    break;      
             }
             
             

@@ -5,13 +5,14 @@
  */
 package eu.reservoir.monitoring.core;
 
+import eu.fivegex.monitoring.im.delegate.ReporterInformationManager;
 import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author uceeftu
  */
-public abstract class AbstractReporter implements ControllableReporter {
+public abstract class AbstractReporterWithInfoPlaneDelegate implements ControllableReporter {
     /**
     * The Reporter ID
     */
@@ -22,13 +23,22 @@ public abstract class AbstractReporter implements ControllableReporter {
     */
     ID dcId;
         
-
-    public AbstractReporter(String name) {
+    protected ReporterInformationManager reporterInfoPlaneDelegate;
+    
+    
+    public AbstractReporterWithInfoPlaneDelegate(String name) {
         myId = ID.generate();
-        LoggerFactory.getLogger(AbstractReporter.class).debug("Reporter ID: " + myId);
+        LoggerFactory.getLogger(AbstractReporterWithInfoPlaneDelegate.class).debug("Reporter ID: " + myId);
         this.name = name;
     }
     
+    public void setInfoPlaneDelegate(ReporterInformationManager infoManager) {
+        reporterInfoPlaneDelegate = infoManager;
+    }
+    
+    public ReporterInformationManager setInfoPlaneDelegate() {
+        return reporterInfoPlaneDelegate;
+    }
     
     @Override
     public ID getId() {
@@ -61,6 +71,7 @@ public abstract class AbstractReporter implements ControllableReporter {
     public void setDcId(ID dcId) {
         this.dcId = dcId;
     }
+    
     
     @Override
     public abstract void report(Measurement m);

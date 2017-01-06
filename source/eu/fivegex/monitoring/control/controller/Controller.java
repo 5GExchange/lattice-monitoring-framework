@@ -34,7 +34,7 @@ import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegateInteracter;
-import eu.fivegex.monitoring.im.zmq.ZMQInfoPlaneConsumer;
+import eu.fivegex.monitoring.im.zmq.ZMQControllerInfoPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 
 /**
@@ -72,14 +72,14 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         Integer transmitterPoolSize = (Integer) pr.getOrDefault("control.poolsize", 8);
         
         // Controller is the root of the infoPlane - other nodes use it to perform bootstrap
-        InfoPlane infoPlane = new DHTInfoPlaneRoot(infoPlanePort);
-        //InfoPlane infoPlane = new ZMQInfoPlaneConsumer(infoPlanePort);
+        //InfoPlane infoPlane = new DHTInfoPlaneRoot(infoPlanePort);
+        InfoPlane infoPlane = new ZMQControllerInfoPlane(infoPlanePort);
         
         // we get the ControlInformationManager from the InfoPlane
         controlInformationManager = ((InfoPlaneDelegateInteracter) infoPlane).getInfoPlaneDelegateInteracter();
         
         // setting the InfoPlane to send announce events to the ControlInformationManager
-        ((DHTInfoPlaneRoot) infoPlane).addAnnounceEventListener(controlInformationManager);
+        //((DHTInfoPlaneRoot) infoPlane).addAnnounceEventListener(controlInformationManager);
         
 	setInfoPlane(infoPlane);
         
@@ -575,7 +575,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         
         // setting some default values
         String remoteInfoHost = InetAddress.getLoopbackAddress().getHostName();
-        int infoPlanePort = 6969; // the same port is used as remote and local by DHTInfoPlaneRoot
+        int infoPlanePort = 6699; // the same port is used as remote and local by DHTInfoPlaneRoot
         int restConsolePort = 6666;
         String probePackage = "eu.fivegex.monitoring.appl.probes";
         String probeSuffix = "Probe";
@@ -621,6 +621,6 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         }
         
         Controller myController = Controller.getInstance();
-        myController.init(/*remoteInfoHost,*/ infoPlanePort, restConsolePort, probePackage, probeSuffix, prop);
+        myController.init(infoPlanePort, restConsolePort, probePackage, probeSuffix, prop);
     }
 }

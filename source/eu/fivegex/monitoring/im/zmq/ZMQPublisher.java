@@ -1,6 +1,9 @@
 package eu.fivegex.monitoring.im.zmq;
 
+import eu.fivegex.monitoring.appl.dataconsumers.DefaultControllableDataConsumer;
+import eu.reservoir.monitoring.core.ControllableDataConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
+import eu.reservoir.monitoring.core.ControllableReporter;
 import eu.reservoir.monitoring.core.DataSource;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
@@ -13,26 +16,29 @@ import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
 /**
- * An ZMQInformationPublisher is responsible for sending information about  DataSource, ControllableDataConsumer and Probe
+ * An ZMQPublisher is responsible for sending information about  DataSource, ControllableDataConsumer and Probe
  attributes on the InfoPlane using ZMQ.
 **/
 
-public class ZMQInformationPublisher {
+public class ZMQPublisher {
     String remoteHost;
     int remotePort = 0;
     
-    ZMQ.Context context = ZMQ.context(1);
-    ZMQ.Socket publisher = context.socket(ZMQ.PUB);
+    ZMQ.Context context;
+    ZMQ.Socket publisherSocket;
     
-    static Logger LOGGER = LoggerFactory.getLogger(ZMQInformationPublisher.class);
+    static Logger LOGGER = LoggerFactory.getLogger(ZMQPublisher.class);
 
     /**
      * Construct an InfoFormatter, given a remote Consumer host
      * and a remote port.
      */
-    public ZMQInformationPublisher(String remHost, int remPort) {
+    public ZMQPublisher(String remHost, int remPort) {
 	remoteHost = remHost;
 	remotePort = remPort;
+        
+        context = ZMQ.context(1);
+        publisherSocket = context.socket(ZMQ.PUB);
     }
     
 
@@ -41,7 +47,7 @@ public class ZMQInformationPublisher {
      */
     public boolean connect() {
         String uri = "tcp://" + remoteHost + ":" + remotePort;
-        publisher.connect(uri);
+        publisherSocket.connect(uri);
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {   
@@ -53,7 +59,7 @@ public class ZMQInformationPublisher {
      * Disconnect from the DHT peers.
      */
     public boolean disconnect() {
-        publisher.close();
+        publisherSocket.close();
         context.term();
         return true;
     }
@@ -61,40 +67,17 @@ public class ZMQInformationPublisher {
     public String getRootHostname() {
         return this.remoteHost;
     }
+
     
-//    public ZMQInformationPublisher addDataConsumer(ControllableDataConsumer dc) throws IOException {
-//        sendInfo("/dataconsumer/" + dc.getID() + "/name", dc.getName());        
-//        sendInfo("/dataconsumer/" + dc.getID() + "/inetSocketAddress", dc.getControlPlane().getControlEndPoint());
-//        
-//        for (ControllableReporter r: dc.getReportersCollection()) {
-//            if (r instanceof ControllableReporter)
-//                addReporter((ControllableReporter)r);
-//        }
-//        
-//        return this;
-//    }
-    
-    
-//    public ZMQInformationPublisher addDataConsumerInfo(ControllableDataConsumer dc) throws IOException {
-//        // this maps the name to the ID
-//	sendInfo("/dataconsumer/name/" + dc.getName(), dc.getID().toString()); 
-//        
-//        if (dc instanceof DefaultControllableDataConsumer)
-//            sendInfo("/dataconsumer/" + dc.getID() + "/pid", ((DefaultControllableDataConsumer) dc).getMyPID());       
-//	return this;
-//    }
-//    
-//    public ZMQInformationPublisher addReporter(ControllableReporter r) throws IOException {
-//        sendInfo("/reporter/" + r.getId() + "/name", r.getName());
-//        sendInfo("/reporter/" + r.getId() + "/dataconsumer", r.getDcId().toString());
-//        return this;
-//    }
+    public ZMQ.Context getContext() {
+        return context;
+    }
     
     
     /**
      * Add data for a DataSource
      */
-    public ZMQInformationPublisher addDataSource(DataSource ds) throws IOException {
+    public ZMQPublisher addDataSource(DataSource ds) throws IOException {
         JSONObject infoObj = new JSONObject();
         JSONObject dataSourceInfo = new JSONObject();
         
@@ -151,7 +134,7 @@ public class ZMQInformationPublisher {
     /**
      * Add data for a Probe.
      */
-    public ZMQInformationPublisher addProbe(Probe aProbe) throws IOException {
+    public ZMQPublisher addProbe(Probe aProbe) throws IOException {
         DataSource ds = (DataSource)aProbe.getProbeManager();
         JSONObject infoObj = new JSONObject();
         try {
@@ -185,7 +168,7 @@ public class ZMQInformationPublisher {
     /**
      * Add data for a ProbeAttribute.
      */
-    public ZMQInformationPublisher addProbeAttribute(Probe aProbe, ProbeAttribute attr)  throws IOException {
+    public ZMQPublisher addProbeAttribute(Probe aProbe, ProbeAttribute attr)  throws IOException {
         JSONObject infoObj = new JSONObject();
         JSONObject attrInfo = new JSONObject();
         
@@ -212,20 +195,78 @@ public class ZMQInformationPublisher {
         
 	return this;
     }
+    
+    
+    public ZMQPublisher addDataConsumer(ControllableDataConsumer dc) throws IOException {
+        JSONObject infoObj = new JSONObject();
+        JSONObject dataConsumerInfo = new JSONObject();
+        
+        try {
+            dataConsumerInfo.put("id", dc.getID().toString());
+            dataConsumerInfo.put("name", dc.getName());
+            
+            if (dc instanceof DefaultControllableDataConsumer) {
+                dataConsumerInfo.put("pid",  ((DefaultControllableDataConsumer) dc).getMyPID());
+                dataConsumerInfo.put("controlendpoint", dc.getControlPlane().getControlEndPoint());
+            }
+            
+            infoObj.put("entity", "dataconsumer");
+            infoObj.put("operation", "add"); // FIXME: could use an ENUM
+            infoObj.put("info", dataConsumerInfo);
+ 
+        } catch(JSONException e) {
+            LOGGER.error("Error while formatting info" + e.getMessage());
+        }
+        
+        sendInfo("info.dataconsumer", infoObj.toString());    
+        
+        Collection<ControllableReporter> reporters = dc.getReportersCollection();
+
+	for (ControllableReporter aReporter : reporters) {
+	    addReporter(aReporter);
+	}
+        
+	return this;
+    }
+    
+    
+    
+    public ZMQPublisher addReporter(ControllableReporter r) throws IOException {
+        JSONObject infoObj = new JSONObject();
+        try {
+            JSONObject reporterInfo = new JSONObject();
+            
+            reporterInfo.put("id", r.getId().toString());
+            reporterInfo.put("name", r.getName());
+            reporterInfo.put("dataconsumer", r.getDcId().toString());
+        
+            infoObj.put("entity", "reporter");
+            infoObj.put("operation", "add"); //FIXME
+            infoObj.put("info", reporterInfo);
+            
+        } catch (JSONException e) {
+            LOGGER.error("Error" + e.getMessage());
+        }
+
+        sendInfo("info.reporter", infoObj.toString());
+
+	return this;
+    }
+    
 
     /*
      * Modify stuff
      */
-//    public ZMQInformationPublisher modifyDataSource(DataSource ds) throws IOException {
+//    public ZMQPublisher modifyDataSource(DataSource ds) throws IOException {
 //	// remove then add
 //	throw new IOException("Not implemented yet!!");
 //    }
 //
-//    public ZMQInformationPublisher modifyProbe(Probe p) throws IOException {
+//    public ZMQPublisher modifyProbe(Probe p) throws IOException {
 //	throw new IOException("Not implemented yet!!");
 //    }
 //
-//    public ZMQInformationPublisher modifyProbeAttribute(Probe p, ProbeAttribute pa)  throws IOException {
+//    public ZMQPublisher modifyProbeAttribute(Probe p, ProbeAttribute pa)  throws IOException {
 //	throw new IOException("Not implemented yet!!");
 //    }
 
@@ -233,7 +274,7 @@ public class ZMQInformationPublisher {
     /*
      * Remove stuff
      */
-    public ZMQInformationPublisher removeDataSource(DataSource ds) throws IOException {
+    public ZMQPublisher removeDataSource(DataSource ds) throws IOException {
         JSONObject infoObj = new JSONObject();
         try {
             JSONObject dsInfo = new JSONObject();
@@ -260,7 +301,7 @@ public class ZMQInformationPublisher {
 	return this;
     }
 
-    public ZMQInformationPublisher removeProbe(Probe aProbe) throws IOException {
+    public ZMQPublisher removeProbe(Probe aProbe) throws IOException {
         JSONObject infoObj = new JSONObject();
         try {
             JSONObject probeInfo = new JSONObject();
@@ -287,7 +328,7 @@ public class ZMQInformationPublisher {
     }
     
 
-    public ZMQInformationPublisher removeProbeAttribute(Probe aProbe, ProbeAttribute attr)  throws IOException {
+    public ZMQPublisher removeProbeAttribute(Probe aProbe, ProbeAttribute attr)  throws IOException {
 	JSONObject infoObj = new JSONObject();
         try {
             JSONObject probeAttrsInfo = new JSONObject();
@@ -310,96 +351,63 @@ public class ZMQInformationPublisher {
     }
 
     
-//    public ZMQInformationPublisher removeDataConsumer(ControllableDataConsumer dc) throws IOException {
-//	remDHT("/dataconsumer/" + dc.getID() + "/name");
-//        remDHT("/dataconsumer/" + dc.getID() + "/inetSocketAddress"); //we also need to remove the control end point
-//        remDHT("/dataconsumer/name/" + dc.getName()); 
-//        
-//        if (dc instanceof DefaultControllableDataConsumer)
-//            remDHT("/dataconsumer/" + dc.getID() + "/pid");
-//
-//	// skip through all reporters
-//	for (ControllableReporter r : dc.getReportersCollection()) {
-//	    removeReporter((ControllableReporter)r);
-//	}        
-//	return this;
-//    }
-//    
-//    
-//    public ZMQInformationPublisher removeReporter(ControllableReporter r) throws IOException {
-//        remDHT("/reporter/" + r.getId() + "/name");
-//        remDHT("/reporter/" + r.getId() + "/dataconsumer");
-//        return this;
-//    }
-    
+    public ZMQPublisher removeDataConsumer(ControllableDataConsumer dc) throws IOException {
+        JSONObject infoObj = new JSONObject();
+        try {
+            JSONObject dcInfo = new JSONObject();
+            
+            dcInfo.put("id", dc.getID().toString());
+        
+            infoObj.put("entity","dataconsumer");
+            infoObj.put("operation", "remove"); // FIXME: could use an ENUM
+            infoObj.put("info", dcInfo);
+            
+            
+        } catch (JSONException e) {
+             LOGGER.error("Error" + e.getMessage());
+        }
+        
+        Collection<ControllableReporter> reporters = dc.getReportersCollection();
 
-    /**
-     * Lookup DataSource info
-     */
-//    public Object getDataSourceInfo(ID dsID, String info) {
-//	return getDHT("/datasource/" + dsID + "/" + info);
-//    }
-//
-//    /**
-//     * Lookup probe details.
-//     */
-//    public Object getProbeInfo(ID probeID, String info) {
-//	return getDHT("/probe/" + probeID + "/" + info);
-//    }
-//
-//    /**
-//     * Lookup probe attribute details.
-//     */
-//    public Object getProbeAttributeInfo(ID probeID, int field, String info) {
-//	return getDHT("/probeattribute/" + probeID + "/" + field + "/" + info);
-//    }
-//
-//    /**
-//     * Lookup ControllableDataConsumer info
-//     */
-//    public Object getDataConsumerInfo(ID dcID, String info) {
-//	return getDHT("/dataconsumer/" + dcID + "/" + info);
-//    }
-//    
-//    
-//    /**
-//     * Lookup Reporter info
-//     */
-//    public Object getReporterInfo(ID reporterID, String info) {
-//	return getDHT("/reporter/" + reporterID + "/" + info);
-//    }
-//    
-//    
-//    public boolean containsDataSource(ID dataSourceID, int timeout) {
-//        try {
-//            String newKey = "/datasource/" + dataSourceID + "/name";
-//            return dht.contains(newKey, timeout);
-//        } 
-//        catch (IOException ioe) {
-//            LOGGER.error("ContainsDataSource failed for DS " + dataSourceID + ioe.getMessage());
-//            return false;
-//        }
-//    }
-//    
-//    public boolean containsDataConsumer(ID dataConsumerID, int timeout) {
-//        try {
-//            String newKey = "/dataconsumer/" + dataConsumerID + "/name";
-//            return dht.contains(newKey, timeout);
-//        } 
-//        catch (IOException ioe) {
-//            LOGGER.error("ContainsDataConsumer failed for DS " + dataConsumerID + ioe.getMessage());
-//            return false;
-//        }
-//    }
+	for (ControllableReporter aReporter : reporters) {
+	    removeReporter(aReporter);
+	}
+	  
+        sendInfo("info.dataconsumer", infoObj.toString());
+        
+	return this;
+    }
+    
+    
+    public ZMQPublisher removeReporter(ControllableReporter r) throws IOException {
+        JSONObject infoObj = new JSONObject();
+        try {
+            JSONObject reporterInfo = new JSONObject();
+            
+            reporterInfo.put("id", r.getId().toString());
+        
+            infoObj.put("entity","reporter");
+            infoObj.put("operation", "remove"); // FIXME: could use an ENUM
+            infoObj.put("info", reporterInfo);
+            
+            
+        } catch (JSONException e) {
+             LOGGER.error("Error" + e.getMessage());
+        }
+        
+        sendInfo("info.reporter", infoObj.toString());
+        
+        return this;
+    }
     
 
     /**
      * Send stuff to the Subscribers.
      */
     public boolean sendInfo(String aKey, String aValue) {
-	LOGGER.info("sending " + aKey + " => " + aValue);
-        publisher.sendMore(aKey);
-        publisher.send(aValue);
+	LOGGER.debug("sending " + aKey + " => " + aValue);
+        publisherSocket.sendMore(aKey);
+        publisherSocket.send(aValue);
 	return true;    
     }
     
