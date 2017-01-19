@@ -2,6 +2,7 @@ package eu.fivegex.monitoring.appl.datasources;
 
 import eu.reservoir.monitoring.core.DefaultControllableDataSource;
 import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneXDRConsumer;
+import eu.fivegex.monitoring.control.zmq.ZMQDataSourceControlPlaneXDRConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
@@ -19,14 +20,14 @@ import org.slf4j.LoggerFactory;
  * This DataSource in a basic control point for probes that uses a Control Plane and an Info Plane and 
  * logs out/err to a file rather than standard streams.
  **/
-public final class DataSourceDaemonTEST extends Thread {
+public final class ZMQDataSourceDaemon extends Thread {
     ControllableDataSource dataSource;
     
     ID dataSourceID;
     String dataSourceName;
     
     InetSocketAddress dataConsumerPair;
-    InetSocketAddress localCtrlPair;
+    InetSocketAddress ctrlPair;
     InetSocketAddress remoteCtrlPair;
     
     String remoteInfoHost;
@@ -45,11 +46,11 @@ public final class DataSourceDaemonTEST extends Thread {
      * @param infoPlaneRootName the host name of the Info Plane node to bootstrap to (i.e., the Controller)
      * @param infoPlaneRootPort the port of the Info Plane node to bootstrap to (i.e., the Controller)
      * @param infoPlaneLocalPort the port to be used locally to connect to the Info Plane
-     * @param localControlEndPoint the Control Plane address visible to the other nodes
-     * @param controlPlaneLocalPort the Control Plane port visible to the other nodes
+     * @param controlHostAddress the Control Plane address visible to the other nodes
+     * @param controlHostPort the Control Plane port visible to the other nodes
      **/
     
-    public DataSourceDaemonTEST(
+    public ZMQDataSourceDaemon(
                            String myID,
                            String myDSName, 
                            String dataConsumerName, 
@@ -57,8 +58,8 @@ public final class DataSourceDaemonTEST extends Thread {
                            String infoPlaneRootName,   
                            int infoPlaneRootPort,
                            int infoPlaneLocalPort,
-                           String localControlEndPoint,
-                           int controlPlaneLocalPort
+                           String controlHostAddress,
+                           int controlHostPort
                            ) throws UnknownHostException {
     
     
@@ -66,7 +67,7 @@ public final class DataSourceDaemonTEST extends Thread {
         this.dataSourceName = myDSName;
         
         this.dataConsumerPair = new InetSocketAddress(InetAddress.getByName(dataConsumerName), dataConsumerPort);
-        this.localCtrlPair = new InetSocketAddress(InetAddress.getByName(localControlEndPoint), controlPlaneLocalPort);
+        this.ctrlPair = new InetSocketAddress(InetAddress.getByName(controlHostAddress), controlHostPort);
         
         this.remoteInfoHost = infoPlaneRootName;
         this.localInfoPort = infoPlaneLocalPort;
@@ -90,7 +91,7 @@ public final class DataSourceDaemonTEST extends Thread {
     * @param controlRemotePort the Controller port to send the Announce Messages to
     **/
     
-    public DataSourceDaemonTEST(
+    public ZMQDataSourceDaemon(
                            String myID,
                            String myDSName, 
                            String dataConsumerName, 
@@ -103,7 +104,6 @@ public final class DataSourceDaemonTEST extends Thread {
                            int controlRemotePort) throws UnknownHostException {
     
         this(myID, myDSName, dataConsumerName, dataConsumerPort, infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort,localControlEndPoint, controlPlaneLocalPort);
-        //this.remoteCtrlPair = new InetSocketAddress(InetAddress.getLocalHost(), controlRemotePort);
     }
 
 
@@ -117,19 +117,22 @@ public final class DataSourceDaemonTEST extends Thread {
         LOGGER.info("Process ID: " + dataSource.getMyPID());
         LOGGER.info("Using Data Source name: " + dataSourceName);
         LOGGER.info("Sending measurements to Data Consumer: " + dataConsumerPair.getHostName() + ":" + dataConsumerPair.getPort());
-        LOGGER.info("Connecting to the Control Plane using: " + localCtrlPair.getPort() + ":" + localCtrlPair.getHostName());
+        LOGGER.info("Connecting to the Control Plane: " + ctrlPair.getHostName() + ":" + ctrlPair.getPort());
         
 	// set up the planes
 	dataSource.setDataPlane(new UDPDataPlaneProducer(dataConsumerPair));
         
-        // TEST
+        // ZMQ Info Plane
         dataSource.setInfoPlane(new ZMQDataSourceInfoPlane(remoteInfoHost, remoteInfoPort));
         //
         
-        if (this.remoteCtrlPair != null)
-            dataSource.setControlPlane(new UDPDataSourceControlPlaneXDRConsumer(localCtrlPair, remoteCtrlPair));
-        else
-            dataSource.setControlPlane(new UDPDataSourceControlPlaneXDRConsumer(localCtrlPair));
+        // if (this.remoteCtrlPair != null)
+        //    dataSource.setControlPlane(new UDPDataSourceControlPlaneXDRConsumer(ctrlPair, remoteCtrlPair));
+        // else
+            //dataSource.setControlPlane(new UDPDataSourceControlPlaneXDRConsumer(ctrlPair));
+            
+        // ZMQ Control Plane    
+        dataSource.setControlPlane(new ZMQDataSourceControlPlaneXDRConsumer(ctrlPair));
         
 	if (!dataSource.connect()) {
             LOGGER.error("Error while connecting to the Planes");
@@ -161,7 +164,7 @@ public final class DataSourceDaemonTEST extends Thread {
         System.setProperty(org.slf4j.impl.SimpleLogger.SHOW_THREAD_NAME_KEY, "false");
         //System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "debug");
         
-        LOGGER = LoggerFactory.getLogger(DataSourceDaemonTEST.class);
+        LOGGER = LoggerFactory.getLogger(ZMQDataSourceDaemon.class);
     }
     
     
@@ -192,8 +195,7 @@ public final class DataSourceDaemonTEST extends Thread {
             int infoRemotePort= 6699;
             int infoLocalPort = 9999;
             String controlEndPoint = null;
-            int controlLocalPort = 1111;
-            //int controllerRemotePort = 8888;
+            int controllerPort = 5555;
             
             Scanner sc;
                     
@@ -214,7 +216,7 @@ public final class DataSourceDaemonTEST extends Thread {
                     sc= new Scanner(args[4]);
                     infoLocalPort = sc.nextInt();
                     sc= new Scanner(args[5]);
-                    controlLocalPort = sc.nextInt();
+                    controllerPort = sc.nextInt();
                     dsName = controlEndPoint = InetAddress.getLocalHost().getHostName();
                     break;
                 case 7:
@@ -228,7 +230,7 @@ public final class DataSourceDaemonTEST extends Thread {
                     sc= new Scanner(args[5]);
                     infoLocalPort = sc.nextInt();
                     sc= new Scanner(args[6]);
-                    controlLocalPort = sc.nextInt();
+                    controllerPort = sc.nextInt();
                     dsName = controlEndPoint = InetAddress.getLocalHost().getHostName();
                     break;
                 default:
@@ -236,7 +238,7 @@ public final class DataSourceDaemonTEST extends Thread {
                     System.exit(1);
             }
             
-            DataSourceDaemonTEST dataSourceDaemon = new DataSourceDaemonTEST(
+            ZMQDataSourceDaemon dataSourceDaemon = new ZMQDataSourceDaemon(
                                                             dsID,
                                                             dsName, 
                                                             dataConsumerAddr, 
@@ -244,9 +246,8 @@ public final class DataSourceDaemonTEST extends Thread {
                                                             infoHost, 
                                                             infoRemotePort, 
                                                             infoLocalPort, 
-                                                            controlEndPoint, 
-                                                            controlLocalPort);
-                                                            //controllerRemotePort);
+                                                            /*controlEndPoint*/ infoHost, 
+                                                            controllerPort);
             dataSourceDaemon.init();
             
         } catch (Exception ex) {

@@ -3,27 +3,24 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.control.udp;
+package eu.fivegex.monitoring.control.zmq;
 
+import eu.fivegex.monitoring.control.udp.*;
 import eu.fivegex.monitoring.control.ControlPlaneConsumerException;
 import eu.fivegex.monitoring.control.ControlServiceException;
-import eu.fivegex.monitoring.im.delegate.ControlEndPointMetaData;
 import eu.fivegex.monitoring.im.delegate.SocketControlEndPointMetaData;
 import eu.fivegex.monitoring.im.delegate.DCNotFoundException;
 import eu.fivegex.monitoring.im.delegate.DSNotFoundException;
 import eu.fivegex.monitoring.im.delegate.ProbeNotFoundException;
 import eu.fivegex.monitoring.im.delegate.ReporterNotFoundException;
+import eu.fivegex.monitoring.im.delegate.ZMQControlEndPointMetaData;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Measurement;
 import eu.reservoir.monitoring.core.Rational;
 import eu.reservoir.monitoring.core.Timestamp;
-import eu.reservoir.monitoring.core.TypeException;
-import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage.EntityType;
-import eu.reservoir.monitoring.core.plane.AnnounceMessage;
 import eu.reservoir.monitoring.core.plane.ControlPlaneMessage;
 import eu.reservoir.monitoring.core.plane.ControlOperation;
 import eu.reservoir.monitoring.core.plane.ControllerControlPlane;
-import eu.reservoir.monitoring.core.plane.DeannounceMessage;
 import eu.reservoir.monitoring.core.plane.MessageType;
 import eu.reservoir.monitoring.distribution.MetaData;
 import eu.reservoir.monitoring.distribution.XDRDataInputStream;
@@ -39,18 +36,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer implements ControllerControlPlane {
+public class ZMQControlPlaneXDRProducer extends AbstractZMQControlPlaneProducer implements ControllerControlPlane {
     
     /**
      * Creates a Producer without announce/deannounce management capabilities
      * @param maxPoolSize is the size of the UDP Transmitters pool
      */
-    public UDPControlPlaneXDRProducer(int maxPoolSize) {
+    public ZMQControlPlaneXDRProducer(int maxPoolSize) {
         super(maxPoolSize);
-    }
-    
-    public UDPControlPlaneXDRProducer(int port, int maxPoolSize) {
-        super(port, maxPoolSize);
     }
     
 
@@ -79,8 +72,8 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
             LOGGER.debug("--------- Sending Control Message with seqNo: " + seqNo + " ----------");
 
             // getting a Transmitter from the Pool
-            UDPSynchronousTransmitter connection = controlTransmittersPool.getConnection();
-            result = connection.transmitAndWaitReply(byteStream, (UDPControlMetaData)metadata, seqNo);
+            ZMQRequester connection = controlTransmittersPool.getConnection();
+            result = connection.transmitAndWaitReply(byteStream, (ZMQControlMetaData)metadata, seqNo);
 
             // putting the Transmitter back to the Pool
             controlTransmittersPool.releaseConnection(connection);
@@ -121,7 +114,7 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
 
                 byte [] args = new byte[8192];
                 dataIn.readFully(args);
-
+                
                 try {
                     ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(args));
                     result = (Object) ois.readObject();
@@ -143,55 +136,6 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         return result;
     }
 
-    
-    
-    @Override
-    // called when an Announce/Deannounce Message is received
-    public void received(ByteArrayInputStream bis, MetaData metaData) throws IOException, TypeException {
-        try {
-	    DataInput dataIn = new XDRDataInputStream(bis);
-            
-	    // check message type
-	    int type = dataIn.readInt();            
-	    MessageType mType = MessageType.lookup(type);
-            
-	    if (mType == null) {
-                throw new Exception("Message type is null");
-	    }
-            
-            else if (mType == MessageType.ANNOUNCE || mType == MessageType.DEANNOUNCE) {
-                    Integer e = dataIn.readInt();
-                    EntityType entity = EntityType.lookup(e);
-
-                    long entityIDMSB = dataIn.readLong();
-                    long entityIDLSB = dataIn.readLong();
-                    ID entityID = new ID(entityIDMSB, entityIDLSB);
-                    if (mType == MessageType.ANNOUNCE) {
-                        LOGGER.debug("-------- Announce Message Received ---------");
-                        fireEvent(new AnnounceMessage(entityID, entity));
-                    }
-                    else {
-                        LOGGER.debug("-------- Dennounce Message Received ---------");
-                        fireEvent(new DeannounceMessage(entityID, entity));
-                    }
-                        
-                }         
-        }
-        catch (Exception exception) {
-            LOGGER.error("error while reading Announce/Deannounce message: " + exception.getMessage());
-        }
-        
-    }
-
-    @Override
-    public void eof() {
-        disconnect();
-    }
-    
-    @Override
-    public void error(Exception e) {
-        LOGGER.error("UDP Control Plane Producer error: " + e.getMessage());
-    }
     
     @Override
     public boolean transmitted(int id) {
@@ -217,10 +161,14 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.LOAD_PROBE, args);
         
         try {
-            SocketControlEndPointMetaData dstAddr = (SocketControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromID(dataSourceID);
-            MetaData mData = new UDPControlMetaData(dstAddr.getHost(), dstAddr.getPort());
-            //we return the ID of the new created probe as result
-            probeID = (ID) synchronousTransmit(m, mData);
+            ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromID(dataSourceID);
+            
+            MetaData mData;
+            if (dstAddr.getType().equals("zmq")) {
+                mData = new ZMQControlMetaData(dataSourceID.toString());
+                //we return the ID of the new created probe as result
+                probeID = (ID) synchronousTransmit(m, mData);
+            }  
         } catch (IOException | DSNotFoundException | ControlPlaneConsumerException ex) {
             LOGGER.error("Error while performing load probe command " + ex.getMessage());
             throw new ControlServiceException(ex);
@@ -236,9 +184,11 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.UNLOAD_PROBE, args);
         try {
-            SocketControlEndPointMetaData dstAddr = (SocketControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
-            MetaData mData = new UDPControlMetaData(dstAddr.getHost(), dstAddr.getPort());
+            ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
+            
+            MetaData mData = new ZMQControlMetaData(dstAddr.getId().toString());
             result = (Boolean) synchronousTransmit(m, mData);
+            
         } catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
             LOGGER.error("Error while performing unload probe command " + ex.getMessage());
             throw new ControlServiceException(ex);
@@ -271,9 +221,11 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.SET_PROBE_SERVICE_ID, args);
         try {
-            SocketControlEndPointMetaData dstAddr = (SocketControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
-            MetaData mData = new UDPControlMetaData(dstAddr.getHost(), dstAddr.getPort());
+            ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
+            
+            MetaData mData = new ZMQControlMetaData(dstAddr.getId().toString());
             result = (Boolean) synchronousTransmit(m, mData);
+            
         } catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
             LOGGER.error("Error while performing set probe service ID command " + ex.getMessage());
             throw new ControlServiceException(ex);
@@ -297,9 +249,11 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.SET_PROBE_GROUP_ID, args);
         try {
-            SocketControlEndPointMetaData dstAddr = (SocketControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
-            MetaData mData = new UDPControlMetaData(dstAddr.getHost(), dstAddr.getPort());
+            ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
+            
+            MetaData mData = new ZMQControlMetaData(dstAddr.getId().toString());
             result = (Boolean) synchronousTransmit(m, mData);
+           
         } catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
             LOGGER.error("Error while performing set probe group ID command " + ex.getMessage());
             throw new ControlServiceException(ex);
@@ -323,8 +277,9 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.SET_PROBE_DATA_RATE, args);
         
         try {
-            SocketControlEndPointMetaData dstAddr = (SocketControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
-            MetaData mData = new UDPControlMetaData(dstAddr.getHost(), dstAddr.getPort());
+            ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
+            
+            MetaData mData = new ZMQControlMetaData(dstAddr.getId().toString());
             result = (Boolean) synchronousTransmit(m, mData);
         } 
           catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
@@ -353,15 +308,17 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.TURN_ON_PROBE, args);
         try {
-            SocketControlEndPointMetaData dstAddr = (SocketControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
-            MetaData mData = new UDPControlMetaData(dstAddr.getHost(), dstAddr.getPort());
+            ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
+            
+            MetaData mData = new ZMQControlMetaData(dstAddr.getId().toString());
             result = (Boolean) synchronousTransmit(m, mData);
+            
+            return result;
+            
         } catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
             LOGGER.error("Error while performing turn on probe command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
-        
-        return result;
         }
 
     @Override
@@ -372,9 +329,11 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.TURN_OFF_PROBE, args);
         try {
-            SocketControlEndPointMetaData dstAddr = (SocketControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
-            MetaData mData = new UDPControlMetaData(dstAddr.getHost(), dstAddr.getPort());
+            ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
+            
+            MetaData mData = new ZMQControlMetaData(dstAddr.getId().toString());
             result = (Boolean) synchronousTransmit(m, mData);
+            
             return result;
         } catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
             LOGGER.error("Error while performing turn off probe command " + ex.getMessage());
@@ -408,19 +367,22 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         List<Object> args = new ArrayList();
         args.add(id);
         
-        String name;
+        String name = null;
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.GET_DS_NAME, args);
         
         try {
-            SocketControlEndPointMetaData dstAddr = (SocketControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromID(id);
-            MetaData mData = new UDPControlMetaData(dstAddr.getHost(), dstAddr.getPort());            
+            ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromID(id);
+            
+            MetaData mData = new ZMQControlMetaData(dstAddr.getId().toString());
             name = (String) synchronousTransmit(m, mData);
+            
+            return name;
+            
         } catch (IOException | DSNotFoundException | ControlPlaneConsumerException ex) {
             LOGGER.error("Error while performing getDataSourceName command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
-        return name;
     }
 
     @Override
@@ -441,8 +403,8 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.GET_DC_RATE, args);
         
         try {
-            SocketControlEndPointMetaData dstAddr = (SocketControlEndPointMetaData)infoPlaneDelegate.getDCAddressFromID(dcId);
-            MetaData mData = new UDPControlMetaData(dstAddr.getHost(), dstAddr.getPort());            
+            ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDCAddressFromID(dcId);
+            MetaData mData = new ZMQControlMetaData(dstAddr.getId().toString());    
             rate = (Float) synchronousTransmit(m, mData);
         } catch (IOException | DCNotFoundException | ControlPlaneConsumerException ex) {
             LOGGER.error("Error while performing getDCMeasurementsRate command " + ex.getMessage());
@@ -463,8 +425,8 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.LOAD_REPORTER, args);
         
         try {
-            SocketControlEndPointMetaData dstAddr = (SocketControlEndPointMetaData)infoPlaneDelegate.getDCAddressFromID(dataConsumerID);
-            MetaData mData = new UDPControlMetaData(dstAddr.getHost(), dstAddr.getPort());
+            ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDCAddressFromID(dataConsumerID);
+            MetaData mData = new ZMQControlMetaData(dstAddr.getId().toString());
             //we return the ID of the new created reporter as result
             reporterID = (ID) synchronousTransmit(m, mData);
         } catch (IOException | DCNotFoundException | ControlPlaneConsumerException ex) {
@@ -483,8 +445,8 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.UNLOAD_REPORTER, args);
         try {
-            SocketControlEndPointMetaData dstAddr = (SocketControlEndPointMetaData)infoPlaneDelegate.getDCAddressFromReporterID(reporterID);
-            MetaData mData = new UDPControlMetaData(dstAddr.getHost(), dstAddr.getPort());
+            ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDCAddressFromReporterID(reporterID);
+            MetaData mData = new ZMQControlMetaData(dstAddr.getId().toString());
             result = (Boolean) synchronousTransmit(m, mData);
         } catch (IOException | DCNotFoundException | ReporterNotFoundException | ControlPlaneConsumerException ex) {
             LOGGER.error("Error while performing unloadReporter command " + ex.getMessage());

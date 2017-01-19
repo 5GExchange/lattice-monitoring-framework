@@ -3,19 +3,16 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.control.udp;
+package eu.fivegex.monitoring.control.zmq;
 
 import eu.fivegex.monitoring.control.SynchronousTransmitting;
+import eu.fivegex.monitoring.control.udp.*;
 import eu.fivegex.monitoring.control.ControlPlaneConsumerException;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegateInteracter;
-import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
-import eu.reservoir.monitoring.core.plane.AnnounceEventListener;
 import eu.reservoir.monitoring.core.plane.ControllerControlPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlaneMessage;
 import eu.reservoir.monitoring.distribution.MetaData;
-import eu.reservoir.monitoring.distribution.Receiving;
-import eu.reservoir.monitoring.distribution.udp.UDPReceiver;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
 import org.slf4j.Logger;
@@ -30,27 +27,19 @@ import us.monoid.json.JSONObject;
  * implementation does not provide that functionality)
  * @author uceeftu
  */
-public abstract class AbstractUDPControlPlaneProducer implements 
-        ControllerControlPlane, SynchronousTransmitting, Receiving, InfoPlaneDelegateInteracter  {
+public abstract class AbstractZMQControlPlaneProducer implements 
+        ControllerControlPlane, SynchronousTransmitting, InfoPlaneDelegateInteracter  {
     
-    UDPReceiver AnnounceListener;
-    UDPTransmitterPool controlTransmittersPool;
+    ZMQRouter zmqRouter;
+    ZMQRequesterPool controlTransmittersPool;
     int maxPoolSize;
-    int announceListenerPort;
     
     InfoPlaneDelegate infoPlaneDelegate;
-    AnnounceEventListener listener;
     
-    static Logger LOGGER = LoggerFactory.getLogger("UDPControlPlaneProducer");
+    static Logger LOGGER = LoggerFactory.getLogger("ZMQControlPlaneProducer");
     
-    public AbstractUDPControlPlaneProducer(int maxPoolSize) {
-        this.announceListenerPort = -1;
-        this.maxPoolSize = maxPoolSize;
-    }
-    
-    
-    public AbstractUDPControlPlaneProducer(int port, int maxPoolSize) {
-        this.announceListenerPort = port;
+    public AbstractZMQControlPlaneProducer(int maxPoolSize) {
+        this.zmqRouter = new ZMQRouter();
         this.maxPoolSize = maxPoolSize;
     }
     
@@ -58,16 +47,12 @@ public abstract class AbstractUDPControlPlaneProducer implements
     @Override
     public boolean connect() {
 	try {
-	    // Creating listener for Announce Messages - only connect if we're not already connected
-	    if (AnnounceListener == null && announceListenerPort != -1) {
-                AnnounceListener = new UDPReceiver(this, announceListenerPort, "AnnounceListener");
-                AnnounceListener.listen();
-            }
+            zmqRouter.bind();
             
             if (controlTransmittersPool == null) {
                 // creating a pool for Control Messages transmission
                 // 8 seems to match the max size of the threadPool created by the RestConsole
-                controlTransmittersPool = new UDPTransmitterPool(this, maxPoolSize); 
+                controlTransmittersPool = new ZMQRequesterPool(this, maxPoolSize, zmqRouter.getContext());
             }       
             return true;
             
@@ -80,12 +65,10 @@ public abstract class AbstractUDPControlPlaneProducer implements
     @Override
     public boolean disconnect() {
         try {
-	    AnnounceListener.end();
-	    AnnounceListener = null;
             controlTransmittersPool.disconnect();
+            zmqRouter.disconnect();
 	    return true;
 	} catch (IOException ieo) {
-	    AnnounceListener = null;
 	    return false;
 	}
     }
@@ -125,15 +108,6 @@ public abstract class AbstractUDPControlPlaneProducer implements
     @Override
     public void setInfoPlaneDelegate(InfoPlaneDelegate im) {
         this.infoPlaneDelegate = im;
-    }
-    
-    
-    public void addAnnounceEventListener(AnnounceEventListener l) {
-        listener = l;
-    }
-
-    protected void fireEvent(AbstractAnnounceMessage m) {
-        listener.receivedAnnounceEvent(m);
     }
     
 }

@@ -23,15 +23,15 @@ public interface InfoPlaneDelegateConsumer {
     
     public JSONObject getDataConsumers() throws JSONException;
     
-    public InetSocketAddress getDSAddressFromProbeID(ID probe) throws ProbeNotFoundException, DSNotFoundException;
+    public ControlEndPointMetaData getDSAddressFromProbeID(ID probe) throws ProbeNotFoundException, DSNotFoundException;
     
-    public InetSocketAddress getDSAddressFromID(ID dataSource) throws DSNotFoundException;
+    public ControlEndPointMetaData getDSAddressFromID(ID dataSource) throws DSNotFoundException;
     
     public String getDSIDFromName(String dsName) throws DSNotFoundException;
     
-    public InetSocketAddress getDCAddressFromID(ID dataConsumer) throws DCNotFoundException;
+    public ControlEndPointMetaData getDCAddressFromID(ID dataConsumer) throws DCNotFoundException;
     
-    public InetSocketAddress getDCAddressFromReporterID(ID reporter) throws ReporterNotFoundException, DCNotFoundException;
+    public ControlEndPointMetaData getDCAddressFromReporterID(ID reporter) throws ReporterNotFoundException, DCNotFoundException;
     
     public Integer getDSPIDFromID(ID dataSource) throws DSNotFoundException;
     

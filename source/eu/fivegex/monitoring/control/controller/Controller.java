@@ -29,6 +29,7 @@ import us.monoid.json.JSONObject;
 import eu.fivegex.monitoring.control.deployment.EntityDeploymentDelegate;
 import eu.fivegex.monitoring.control.deployment.ssh.SSHServerEntityInfo;
 import eu.fivegex.monitoring.control.deployment.ssh.SSHDeploymentManager;
+import eu.fivegex.monitoring.control.zmq.ZMQControlPlaneXDRProducer;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import java.net.InetAddress;
 import org.slf4j.Logger;
@@ -76,7 +77,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         InfoPlane infoPlane = new ZMQControllerInfoPlane(infoPlanePort);
         
         // we get the ControlInformationManager from the InfoPlane
-        controlInformationManager = ((InfoPlaneDelegateInteracter) infoPlane).getInfoPlaneDelegateInteracter();
+        controlInformationManager = ((InfoPlaneDelegateInteracter) infoPlane).getInfoPlaneDelegate();
         
         // setting the InfoPlane to send announce events to the ControlInformationManager
         //((DHTInfoPlaneRoot) infoPlane).addAnnounceEventListener(controlInformationManager);
@@ -89,10 +90,11 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         // ControlPlane controlPlane = new UDPControlPlaneXDRProducer(8888, transmitterPoolSize);
         
         // create a control plane producer without announce listening capabilities 
-        ControlPlane controlPlane = new UDPControlPlaneXDRProducer(transmitterPoolSize);
+        //ControlPlane controlPlane = new UDPControlPlaneXDRProducer(transmitterPoolSize);
+        ControlPlane controlPlane = new ZMQControlPlaneXDRProducer(transmitterPoolSize);
         
         // setting the InfoPlaneDelegate to the Control Plane
-        ((InfoPlaneDelegateInteracter) controlPlane).setInfoPlaneDelegateInteracter(controlInformationManager);
+        ((InfoPlaneDelegateInteracter) controlPlane).setInfoPlaneDelegate(controlInformationManager);
         //((UDPControlPlaneXDRProducer) controlPlane).addAnnounceEventListener(controlInformationManager);
         setControlPlane(controlPlane);
         

@@ -4,6 +4,7 @@ import eu.reservoir.monitoring.core.DefaultControllableDataSource;
 import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneXDRConsumer;
 import eu.fivegex.monitoring.utils.DockerDataSourceConfigurator;
 import eu.reservoir.monitoring.core.ControllableDataSource;
+import eu.reservoir.monitoring.core.DockerDataSource;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
 import eu.reservoir.monitoring.im.dht.DHTDataSourceInfoPlane;
@@ -97,7 +98,7 @@ public final class DataSourceContainerDaemon extends Thread {
         LOGGER.info("Sending measurements to Data Consumer: " + dataConsumerPair.getHostName() + ":" + dataConsumerPair.getPort());
         LOGGER.info("Connecting to the Control Plane using: " + localCtrlPair.getPort() + ":" + localCtrlPair.getHostName());
         
-        dataSource.setDataSourceConfigurator(dataSourceConfigurator);
+        ((DockerDataSource)dataSource).setDataSourceConfigurator(dataSourceConfigurator);
         
 	// set up the planes
 	dataSource.setDataPlane(new UDPDataPlaneProducer(dataConsumerPair));

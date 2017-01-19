@@ -48,7 +48,6 @@ public class DockerProbe extends AbstractProbe implements Probe{
 
     @Override
     public void beginThreadBody() {
-	System.out.println("DockerProbe: beginThread " + this.resourceId + " with ID " + this.containerId);
         ddc.collectValues();
         previousContainerCPUTime = ddc.getContainerCpuTime();
         previousSystemCPUTime = ddc.getSystemCpuTime();

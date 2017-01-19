@@ -11,6 +11,7 @@ package eu.fivegex.monitoring.appl.dataconsumers;
  */
 
 import eu.fivegex.monitoring.control.udp.UDPDataConsumerControlPlaneXDRConsumer;
+import eu.fivegex.monitoring.control.zmq.ZMQDataConsumerControlPlaneXDRConsumer;
 import eu.fivegex.monitoring.im.zmq.ZMQDataConsumerInfoPlane;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.ID;
@@ -31,7 +32,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This receives measurements from a UDP Data Plane.
  */
-public final class ControllableDataConsumerDaemonTEST extends Thread {
+public final class ZMQControllableDataConsumerDaemon extends Thread {
     DefaultControllableDataConsumer consumer;
     
     ID dataConsumerID;
@@ -53,7 +54,7 @@ public final class ControllableDataConsumerDaemonTEST extends Thread {
     PrintStream errStream;
 
     
-    public ControllableDataConsumerDaemonTEST(String myID,
+    public ZMQControllableDataConsumerDaemon(String myID,
                                           int dataPort, 
                                           String infoPlaneRootName,   
                                           int infoPlaneRootPort,
@@ -74,7 +75,7 @@ public final class ControllableDataConsumerDaemonTEST extends Thread {
     
     
     
-    public ControllableDataConsumerDaemonTEST(String myID,
+    public ZMQControllableDataConsumerDaemon(String myID,
                                           int dataPort, 
                                           String infoPlaneRootName,   
                                           int infoPlaneRootPort,
@@ -116,7 +117,7 @@ public final class ControllableDataConsumerDaemonTEST extends Thread {
         if (this.remoteCtrlPair != null)
             controlPlane = new UDPDataConsumerControlPlaneXDRConsumer(localCtrlPair, remoteCtrlPair);
         else
-            controlPlane = new UDPDataConsumerControlPlaneXDRConsumer(localCtrlPair);
+            controlPlane = new ZMQDataConsumerControlPlaneXDRConsumer(localCtrlPair);
         
         ((DataConsumerInteracter) controlPlane).setDataConsumer(consumer);
         consumer.setControlPlane(controlPlane);    
@@ -149,7 +150,7 @@ public final class ControllableDataConsumerDaemonTEST extends Thread {
         System.setProperty(org.slf4j.impl.SimpleLogger.SHOW_THREAD_NAME_KEY, "false");
         //System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "debug");
         
-        LOGGER = LoggerFactory.getLogger(ControllableDataConsumerDaemonTEST.class);
+        LOGGER = LoggerFactory.getLogger(ZMQControllableDataConsumerDaemon.class);
     }
     
     
@@ -184,7 +185,7 @@ public final class ControllableDataConsumerDaemonTEST extends Thread {
             int infoRemotePort= 6699;
             int infoLocalPort = 10000;
             String controlEndPoint = null;
-            int controlLocalPort = 2222;
+            int controlLocalPort = 5555;
             //int controllerRemotePort = 8888; commenting out as we use announce on the Info Plane
             
             Scanner sc;
@@ -223,7 +224,7 @@ public final class ControllableDataConsumerDaemonTEST extends Thread {
                     LOGGER.error("usage: ControllableDataConsumerDaemon [dcID] localdataPort infoRemotePort infoLocalPort controlLocalPort");
                     System.exit(1);
             }
-            ControllableDataConsumerDaemonTEST dataConsumer = new ControllableDataConsumerDaemonTEST(dcID, 
+            ZMQControllableDataConsumerDaemon dataConsumer = new ZMQControllableDataConsumerDaemon(dcID, 
                                                                                    dataPort, 
                                                                                    infoHost, 
                                                                                    infoRemotePort, 

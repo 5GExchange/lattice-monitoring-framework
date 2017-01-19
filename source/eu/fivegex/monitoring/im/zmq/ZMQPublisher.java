@@ -5,6 +5,7 @@ import eu.reservoir.monitoring.core.ControllableDataConsumer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.ControllableReporter;
 import eu.reservoir.monitoring.core.DataSource;
+import eu.reservoir.monitoring.core.DockerDataSource;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
 import java.io.IOException;
@@ -90,9 +91,9 @@ public class ZMQPublisher {
                 
                 JSONObject controlEndPoint = new JSONObject();
                 
-                if (((ControllableDataSource) ds).getDataSourceConfigurator() != null) {
-                    String externalHost = ((ControllableDataSource) ds).getDataSourceConfigurator().getDockerHost();
-                    int controlPort = ((ControllableDataSource) ds).getDataSourceConfigurator().getControlForwardedPort();
+                if (ds instanceof DockerDataSource && ((DockerDataSource) ds).getDataSourceConfigurator() != null) {
+                    String externalHost = ((DockerDataSource) ds).getDataSourceConfigurator().getDockerHost();
+                    int controlPort = ((DockerDataSource) ds).getDataSourceConfigurator().getControlForwardedPort();
                     
                     try {
                         controlEndPoint.put("address", externalHost);

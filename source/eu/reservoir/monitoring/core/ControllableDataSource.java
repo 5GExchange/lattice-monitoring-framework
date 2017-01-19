@@ -6,7 +6,6 @@
 package eu.reservoir.monitoring.core;
 
 import eu.fivegex.monitoring.control.ProbeLoader;
-import eu.fivegex.monitoring.utils.DockerDataSourceConfigurator;
 
 /**
  *
@@ -18,8 +17,4 @@ public interface ControllableDataSource extends DataSource, DataSourceDelegateIn
     public int getMyPID();
       
     public void setMyPID(int myPID);
-    
-    public DockerDataSourceConfigurator getDataSourceConfigurator();
-    
-    public void setDataSourceConfigurator(DockerDataSourceConfigurator dataSourceConfigurator);
 }

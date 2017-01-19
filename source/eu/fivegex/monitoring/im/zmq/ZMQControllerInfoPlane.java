@@ -30,7 +30,7 @@ public class ZMQControllerInfoPlane extends AbstractZMQInfoPlane implements Info
      * Constructor for subclasses.
      */
     private ZMQControllerInfoPlane() {
-        setInfoPlaneDelegateInteracter(new ControlInformationManager(this));
+        setInfoPlaneDelegate(new ControlInformationManager(this));
         // setting the announce listener to the InfoPlaneDelegate
         listener = infoPlaneDelegate;
     }
@@ -179,12 +179,12 @@ public class ZMQControllerInfoPlane extends AbstractZMQInfoPlane implements Info
     }
     
     @Override
-    public void setInfoPlaneDelegateInteracter(InfoPlaneDelegate im) {
+    public void setInfoPlaneDelegate(InfoPlaneDelegate im) {
         this.infoPlaneDelegate = im;
     }
 
     @Override
-    public InfoPlaneDelegate getInfoPlaneDelegateInteracter() {
+    public InfoPlaneDelegate getInfoPlaneDelegate() {
         return this.infoPlaneDelegate;
     }
     

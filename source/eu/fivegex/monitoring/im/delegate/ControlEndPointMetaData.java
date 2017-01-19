@@ -5,15 +5,17 @@
  */
 package eu.fivegex.monitoring.im.delegate;
 
-
 /**
  *
  * @author uceeftu
  */
-public interface InfoPlaneDelegateInteracter {
+public abstract class ControlEndPointMetaData {
+    protected final String type;
+
+    public ControlEndPointMetaData(String type) {
+        this.type = type;
+    }
     
-    public InfoPlaneDelegate getInfoPlaneDelegate();
     
-    public void setInfoPlaneDelegate(InfoPlaneDelegate im);
     
 }

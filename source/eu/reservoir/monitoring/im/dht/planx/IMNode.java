@@ -30,7 +30,7 @@ import eu.reservoir.monitoring.core.ControllableDataConsumer;
  * <ul>
  * <li> /probe/probe-id/attribute = value
  * </ul>
- * @deprecated 
+ * @deprecated, use eu.fivegex.monitoring.im.dht.tomp2p.IMNode
  **/
 
 public class IMNode {

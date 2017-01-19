@@ -20,7 +20,7 @@ import org.planx.routing.*;
  * A Distributed Hash Table implementation.
  * Values can be accessed and added from any one
  * of the distributed nodes.
- * @deprecated 
+ * @deprecated, use eu.fivegex.monitoring.im.dht.tomp2p.DistributedHashTable
  **/
 public class DistributedHashTable {
     Kademlia kademlia = null;

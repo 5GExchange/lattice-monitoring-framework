@@ -11,6 +11,7 @@ import java.io.Serializable;
 import java.io.IOException;
 import java.util.Collection;
 import eu.reservoir.monitoring.core.ControllableDataConsumer;
+import eu.reservoir.monitoring.core.DockerDataSource;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.AnnounceEventListener;
 import java.net.InetAddress;
@@ -204,9 +205,9 @@ public class IMNode implements AnnounceEventListener {
     public IMNode addDataSource(DataSource ds) throws IOException {
 	putDHT("/datasource/" + ds.getID() + "/name", ds.getName());     
         
-        if (ds instanceof ControllableDataSource && ((ControllableDataSource) ds).getDataSourceConfigurator() != null) {
-            String externalHost = ((ControllableDataSource) ds).getDataSourceConfigurator().getDockerHost();
-            int controlPort = ((ControllableDataSource) ds).getDataSourceConfigurator().getControlForwardedPort();
+        if (ds instanceof DockerDataSource && ((DockerDataSource) ds).getDataSourceConfigurator() != null) {
+            String externalHost = ((DockerDataSource) ds).getDataSourceConfigurator().getDockerHost();
+            int controlPort = ((DockerDataSource) ds).getDataSourceConfigurator().getControlForwardedPort();
             
             JSONObject controlEndPoint = new JSONObject();
             try {

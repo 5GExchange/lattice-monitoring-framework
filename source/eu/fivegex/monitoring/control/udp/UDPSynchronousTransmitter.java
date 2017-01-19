@@ -5,6 +5,8 @@
 
 package eu.fivegex.monitoring.control.udp;
 
+import eu.fivegex.monitoring.control.SynchronousTransmitting;
+import eu.fivegex.monitoring.control.Transmitter;
 import eu.reservoir.monitoring.distribution.*;
 import java.net.*;
 import java.io.*;
@@ -12,7 +14,7 @@ import java.io.*;
 /**
  * This is a UDP transmitter for monitoring messages
  */
-public final class UDPSynchronousTransmitter {
+public final class UDPSynchronousTransmitter implements Transmitter {
     /*
      * The transmitting that interacts with a DataSourceDelegate.
      */
@@ -76,6 +78,22 @@ public final class UDPSynchronousTransmitter {
         replyPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
     }
     
+    public UDPSynchronousTransmitter() throws IOException {
+        socket = new DatagramSocket();
+
+        // allocate emtpy packet for sending messages later
+        packet = new DatagramPacket(new byte[1], 1);
+
+        // allocate emtpy packet for receiving messages later
+        replyPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
+    }
+    
+    
+    @Override
+    public void setTransmitting(Transmitting transmitting) {
+        this.transmitting=transmitting;
+    }
+        
 
     /**
      * Connect to the remote dstAddress now
@@ -89,7 +107,8 @@ public final class UDPSynchronousTransmitter {
     /**
      * End the connection to the remote dstAddress now
      */
-    public void end()  throws IOException {
+    @Override
+    public void end() throws IOException {
 	// disconnect now
 	//socket.disconnect();
         socket.close();
