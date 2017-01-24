@@ -3,6 +3,7 @@ package eu.fivegex.monitoring.appl.datasources;
 import eu.reservoir.monitoring.core.DefaultControllableDataSource;
 import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneXDRConsumer;
 import eu.fivegex.monitoring.control.zmq.ZMQDataSourceControlPlaneXDRConsumer;
+import eu.fivegex.monitoring.distribution.zmq.ZMQDataPlaneProducer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
@@ -120,7 +121,8 @@ public final class ZMQDataSourceDaemon extends Thread {
         LOGGER.info("Connecting to the Control Plane: " + ctrlPair.getHostName() + ":" + ctrlPair.getPort());
         
 	// set up the planes
-	dataSource.setDataPlane(new UDPDataPlaneProducer(dataConsumerPair));
+	//dataSource.setDataPlane(new UDPDataPlaneProducer(dataConsumerPair));
+        dataSource.setDataPlane(new ZMQDataPlaneProducer(dataConsumerPair.getAddress().getHostAddress(), dataConsumerPair.getPort()));
         
         // ZMQ Info Plane
         dataSource.setInfoPlane(new ZMQDataSourceInfoPlane(remoteInfoHost, remoteInfoPort));
@@ -194,7 +196,7 @@ public final class ZMQDataSourceDaemon extends Thread {
             String infoHost = null;
             int infoRemotePort= 6699;
             int infoLocalPort = 9999;
-            String controlEndPoint = null;
+            String controllerHost = null;
             int controllerPort = 5555;
             
             Scanner sc;
@@ -203,37 +205,38 @@ public final class ZMQDataSourceDaemon extends Thread {
                 case 0:
                     // use existing settings
                     String loopBack = InetAddress.getLoopbackAddress().getHostName();
-                    dsName = dataConsumerAddr = controlEndPoint = loopBack;
+                    dsName = dataConsumerAddr = controllerHost = loopBack;
                     infoHost = InetAddress.getLocalHost().getHostName();
                     break;
                 case 6:
                     dataConsumerAddr = args[0];
                     sc = new Scanner(args[1]);
                     dataConsumerPort = sc.nextInt();
-                    infoHost = args[2];
+                    infoHost = controllerHost = args[2];
                     sc = new Scanner(args[3]);
                     infoRemotePort = sc.nextInt();
                     sc= new Scanner(args[4]);
                     infoLocalPort = sc.nextInt();
                     sc= new Scanner(args[5]);
                     controllerPort = sc.nextInt();
-                    dsName = controlEndPoint = InetAddress.getLocalHost().getHostName();
+                    dsName = InetAddress.getLocalHost().getHostName();
                     break;
                 case 7:
                     dsID = args[0];
                     dataConsumerAddr = args[1];
                     sc = new Scanner(args[2]);
                     dataConsumerPort = sc.nextInt();
-                    infoHost = args[3];
+                    infoHost = controllerHost = args[3];
                     sc = new Scanner(args[4]);
                     infoRemotePort = sc.nextInt();
                     sc= new Scanner(args[5]);
                     infoLocalPort = sc.nextInt();
                     sc= new Scanner(args[6]);
                     controllerPort = sc.nextInt();
-                    dsName = controlEndPoint = InetAddress.getLocalHost().getHostName();
+                    dsName = InetAddress.getLocalHost().getHostName();
                     break;
                 default:
+                    // TODO: fixme
                     System.err.println("use: SimpleDataSourceDaemon [dsID] dcAddress dcPort infoRemotePort infoLocalPort controlLocalPort");
                     System.exit(1);
             }
@@ -245,8 +248,8 @@ public final class ZMQDataSourceDaemon extends Thread {
                                                             dataConsumerPort, 
                                                             infoHost, 
                                                             infoRemotePort, 
-                                                            infoLocalPort, 
-                                                            /*controlEndPoint*/ infoHost, 
+                                                            infoLocalPort, // remove me 
+                                                            controllerHost, 
                                                             controllerPort);
             dataSourceDaemon.init();
             

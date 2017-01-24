@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.im.zmq;
+package eu.fivegex.monitoring.distribution.zmq;
 
 import org.zeromq.ZMQ;
 
@@ -11,17 +11,16 @@ import org.zeromq.ZMQ;
  *
  * @author uceeftu
  */
-public class ZMQProxy extends Thread {
-    
+public class ZMQDataForwarder extends Thread {
     ZMQ.Context context;
     ZMQ.Socket backend;
     ZMQ.Socket frontend;
     
-    String internalURI = "inproc://infoplane";
+    String internalURI = "inproc://dataplane";
     
     int localPort;
     
-    public ZMQProxy(int localPort) {
+    public ZMQDataForwarder(int localPort) {
         this.localPort = localPort;
         
         context = ZMQ.context(1);
@@ -38,7 +37,7 @@ public class ZMQProxy extends Thread {
     }
     
     public boolean startProxy() {
-        this.setName("zmq-info-proxy");
+        this.setName("zmq-data-forwarder");
         this.start();
         return true;
     }
@@ -46,7 +45,7 @@ public class ZMQProxy extends Thread {
     public boolean stopProxy() {
         frontend.close();
         backend.close();
-        context.term();
+        //context.term();
         return true;
     }
     
@@ -57,6 +56,4 @@ public class ZMQProxy extends Thread {
         backend.bind(internalURI);
         ZMQ.proxy(frontend, backend, null);
     }
-    
-    
 }

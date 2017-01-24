@@ -61,10 +61,14 @@ public class ZMQPublisher {
      */
     public boolean disconnect() {
         publisherSocket.close();
-        context.term();
+        //context.term();
         return true;
     }
 
+    public void destroyZMQContext() {
+        context.term();
+    }
+    
     public String getRootHostname() {
         return this.remoteHost;
     }

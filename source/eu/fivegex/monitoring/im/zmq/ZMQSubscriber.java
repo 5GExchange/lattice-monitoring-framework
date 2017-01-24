@@ -11,6 +11,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.ZMQ;
+import org.zeromq.ZMQException;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
@@ -30,6 +31,8 @@ public class ZMQSubscriber extends Thread {
     
     String internalURI;
     String messageFilter;
+    
+    boolean threadRunning = false;
     
     Map<ID, JSONObject> dataSources = new HashMap<>();
     Map<ID, JSONObject> probes = new HashMap<>();
@@ -139,8 +142,7 @@ public class ZMQSubscriber extends Thread {
      * Disconnect from the DHT peers.
      */
     public boolean disconnect() {
-        subscriberSocket.close();
-        context.term();
+        threadRunning = false;
         return true;
     }
 
@@ -211,17 +213,25 @@ public class ZMQSubscriber extends Thread {
     
     @Override
     public void run() {
-        this.setName("zmq-subscriber");
+        this.setName("zmq-info-subscriber");
         subscriberSocket.subscribe(messageFilter.getBytes());
         
         LOGGER.info("Listening for messages");
         
-        while (!Thread.currentThread ().isInterrupted()) {
-            String header = subscriberSocket.recvStr ();
-            String content = subscriberSocket.recvStr ();
-            LOGGER.debug(header + " : " + content);
-            messageHandler(content);
-        }
+        threadRunning = true;
+        try {
+            while (threadRunning) {
+                String header = subscriberSocket.recvStr();
+                String content = subscriberSocket.recvStr();
+                LOGGER.debug(header + " : " + content);
+                messageHandler(content);
+            }
+            } catch (ZMQException e) {
+                // we won't do anything
+            }
+        
+        subscriberSocket.close();
+        context.close();
     }
     
     

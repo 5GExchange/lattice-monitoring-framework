@@ -33,13 +33,15 @@ public abstract class AbstractZMQControlPlaneProducer implements
     ZMQRouter zmqRouter;
     ZMQRequesterPool controlTransmittersPool;
     int maxPoolSize;
+    int localControlPort;
     
     InfoPlaneDelegate infoPlaneDelegate;
     
     static Logger LOGGER = LoggerFactory.getLogger("ZMQControlPlaneProducer");
     
-    public AbstractZMQControlPlaneProducer(int maxPoolSize) {
-        this.zmqRouter = new ZMQRouter();
+    public AbstractZMQControlPlaneProducer(int maxPoolSize, int port) {
+        this.localControlPort = port;
+        this.zmqRouter = new ZMQRouter(localControlPort);
         this.maxPoolSize = maxPoolSize;
     }
     

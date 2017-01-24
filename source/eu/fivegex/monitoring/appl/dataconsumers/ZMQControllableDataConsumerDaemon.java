@@ -12,6 +12,8 @@ package eu.fivegex.monitoring.appl.dataconsumers;
 
 import eu.fivegex.monitoring.control.udp.UDPDataConsumerControlPlaneXDRConsumer;
 import eu.fivegex.monitoring.control.zmq.ZMQDataConsumerControlPlaneXDRConsumer;
+import eu.fivegex.monitoring.distribution.zmq.ZMQDataPlaneConsumer;
+import eu.fivegex.monitoring.distribution.zmq.ZMQDataPlaneConsumerAndForwarder;
 import eu.fivegex.monitoring.im.zmq.ZMQDataConsumerInfoPlane;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.ID;
@@ -102,7 +104,9 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
         LOGGER.info("Connecting to the Control Plane using: " + localCtrlPair.getPort() + ":" + localCtrlPair.getHostName());
         
         // set up data plane listening on *:port
-	consumer.setDataPlane(new UDPDataPlaneConsumer(dataPort));
+	//consumer.setDataPlane(new UDPDataPlaneConsumer(dataPort));
+        //consumer.setDataPlane(new ZMQDataPlaneConsumer(dataPort));
+        consumer.setDataPlane(new ZMQDataPlaneConsumerAndForwarder(dataPort));
        
         //InfoPlane infoPlane = new DHTDataConsumerInfoPlane(remoteInfoHost, remoteInfoPort, localInfoPort);
         //InfoPlane infoPlane = new DHTDataConsumerInfoPlane(remoteInfoPort, localInfoPort); // announcing to broadcast
@@ -114,10 +118,10 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
         consumer.setInfoPlane(infoPlane);
         
         ControlPlane controlPlane;
-        if (this.remoteCtrlPair != null)
-            controlPlane = new UDPDataConsumerControlPlaneXDRConsumer(localCtrlPair, remoteCtrlPair);
-        else
-            controlPlane = new ZMQDataConsumerControlPlaneXDRConsumer(localCtrlPair);
+        // if (this.remoteCtrlPair != null)
+        //    controlPlane = new UDPDataConsumerControlPlaneXDRConsumer(localCtrlPair, remoteCtrlPair);
+        // else
+        controlPlane = new ZMQDataConsumerControlPlaneXDRConsumer(localCtrlPair);
         
         ((DataConsumerInteracter) controlPlane).setDataConsumer(consumer);
         consumer.setControlPlane(controlPlane);    

@@ -42,8 +42,8 @@ public class ZMQControlPlaneXDRProducer extends AbstractZMQControlPlaneProducer 
      * Creates a Producer without announce/deannounce management capabilities
      * @param maxPoolSize is the size of the UDP Transmitters pool
      */
-    public ZMQControlPlaneXDRProducer(int maxPoolSize) {
-        super(maxPoolSize);
+    public ZMQControlPlaneXDRProducer(int maxPoolSize, int port) {
+        super(maxPoolSize, port);
     }
     
 

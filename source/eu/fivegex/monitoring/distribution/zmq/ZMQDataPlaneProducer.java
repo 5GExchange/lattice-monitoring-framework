@@ -1,9 +1,4 @@
-// UDPDataPlaneProducerNoNames.java
-// Author: Stuart Clayman
-// Email: sclayman@ee.ucl.ac.uk
-// Date: Feb 2010
-
-package eu.reservoir.monitoring.distribution.udp;
+package eu.fivegex.monitoring.distribution.zmq;
 
 import eu.reservoir.monitoring.core.DataSourceDelegateInteracter;
 import eu.reservoir.monitoring.core.ProbeMeasurement;
@@ -13,7 +8,6 @@ import eu.reservoir.monitoring.core.plane.*;
 import eu.reservoir.monitoring.distribution.*;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutput;
-import java.net.InetSocketAddress;
 
 /**
  * A UDPDataPlaneProducerNoNames is a DataPlane implementation
@@ -21,12 +15,12 @@ import java.net.InetSocketAddress;
  * It is also a DataSourceDelegateInteracter so it can, if needed,
  * talk to the DataSource object it gets bound to.
  */
-public class UDPDataPlaneProducerNoNames extends AbstractUDPDataPlaneProducer implements DataPlane, DataSourceDelegateInteracter, TransmittingData {
+public class ZMQDataPlaneProducer extends AbstractZMQDataPlaneProducer implements DataPlane, DataSourceDelegateInteracter, TransmittingData {
     /**
      * Construct a UDPDataPlaneProducerNoNames
      */
-    public UDPDataPlaneProducerNoNames(InetSocketAddress addr) {
-        super(addr);
+    public ZMQDataPlaneProducer(String remoteHost, int remotePort) {
+        super(remoteHost, remotePort);
     }
 
     /**
@@ -78,8 +72,8 @@ public class UDPDataPlaneProducerNoNames extends AbstractUDPDataPlaneProducer im
 
 	    //System.err.println("DP: " + dsp + " AS " + byteStream);
 
-	    // now tell the multicaster to transmit this byteStream
-	    udpTransmitter.transmit(byteStream, seqNo);
+	    // now tell the publisher to transmit this byteStream
+	    publisher.transmit(byteStream, seqNo);
 
 	    return 1;
 	} catch (TypeException te) {

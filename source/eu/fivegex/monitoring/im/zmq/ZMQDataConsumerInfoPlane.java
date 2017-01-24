@@ -51,7 +51,9 @@ public class ZMQDataConsumerInfoPlane extends AbstractZMQInfoPlane implements In
      * Disconnect from a delivery mechanism.
      */
     public boolean disconnect() {
-	return zmqPublisher.disconnect() && zmqSubscriber.disconnect();
+        zmqPublisher.disconnect();
+        zmqSubscriber.disconnect();
+        return true;
     }
 
     @Override

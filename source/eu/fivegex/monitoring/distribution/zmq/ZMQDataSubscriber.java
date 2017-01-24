@@ -1,0 +1,166 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package eu.fivegex.monitoring.distribution.zmq;
+
+import eu.reservoir.monitoring.core.TypeException;
+import eu.reservoir.monitoring.distribution.ExposedByteArrayInputStream;
+import eu.reservoir.monitoring.distribution.Receiving;
+import eu.reservoir.monitoring.distribution.udp.UDPTransmissionMetaData;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQException;
+
+/**
+ *
+ * @author uceeftu
+ */
+public class ZMQDataSubscriber implements Runnable {
+    Receiving receiver;
+    
+    ZMQ.Context context;
+    ZMQ.Socket subscriberSocket;
+    
+    String remoteHost = null;
+    String remoteURI = null;
+    int localPort = 0;
+    int remotePort = 0;
+    
+    ByteArrayInputStream byteStream;
+    
+    int length;
+    
+    Thread myThread;
+
+    boolean threadRunning = false;
+    
+    Exception lastException;
+    
+    private String threadName="zmq-data-subscriber";
+    
+
+    public ZMQDataSubscriber(Receiving receiver, int port) {
+        this.receiver = receiver;
+        this.localPort = port;
+        
+        context = ZMQ.context(1);
+        subscriberSocket = context.socket(ZMQ.SUB);
+    }
+    
+    
+    public ZMQDataSubscriber(Receiving receiver, String remoteHost, int remotePort) {
+        this.receiver = receiver;
+        this.remoteHost = remoteHost;
+        this.remotePort = remotePort;
+        
+        context = ZMQ.context(1);
+        subscriberSocket = context.socket(ZMQ.SUB);
+    }
+    
+    public ZMQDataSubscriber(Receiving receiver, String uri, ZMQ.Context ctx) {
+        this.receiver = receiver;
+        this.remoteURI = uri;
+        
+        context = ctx;
+        subscriberSocket = context.socket(ZMQ.SUB);
+    }
+    
+    
+    public void bind() {
+        subscriberSocket.bind("tcp://*:" + localPort);
+    }
+    
+    public void connect() {
+        if (remoteURI != null) {
+            // sleeping before connecting to the socket
+            // not receiving messages otherwise
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {}
+            subscriberSocket.connect(remoteURI);
+        }
+        else {
+            subscriberSocket.connect("tcp://" + remoteHost + ":" + localPort);
+        }
+    }
+    
+    public void listen() {
+        myThread = new Thread(this, threadName);
+        myThread.start();
+    }
+    
+    public void end() {
+        threadRunning = false;
+    }
+    protected boolean receive() {
+	try {
+	    // clear lastException
+	    lastException = null;
+
+            subscriberSocket.recv(); // header
+            
+	    // receive from socket
+	    byte[] message = subscriberSocket.recv();
+
+	    // get an input stream over the data bytes of the packet
+	    ByteArrayInputStream theBytes = new ExposedByteArrayInputStream(message, 0, message.length);
+
+	    byteStream = theBytes;
+	    //srcAddr = packet.getAddress();
+	    length = message.length;
+            //srcPort = packet.getPort();
+
+
+	    return true;
+	} catch (ZMQException ze) {
+           return false;         
+          } 
+          catch (Exception e) {
+	    // something went wrong
+	    lastException = e;
+	    return false;
+	}
+    }
+
+    
+    
+    @Override
+    public void run() {
+        threadRunning = true;
+        subscriberSocket.subscribe("data".getBytes());
+	while (threadRunning) {
+            
+	    if (receive()) {
+		// now notify the receiver with the replyMessage
+		// and the address it came in on
+		try {
+                    // construct the transmission meta data
+                    UDPTransmissionMetaData metaData = new UDPTransmissionMetaData(length, InetAddress.getLocalHost(), InetAddress.getLocalHost(), 0); // FIXME
+		    receiver.received(byteStream, metaData);
+		} catch (IOException ioe) {
+		    receiver.error(ioe);
+		} catch (TypeException te) {
+		    receiver.error(te);
+		} catch (Exception e) {
+                      receiver.error(e);
+                }
+                  
+	    } else {
+		// the receive() failed
+		// we find the exception in lastException
+                // we notify the receiver only if the socket was not explicitly closed
+                if (threadRunning)
+                    receiver.error(lastException);
+	    }
+	}
+        
+        subscriberSocket.close();
+        context.term();
+        
+    }
+    
+}

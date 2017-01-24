@@ -59,7 +59,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
 
     private Controller() {}
      
-    private void init(int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {  
+    private void init(int infoPlanePort, int controlLocalPort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {  
         
         this.usingDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.enabled", "false"));
         
@@ -91,7 +91,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         
         // create a control plane producer without announce listening capabilities 
         //ControlPlane controlPlane = new UDPControlPlaneXDRProducer(transmitterPoolSize);
-        ControlPlane controlPlane = new ZMQControlPlaneXDRProducer(transmitterPoolSize);
+        ControlPlane controlPlane = new ZMQControlPlaneXDRProducer(transmitterPoolSize, controlLocalPort); // FIXME: to be passed as property
         
         // setting the InfoPlaneDelegate to the Control Plane
         ((InfoPlaneDelegateInteracter) controlPlane).setInfoPlaneDelegate(controlInformationManager);
@@ -579,6 +579,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         String remoteInfoHost = InetAddress.getLoopbackAddress().getHostName();
         int infoPlanePort = 6699; // the same port is used as remote and local by DHTInfoPlaneRoot
         int restConsolePort = 6666;
+        int controlLocalPort = 5555;
         String probePackage = "eu.fivegex.monitoring.appl.probes";
         String probeSuffix = "Probe";
         
@@ -623,6 +624,6 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         }
         
         Controller myController = Controller.getInstance();
-        myController.init(infoPlanePort, restConsolePort, probePackage, probeSuffix, prop);
+        myController.init(infoPlanePort, controlLocalPort, restConsolePort, probePackage, probeSuffix, prop);
     }
 }

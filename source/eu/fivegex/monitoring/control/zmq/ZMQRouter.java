@@ -18,11 +18,14 @@ public class ZMQRouter implements Runnable {
     ZMQ.Socket frontend;
     ZMQ.Socket backend;
     
+    int backendPort;
+    
     Set<String> workers = new HashSet<>();
     
     Thread router;
 
-    public ZMQRouter() {
+    public ZMQRouter(int port) {
+        backendPort = port;
         context = ZMQ.context(1);
         frontend = context.socket(ZMQ.ROUTER);
         backend = context.socket(ZMQ.ROUTER);
@@ -30,7 +33,7 @@ public class ZMQRouter implements Runnable {
     
     public void bind() {
         frontend.bind("inproc://frontend");
-        backend.bind("tcp://*:5555");
+        backend.bind("tcp://*:" + backendPort);
         router = new Thread(this, "zmq-router");
         router.start();
     }
