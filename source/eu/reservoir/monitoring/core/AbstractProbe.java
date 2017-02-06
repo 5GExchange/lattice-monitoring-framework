@@ -33,7 +33,7 @@ public abstract class AbstractProbe implements Probe {
     /*
      * probe status - on or off
      */
-    Probe.Status probeStatus = Probe.Status.OFF;
+    protected Probe.Status probeStatus = Probe.Status.OFF;
 
     /*
      * The data rate as a Rational.
@@ -74,7 +74,7 @@ public abstract class AbstractProbe implements Probe {
     /*
      * Thread running?
      */
-    boolean threadRunning = false;
+    protected boolean threadRunning = false;
 
     /*
      * The ProbeManager for this Probe.
@@ -773,7 +773,7 @@ public abstract class AbstractProbe implements Probe {
     /**
      * The threads waits while the Probe.Status == OFF.
      */
-    private synchronized void waitWhileOff() throws InterruptedException {
+    protected synchronized void waitWhileOff() throws InterruptedException {
 	if (probeStatus == Probe.Status.OFF) {
 	    // wait
             waiting = true;

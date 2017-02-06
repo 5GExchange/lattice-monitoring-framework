@@ -14,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import org.zeromq.ZMQ;
+import org.zeromq.ZMQException;
 
 /**
  *
@@ -90,7 +91,10 @@ public class ZMQReceiver implements Runnable {
             
 	    return true;
             
-	} catch (Exception e) {
+	} catch (ZMQException e) {
+            return false; // generated when closing the context
+        } 
+         catch (Exception e) {
 	    // something went wrong
 	    lastException = e;
 	    return false;
