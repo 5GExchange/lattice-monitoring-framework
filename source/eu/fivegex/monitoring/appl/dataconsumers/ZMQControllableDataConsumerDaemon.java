@@ -104,9 +104,9 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
         LOGGER.info("Connecting to the Control Plane using: " + localCtrlPair.getPort() + ":" + localCtrlPair.getHostName());
         
         // set up data plane listening on *:port
-	//consumer.setDataPlane(new UDPDataPlaneConsumer(dataPort));
+	consumer.setDataPlane(new UDPDataPlaneConsumer(dataPort));
         //consumer.setDataPlane(new ZMQDataPlaneConsumer(dataPort));
-        consumer.setDataPlane(new ZMQDataPlaneConsumerAndForwarder(dataPort));
+        //consumer.setDataPlane(new ZMQDataPlaneConsumerAndForwarder(dataPort));
        
         //InfoPlane infoPlane = new DHTDataConsumerInfoPlane(remoteInfoHost, remoteInfoPort, localInfoPort);
         //InfoPlane infoPlane = new DHTDataConsumerInfoPlane(remoteInfoPort, localInfoPort); // announcing to broadcast
@@ -189,8 +189,7 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
             int infoRemotePort= 6699;
             int infoLocalPort = 10000;
             String controlEndPoint = null;
-            int controlLocalPort = 5555;
-            //int controllerRemotePort = 8888; commenting out as we use announce on the Info Plane
+            int controlRemotePort = 5555;
             
             Scanner sc;
                     
@@ -208,8 +207,8 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
                     sc= new Scanner(args[3]);
                     infoLocalPort = sc.nextInt();
                     sc= new Scanner(args[4]);
-                    controlLocalPort = sc.nextInt();
-                    controlEndPoint = InetAddress.getLocalHost().getHostName();
+                    controlRemotePort = sc.nextInt();
+                    controlEndPoint = infoHost;
                     break;
                 case 6:
                     dcID = args[0];
@@ -221,8 +220,8 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
                     sc= new Scanner(args[4]);
                     infoLocalPort = sc.nextInt();
                     sc= new Scanner(args[5]);
-                    controlLocalPort = sc.nextInt();
-                    controlEndPoint = InetAddress.getLocalHost().getHostName();
+                    controlRemotePort = sc.nextInt();
+                    controlEndPoint = infoHost;
                     break;
                 default:
                     LOGGER.error("usage: ControllableDataConsumerDaemon [dcID] localdataPort infoRemotePort infoLocalPort controlLocalPort");
@@ -234,8 +233,7 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
                                                                                    infoRemotePort, 
                                                                                    infoLocalPort, 
                                                                                    controlEndPoint, 
-                                                                                   controlLocalPort);
-                                                                                   //controllerRemotePort); //not using announce on the Control Plane
+                                                                                   controlRemotePort);
             dataConsumer.init();
             
         } catch (Exception e) {

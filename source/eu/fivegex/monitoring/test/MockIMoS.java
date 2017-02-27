@@ -213,6 +213,9 @@ public class MockIMoS {
         String NFId = NFInstance.getString("id");
         String localId = NFInstance.getString("internalid");
         
+        System.out.println("NF ID: " + NFId);
+        System.out.println("Container ID: " + localId);
+        
         JSONObject probeInfo = lattice.loadProbe(dsId, 
                                                  probeClassName, 
                                                  localMonitoringAddress + "+" + localMonitoringPort + "+" + NFId + "+" + localId + "+" + NFId
@@ -230,17 +233,16 @@ public class MockIMoS {
     public JSONObject instantiateMonitoringElements() {
         try {
             // start a DC where the MdO is running
-            JSONObject dataConsumerInfo = lattice.startDC("mininet-vm", "22", "lattice", "22998+6699+9999+1111");
+            JSONObject dataConsumerInfo = lattice.startDC("mininet-vm", "22", "lattice", "22998+lattice-controller+6699+9999+5555");
             String dataConsumerID = dataConsumerInfo.getString("ID");
             
             // load a Logger Reporter
-            //JSONObject reporterInfo = lattice.loadReporter(dataConsumerID, "eu.fivegex.monitoring.appl.reporters.LoggerReporter", "logger-reporter");
-            JSONObject reporterInfo = lattice.loadReporter(dataConsumerID, "eu.fivegex.monitoring.appl.reporters.InfluxDBReporter", "localhost+8086+fgex");
+            lattice.loadReporter(dataConsumerID, "eu.fivegex.monitoring.appl.reporters.LoggerReporter", "logger-reporter");
+            lattice.loadReporter(dataConsumerID, "eu.fivegex.monitoring.appl.reporters.InfluxDBReporter", "localhost+8086+fgx");
             
             // should check created reporter ID
             
-            
-            String controllerAddress = InetAddress.getLocalHost().getHostAddress();
+            //String controllerAddress = InetAddress.getLocalHost().getHostAddress();
             
             for (String domain : DOMappingInfo.keySet()) { // should run in parallel
                 /* start a DS on the Domains (should check if it already exists)
@@ -255,7 +257,7 @@ public class MockIMoS {
                 String DSSSHHostPort = fakeDomainsInfo.getJSONObject(domain).getString("ssh");
                 String username = fakeDomainsInfo.getJSONObject(domain).getString("user");
                 
-                JSONObject dataSourceInfo = lattice.startDS(DSHostAddress, DSSSHHostPort, username, "mininet-vm+22998+6699+9999+1111");
+                JSONObject dataSourceInfo = lattice.startDS(DSHostAddress, DSSSHHostPort, username, "mininet-vm+22998+lattice-controller+6699+9999+5555");
                 String dataSourceId = dataSourceInfo.getString("ID");
                 
                 JSONArray mappings = DOMappingInfo.get(domain).getJSONObject("mapping").getJSONArray("instances");
@@ -267,7 +269,7 @@ public class MockIMoS {
                     instantiateProbes(((JSONObject)mappings.get(i)), dataSourceId, DSHostAddress); 
                 }
             }
-        } catch (JSONException | IOException e) {
+        } catch (JSONException e) {
             System.out.println("Error while instantiating monitoring elements: " + e.getMessage());
         }
         return null;
@@ -297,7 +299,7 @@ public class MockIMoS {
         MockIMoS imos;
         
         if (args.length != 3)
-           imos = new MockIMoS("localhost", 8889, "e961b2e5-90c8-4b7f-a7da-d7d5c0afbc6a");
+           imos = new MockIMoS("localhost", 8889, "3fa834b4-f781-11e6-8cf3-fa163ef7e9db");
         else {
             String resOrchHost = args[0];
             Scanner sc = new Scanner(args[1]);
