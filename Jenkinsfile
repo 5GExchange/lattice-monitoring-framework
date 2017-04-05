@@ -8,9 +8,10 @@ timestamps {
             docker.image('frekele/ant:1.9.7-jdk8').withRun('bash') {c ->
 			    sh """
                 docker cp ./ ${c.id}:/root
-				docker exec ${c.id} ant -f lattice-monitoring-framework/source/build.xml dist
+				docker exec ${c.id} ant -f /root/source/build.xml dist
                 """
             }
+			//aggiungere il task maven install
         }
         //step([$class: 'Mailer', recipients: '5gex-devel@tmit.bme.hu'])
     }
