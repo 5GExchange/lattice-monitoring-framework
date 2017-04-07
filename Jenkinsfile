@@ -9,6 +9,7 @@ timestamps {
                 docker cp ./ ${c.id}:/root
 				docker exec ${c.id} ant -f /root/source/build.xml dist
                 mkdir -p jars
+                mkdir -p config
                 docker cp ${c.id}:/root/jars jars
                 cd jars
                 mylib=`ls monitoring-bin-controller*.jar`
@@ -18,6 +19,9 @@ timestamps {
             }
 			
 			archive 'jars/*.jar'
+			archive 'conf/*'
+			
+			sh "./deploy-lattice-test.sh"
         }
         //step([$class: 'Mailer', recipients: '5gex-devel@tmit.bme.hu'])
     }
