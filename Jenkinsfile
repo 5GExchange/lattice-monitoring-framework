@@ -24,6 +24,7 @@ timestamps {
 			archive 'conf/*'
 			
 			echo "Running deployment script..."
+			chmod a+x deploy-lattice-test.sh
 			sh "./deploy-lattice-test.sh"
 			echo "...done"
         }
