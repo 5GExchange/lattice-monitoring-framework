@@ -18,10 +18,14 @@ timestamps {
               """
             }
 			
+			echo "Archiving jars..."
 			archive 'jars/*.jar'
+			echo "Archiving confs..."
 			archive 'conf/*'
 			
+			echo "Running deployment script..."
 			sh "./deploy-lattice-test.sh"
+			echo "...done"
         }
         //step([$class: 'Mailer', recipients: '5gex-devel@tmit.bme.hu'])
     }
