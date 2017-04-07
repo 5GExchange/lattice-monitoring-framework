@@ -16,6 +16,12 @@ timestamps {
                 docker cp  \$mylib ${c.id}:/root/.m2/repository/eu/fivegex/monitoring/control/controller/monitoring-bin-controller/0.7.1/
               """
             }
+			
+			post {
+				always {
+					archive 'jars/*.jar'
+				}
+			}
  
         }
         //step([$class: 'Mailer', recipients: '5gex-devel@tmit.bme.hu'])
