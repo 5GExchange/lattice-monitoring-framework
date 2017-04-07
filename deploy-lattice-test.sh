@@ -12,4 +12,4 @@ scp -r jars ubuntu@$DDO_IP:~/lattice-monitoring-framework
 scp -r config ubuntu@$DDO_IP:~/lattice-monitoring-framework 
 ssh ubuntu@$DDO_IP 'cd lattice-monitoring-framework'
 echo "Running..." >> log.txt
-ssh ubuntu@$DDO_IP 'java -cp ./jars eu.fivegex.monitoring.control.controller.Controller config/controller.properties' 
+ssh ubuntu@$DDO_IP 'java -cp jars/monitoring-bin-controller-0.7.1.jar eu.fivegex.monitoring.control.controller.Controller config/controller.properties' 
