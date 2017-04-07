@@ -7,9 +7,11 @@ DDO_IP=docker-orchestrator.ci1.5gex
 echo "installing java (if needed...)"
 ssh ubuntu@$DDO_IP 'sudo apt-get -y install openjdk-8-jre-headless'
 echo "stopping java processes (if any)"
-ssh ubuntu@$DDO_IP 'sudo killall java'
+ssh ubuntu@$DDO_IP 'sudo killall java'  || RESULT=$?
+echo "removing existing installation (if any)..."
+ssh ubuntu@$DDO_IP 'rm -r lattice-monitoring-framework' || RESULT=$?
 echo "creating dir..."
-ssh ubuntu@$DDO_IP 'mkdir -p lattice-monitoring-framework'
+ssh ubuntu@$DDO_IP 'mkdir -p lattice-monitoring-framework' || RESULT=$?
 scp -r dist/jars ubuntu@$DDO_IP:~/lattice-monitoring-framework 
 scp -r conf ubuntu@$DDO_IP:~/lattice-monitoring-framework 
 echo "Running..."
