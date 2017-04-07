@@ -8,10 +8,9 @@ timestamps {
 			    sh """
                 docker cp ./ ${c.id}:/root
 				docker exec ${c.id} ant -f /root/source/build.xml dist
-                mkdir -p jars
-                mkdir -p config
-                docker cp ${c.id}:/root/jars jars
-                cd jars
+                mkdir -p built_jars
+                docker cp ${c.id}:/root/jars built_jars
+                cd built_jars
                 mylib=`ls monitoring-bin-controller*.jar`
                 echo "mylib: \$mylib"              
                 docker cp  \$mylib ${c.id}:/root/.m2/repository/eu/fivegex/monitoring/control/controller/monitoring-bin-controller/0.7.1/
@@ -19,7 +18,7 @@ timestamps {
             }
 			
 			echo "Archiving jars..."
-			archive 'jars/*.jar'
+			archive 'built_jars/*.jar'
 			echo "Archiving confs..."
 			archive 'conf/*'
 			
