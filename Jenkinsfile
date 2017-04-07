@@ -17,12 +17,7 @@ timestamps {
               """
             }
 			
-			post {
-				always {
-					archive 'jars/*.jar'
-				}
-			}
- 
+			archive 'jars/*.jar'
         }
         //step([$class: 'Mailer', recipients: '5gex-devel@tmit.bme.hu'])
     }
