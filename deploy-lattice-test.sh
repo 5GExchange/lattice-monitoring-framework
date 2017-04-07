@@ -15,4 +15,4 @@ ssh ubuntu@$DDO_IP 'mkdir -p lattice-monitoring-framework' || RESULT=$?
 scp -r dist/jars ubuntu@$DDO_IP:~/lattice-monitoring-framework 
 scp -r conf ubuntu@$DDO_IP:~/lattice-monitoring-framework 
 echo "Running..."
-ssh ubuntu@$DDO_IP 'cd lattice-monitoring-framework &&  nohup java -cp jars/monitoring-bin-controller-0.7.1.jar eu.fivegex.monitoring.control.controller.Controller conf/controller.properties > lattice.out 2> lattice.out < /dev/null & && echo "started" && exit 0'
+ssh ubuntu@$DDO_IP 'cd lattice-monitoring-framework &&  nohup java -cp jars/monitoring-bin-controller-0.7.1.jar eu.fivegex.monitoring.control.controller.Controller conf/controller.properties > lattice.log 2>&1 &'
