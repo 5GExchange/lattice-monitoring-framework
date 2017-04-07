@@ -8,7 +8,7 @@ echo "installing java (if needed...)" >> log.txt
 ssh ubuntu@$DDO_IP 'sudo apt-get -y install openjdk-8-jre-headless'
 echo "creating dir..." >> log.txt
 ssh ubuntu@$DDO_IP 'mkdir -p lattice-monitoring-framework'
-scp -r built_jars ubuntu@$DDO_IP:~/lattice-monitoring-framework 
+scp -r dist/jars ubuntu@$DDO_IP:~/lattice-monitoring-framework 
 scp -r conf ubuntu@$DDO_IP:~/lattice-monitoring-framework 
 echo "Running..." >> log.txt
 ssh ubuntu@$DDO_IP 'cd lattice-monitoring-framework && java -cp jars/monitoring-bin-controller-0.7.1.jar eu.fivegex.monitoring.control.controller.Controller config/controller.properties'
