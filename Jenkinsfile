@@ -12,7 +12,9 @@ timestamps {
                 docker cp ${c.id}:/root/jars dist
                 cd dist/jars
                 mylib=`ls monitoring-bin-controller*.jar`
-                echo "mylib: \$mylib"              
+                echo "mylib: \$mylib"   
+				def libversion = $mylib.minus("monitoring-bin-controller-").minus(".jar")
+				println "libversion: " + libversion
                 docker cp  \$mylib ${c.id}:/root/.m2/repository/eu/fivegex/monitoring/control/controller/monitoring-bin-controller/0.7.1/
               """
             }
@@ -27,7 +29,7 @@ timestamps {
 			currentBuild.result = 'FAILURE'
 			throw any
 		} finally {
-			step([$class: 'Mailer', recipients: '5gex-devel@tmit.bme.hu'])
+			//step([$class: 'Mailer', recipients: '5gex-devel@tmit.bme.hu'])
 		}
     }
 }
