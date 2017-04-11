@@ -14,10 +14,9 @@ timestamps {
                 mylib=`ls monitoring-bin-controller*.jar`
                 echo "mylib: \$mylib"   
 				version=\${mylib#monitoring-bin-controller-}
-				echo "version: \$version"
 				version=\${version%.jar}
 				echo "version: \$version"
-                docker cp  \$mylib ${c.id}:/root/.m2/repository/eu/fivegex/monitoring/control/controller/monitoring-bin-controller/0.7.1/
+                docker cp  \$mylib ${c.id}:/root/.m2/repository/eu/fivegex/monitoring/control/controller/monitoring-bin-controller/\$version/
               """
             }
 			
