@@ -1,7 +1,7 @@
 #!groovy
 timestamps {
     node {
-        catchError {
+        try {
             checkout scm
             // Run bash with -it to keep the container alive while we copy files in and run the build
             docker.image('frekele/ant:1.9.7-jdk8').withRun('-it -v /var/lib/m2:/root/.m2', 'bash') {c ->
@@ -22,10 +22,12 @@ timestamps {
 			echo "Archiving confs..."
 			archive 'conf/*'
 			
-			echo "Running deployment script..."
-			sh "./deploy-lattice-test.sh"
-			echo "...done"
-        }
-        //step([$class: 'Mailer', recipients: '5gex-devel@tmit.bme.hu'])
+			currentBuild.result = 'SUCCESS'
+        } catch (any) {
+			currentBuild.result = 'FAILURE'
+			throw any
+		} finally {
+			step([$class: 'Mailer', recipients: '5gex-devel@tmit.bme.hu'])
+		}
     }
 }
