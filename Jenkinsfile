@@ -13,8 +13,10 @@ timestamps {
                 cd dist/jars
                 mylib=`ls monitoring-bin-controller*.jar`
                 echo "mylib: \$mylib"   
-				def libversion = $mylib.minus("monitoring-bin-controller-").minus(".jar")
-				println "libversion: " + libversion
+				version=echo \${mylib#monitoring-bin-controller}
+				echo "version: \$version"
+				version=echo \${version%.jar}
+				echo "version: \$version"
                 docker cp  \$mylib ${c.id}:/root/.m2/repository/eu/fivegex/monitoring/control/controller/monitoring-bin-controller/0.7.1/
               """
             }
