@@ -8,13 +8,10 @@ package eu.reservoir.monitoring.distribution.udp;
 import eu.reservoir.monitoring.core.Measurement;
 import eu.reservoir.monitoring.core.MeasurementReporting;
 import eu.reservoir.monitoring.core.MeasurementReceiver;
-import eu.reservoir.monitoring.core.ConsumerMeasurement;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.core.plane.*;
 import eu.reservoir.monitoring.distribution.*;
-import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
@@ -24,6 +21,8 @@ public abstract class AbstractUDPDataPlaneConsumer implements DataPlane, Measure
     // The address we are sending to
     InetSocketAddress address;
 
+    int port;
+    
     // We don't want to transmit measurement data.
     // Producers will only transmit, and Consumers will receive.
 
@@ -36,6 +35,20 @@ public abstract class AbstractUDPDataPlaneConsumer implements DataPlane, Measure
     // This keeps the last seqNo from each DataSource that is seen
     HashMap<ID, Integer> seqNoMap;
 
+    
+    
+    /**
+     * Construct a AbstractUDPDataPlaneConsumer.
+     */
+    public AbstractUDPDataPlaneConsumer(int port) {
+	// sending address is explicitly set to null
+	address = null;
+        
+        this.port = port;
+
+	seqNoMap = new HashMap<ID, Integer>();
+    }
+    
     /**
      * Construct a AbstractUDPDataPlaneConsumer.
      */
@@ -54,9 +67,11 @@ public abstract class AbstractUDPDataPlaneConsumer implements DataPlane, Measure
 	    // only connect if we're not already connected
 	    if (udpReceiver == null) {
                 
-                //System.out.println("FT: AbstractUDPDataPlaneCunsumer.connect - Connecting to the Data Plane");
-                
-		UDPReceiver rr = new UDPReceiver(this, address);
+                UDPReceiver rr;
+                if (address != null)
+                    rr = new UDPReceiver(this, address);
+                else
+                    rr = new UDPReceiver(this, port);
 
 		rr.listen();
 		

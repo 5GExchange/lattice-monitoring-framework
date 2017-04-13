@@ -10,7 +10,7 @@ package eu.fivegex.monitoring.appl.dataconsumers;
  * @author uceeftu
  */
 
-import eu.fivegex.monitoring.control.udp.UDPDataConsumerControlPlaneConsumer;
+import eu.fivegex.monitoring.control.udp.UDPDataConsumerControlPlaneXDRConsumer;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
@@ -24,8 +24,8 @@ import java.util.Scanner;
 /**
  * This receives measurements from a UDP Data Plane.
  */
-public class SimpleControllableDataConsumer {
-    ControllableDataConsumer consumer;
+public final class SimpleControllableDataConsumer extends Thread {
+    DefaultControllableDataConsumer consumer;
 
     /*
      * Construct a controllable SimpleControllableDataConsumer
@@ -39,8 +39,10 @@ public class SimpleControllableDataConsumer {
                                           int controlPort,
                                           int controlRemotePort) throws UnknownHostException {
         
-	// set up a ControllableDataConsumer
-	consumer = new ControllableDataConsumer("controllable-DC");
+        this.attachShutDownHook();
+        
+	// set up a DefaultControllableDataConsumer
+	consumer = new DefaultControllableDataConsumer("controllable-DC");
         System.out.println("Data Consumer ID: " + consumer.getID());
 
 	// set up an IP address for data and control
@@ -53,17 +55,35 @@ public class SimpleControllableDataConsumer {
 	// set up data plane
 	consumer.setDataPlane(new UDPDataPlaneConsumer(address));
         
-        ControlPlane controlPlane = new UDPDataConsumerControlPlaneConsumer(ctrlAddress, ctrlRemoteAddress);
-        ((DataConsumerInteracter)controlPlane).setDataConsumer(consumer);
+        ControlPlane controlPlane = new UDPDataConsumerControlPlaneXDRConsumer(ctrlAddress, ctrlRemoteAddress);
+        ((DataConsumerInteracter) controlPlane).setDataConsumer(consumer);
         consumer.setControlPlane(controlPlane);
         
-        InfoPlane infoPlane = new DHTDataConsumerInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort);
-        ((DataConsumerInteracter)infoPlane).setDataConsumer(consumer);
+        //InfoPlane infoPlane = new DHTDataConsumerInfoPlane(infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort);
+        InfoPlane infoPlane = new DHTDataConsumerInfoPlane(infoPlaneRootPort, infoPlaneLocalPort);
+        ((DataConsumerInteracter) infoPlane).setDataConsumer(consumer);
         consumer.setInfoPlane(infoPlane);
 
 	consumer.connect();
     }
 
+    
+    @Override
+    public void run() {
+        System.out.println("Disconnecting from the planes before shutting down");
+        try {
+            // first performs deannounce and then disconnect for each of the planes
+            consumer.disconnect(); 
+        } catch (Exception e) {
+            System.out.println("Something went wrong while Disconnecting from the planes " + e.getMessage());
+          }
+    }
+    
+    public void attachShutDownHook() {
+        Runtime.getRuntime().addShutdownHook(this);
+    }
+    
+    
     public static void main(String [] args) {
         try {
             String dcAddr = null;

@@ -83,9 +83,9 @@ public interface InfoService {
     public boolean addProbeAttributeInfo(Probe p, ProbeAttribute pa);
     
     /**
-     * Add DataConsumer info.
+     * Add ControllableDataConsumer info.
      */
-    public boolean addDataConsumerInfo(DataConsumer dc);
+    public boolean addDataConsumerInfo(ControllableDataConsumer dc);
     
     /**
      * Add Reporter info.
@@ -132,9 +132,9 @@ public interface InfoService {
     public boolean removeProbeAttributeInfo(Probe p, ProbeAttribute pa);
     
     /**
-     * Remove DataConsumer Info.
+     * Remove ControllableDataConsumer Info.
      */
-    public boolean removeDataConsumerInfo(DataConsumer dc);
+    public boolean removeDataConsumerInfo(ControllableDataConsumer dc);
     
     
     /**
@@ -143,6 +143,18 @@ public interface InfoService {
     public boolean removeReporterInfo(Reporter r);
     
 
+    /**
+     * Check if a Data Source is in the Info Plane
+     */
+    public boolean containsDataSource(ID dataSourceID, int timeOut);
+    
+    
+    /**
+     * Check if a Data Consumer is in the Info Plane
+     */
+    public boolean containsDataConsumer(ID dataConsumerID, int timeOut);
+    
+    
     /*
      * General .
      */

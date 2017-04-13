@@ -6,6 +6,7 @@
 package eu.fivegex.monitoring.control.controller;
 
 import cc.clayman.console.BasicRequestHandler;
+import eu.fivegex.monitoring.control.ControlInterface;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Scanner;
@@ -13,6 +14,8 @@ import org.simpleframework.http.Path;
 import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
@@ -22,7 +25,8 @@ import us.monoid.json.JSONObject;
  */
 class DataConsumerRestHandler extends BasicRequestHandler {
     
-    Controller controller_;
+    ControlInterface<JSONObject, JSONException> controllerInterface;
+    private Logger LOGGER = LoggerFactory.getLogger(DataConsumerRestHandler.class);
 
     public DataConsumerRestHandler() {
     }
@@ -30,9 +34,9 @@ class DataConsumerRestHandler extends BasicRequestHandler {
      @Override
     public boolean handle(Request request, Response response) {
         // get Controller
-        controller_ = (Controller) getManagementConsole().getAssociated();
+        controllerInterface = (ControlInterface<JSONObject, JSONException>) getManagementConsole().getAssociated();
         
-        System.out.println("REQUEST: " + request.getMethod() + " " +  request.getTarget());
+        LOGGER.debug("-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
         
         long time = System.currentTimeMillis();
@@ -65,44 +69,191 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         */
         
         try {
-            if (method.equals("POST")) {
-                if (name == null && segments.length == 3)
-                    loadReporter(request, response);
-                else if (name == null && segments.length == 1) {
-                    //TODO: deployDC(request,response);
-                }
-                else
-                    notFound(response, "POST bad request");
-            }
-            
-            else if (method.equals("GET")) {
-                    if (name == null && segments.length == 3) {
-                        getDCMeasurementRate(request, response);
+            switch (method) {
+                case "POST":
+                    if (name == null && segments.length == 3)
+                        loadReporter(request, response);
+                    else if (name == null && segments.length == 1) {
+                        deployDC(request,response);
                     }
                     else
-                        notFound(response, "GET bad request");
-            } 
+                        notFound(response, "POST bad request");
+                    break;
+                case "DELETE":
+                    if (name != null && segments.length == 2) {
+                        stopDC(request,response);
+                    }
+                    break;    
+                case "GET":
+                    if (name == null && segments.length == 1)
+                        getDataConsumers(request, response);
+                    else
+                        if (name == null && segments.length == 3) {
+                            getDCMeasurementRate(request, response);
+                        }
+                        else
+                            notFound(response, "GET bad request");
+                    break;
+                default:
+                    badRequest(response, "Unknown method" + method);
+                    return false;
+            }
             
             return true;
             
             } catch (IOException ex) {
-                System.out.println("IOException" + ex.getMessage());
+                LOGGER.error("IOException" + ex.getMessage());
             } catch (JSONException jex) {
-                System.out.println("JSONException" + jex.getMessage());
-            } catch (DCNotFoundException idEx) {
-                System.out.println("DCNotFoundException --- " + idEx.getMessage());
+                LOGGER.error("JSONException" + jex.getMessage());
             } finally {
                         try {
                             response.close();
                             } catch (IOException ex) {
-                                System.out.println("IOException" + ex.getMessage());
+                                LOGGER.error("IOException" + ex.getMessage());
                               }
                       }
      return false;
     }
    
    
-    private void loadReporter(Request request, Response response) throws JSONException, IOException, DCNotFoundException {
+    
+    private void deployDC(Request request, Response response) throws JSONException, IOException {
+        Query query = request.getQuery();
+        
+        String endPoint;
+        String port;
+        String userName;
+        String rawArgs="";
+        
+        if (query.containsKey("endpoint"))
+            endPoint = query.get("endpoint");
+        else {
+            badRequest(response, "missing endpoint arg");
+            response.close();
+            return;
+        }
+        
+        if (query.containsKey("port"))
+            port = query.get("port");
+        else {
+            badRequest(response, "missing port arg");
+            response.close();
+            return;
+        }
+        
+        if (query.containsKey("username"))
+            userName = query.get("username");
+        else {
+            badRequest(response, "missing username args");
+            response.close();
+            return;
+        }
+        
+        if (query.containsKey("args")) {
+            rawArgs = query.get("args");
+            rawArgs = rawArgs.trim();
+            rawArgs = rawArgs.replaceAll("\\+", " ");
+        }
+        
+        boolean success = true;
+        String failMessage = null;
+        JSONObject jsobj = null;
+        
+        jsobj = controllerInterface.startDC(endPoint, port, userName, rawArgs);
+        
+        if (!jsobj.getBoolean("success")) {
+            failMessage = (String)jsobj.get("msg");
+            LOGGER.error("startDC: failure detected: " + failMessage);
+            success = false;   
+        }   
+    
+        if (success) {
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+        
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }  
+    }
+    
+    
+    private void stopDC(Request request, Response response) throws JSONException, IOException {
+        Path path = request.getPath();
+        
+        /*
+        String endPoint;
+        String port;
+        String userName;
+        
+        if (query.containsKey("endpoint"))
+            endPoint = query.get("endpoint");
+        else {
+            badRequest(response, "missing endpoint arg");
+            response.close();
+            return;
+        }
+        
+        if (query.containsKey("port"))
+            port = query.get("port");
+        else {
+            badRequest(response, "missing port arg");
+            response.close();
+            return;
+        }
+        
+        if (query.containsKey("username"))
+            userName = query.get("username");
+        else {
+            badRequest(response, "missing username args");
+            response.close();
+            return;
+        }*/
+        
+        String dcID;
+        
+        Scanner scanner = new Scanner(path.getName());
+        
+        if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
+            dcID = scanner.next();
+            scanner.close();
+        }
+        else {
+            LOGGER.error("dcID is not valid");
+            scanner.close();
+            complain(response, "data consumer ID is not a valid UUID: " + path.getName());
+            return;
+        }
+        
+        boolean success = true;
+        String failMessage = null;
+        JSONObject jsobj = null;
+        
+        jsobj = controllerInterface.stopDC(dcID);
+        
+        if (!jsobj.getBoolean("success")) {
+            failMessage = (String)jsobj.get("msg");
+            LOGGER.error("stopDC: failure detected: " + failMessage);
+            success = false;   
+        }   
+    
+        if (success) {
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+        
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+        
+    }
+    
+    
+    private void loadReporter(Request request, Response response) throws JSONException, IOException {
         Path path = request.getPath();
         String[] segments = path.getSegments(); 
         Query query = request.getQuery();
@@ -132,7 +283,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         
         if (segments[1].matches("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}") && segments[2].equals("reporter")) {
             dcID = segments[1];
-            jsobj = controller_.loadReporter(dcID, className, rawArgs);
+            jsobj = controllerInterface.loadReporter(dcID, className, rawArgs);
         }
         
         else {
@@ -141,9 +292,9 @@ class DataConsumerRestHandler extends BasicRequestHandler {
             return;
         }
         
-        if (jsobj.get("success").equals("false")) {
-            failMessage = (String)jsobj.get("msg");
-            System.out.println("loadReporter: failure detected: " + failMessage);
+        if (!jsobj.getBoolean("success")) {
+            failMessage =(String)jsobj.get("msg");
+            LOGGER.error("loadReporter failure: " + failMessage);
             success = false;   
         }   
     
@@ -161,7 +312,7 @@ class DataConsumerRestHandler extends BasicRequestHandler {
     }
     
     
-    private void getDCMeasurementRate(Request request, Response response) throws JSONException, IOException, DCNotFoundException {
+    private void getDCMeasurementRate(Request request, Response response) throws JSONException, IOException {
         Scanner scanner;
         boolean success = true;
         String failMessage = null;
@@ -175,11 +326,10 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         scanner = new Scanner (segments[1]);
         if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
             dcID = scanner.next();
-            System.out.println("dcID " + dcID);
             scanner.close();
         }
         else {
-            System.out.println("DC ID is not valid");
+            LOGGER.error("Data Consumer ID is not a valid UUID");
             scanner.close();
             complain(response, "Data Consumer ID is not a valid UUID: " + segments[1]);
             return;
@@ -191,11 +341,11 @@ class DataConsumerRestHandler extends BasicRequestHandler {
             return;
         }
         
-        jsobj = controller_.getDataConsumerMeasurementRate(dcID);
+        jsobj = controllerInterface.getDataConsumerMeasurementRate(dcID);
 
-        if (jsobj.get("success").equals("false")) {
+        if (!jsobj.getBoolean("success")) {
             failMessage = (String)jsobj.get("msg");
-            System.out.println("getDataConsumerMeasurementRate: failure detected: " + failMessage);
+            LOGGER.error("getDataConsumerMeasurementRate: failure detected: " + failMessage);
             success = false;   
         }
 
@@ -211,5 +361,31 @@ class DataConsumerRestHandler extends BasicRequestHandler {
         }
 
     }
+    
+    private void getDataConsumers(Request request, Response response) throws JSONException, IOException {
+        boolean success = true;
+        String failMessage = null;
+        JSONObject jsobj = null;
+        
+        jsobj = controllerInterface.getDataConsumers();
+
+        if (!jsobj.getBoolean("success")) {
+            failMessage = (String)jsobj.get("msg");
+            LOGGER.error("getDataConsumers: failure detected: " + failMessage);
+            success = false;   
+        }
+
+        if (success) {
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
+    }
+    
     
 }

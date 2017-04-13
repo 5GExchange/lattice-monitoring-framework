@@ -5,16 +5,21 @@
 
 package eu.reservoir.monitoring.im.dht;
 
+import eu.fivegex.monitoring.im.dht.tomp2p.IMNode;
 import eu.reservoir.monitoring.core.ControllableReporter;
-import eu.reservoir.monitoring.core.DataConsumer;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.DataSource;
+import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
 import eu.reservoir.monitoring.core.Reporter;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
 
 import java.io.IOException;
+import eu.reservoir.monitoring.core.ControllableDataConsumer;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
+import eu.reservoir.monitoring.core.plane.AnnounceMessage;
+import eu.reservoir.monitoring.core.plane.DeannounceMessage;
 
 /**
  * A DHTDataConsumerInfoPlane is an InfoPlane implementation
@@ -22,7 +27,7 @@ import java.io.IOException;
  */
 
 public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements InfoPlane, DataConsumerInteracter {
-    DataConsumer dataConsumer;
+    ControllableDataConsumer dataConsumer;
     // The hostname of the DHT root.
     String rootHost;
 
@@ -44,6 +49,14 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
 
 	imNode = new IMNode(localPort, remoteHostname, remotePort);
     }
+    
+    public DHTDataConsumerInfoPlane(int remotePort, int localPort) {
+	rootPort = remotePort;
+	port = localPort;
+
+	imNode = new IMNode(localPort, remotePort);
+    }
+    
 
     /**
      * Connect to a delivery mechansim.
@@ -60,15 +73,16 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     }
 
     /**
-     * Dicconnect from a delivery mechansim.
-     * In a DHTDataSourceInfoPlane we call dennounce.
+     * Disconnect from a delivery mechanism.
+     * In a DHTDataSourceInfoPlane we call deannounce.
      */
     public boolean disconnect() {
-	if (super.disconnect()) {
+	/*if (super.disconnect()) {
 	    return dennounce();
 	} else {
 	    return false;
-	}
+	}*/
+        return super.disconnect();
     }
 
 
@@ -84,16 +98,25 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
      * Un-announce that the plane is up and running
      */
     public boolean dennounce() {
-	// DataSource dataSource = dataSourceDelegate.getDataSource();
-	// return imNode.removeDataSource(dataSource);
-	return true;
+        try {
+	    imNode.removeDataConsumer(dataConsumer);
+            
+            imNode.announce(new DeannounceMessage(dataConsumer.getID(), AbstractAnnounceMessage.EntityType.DATACONSUMER));
+	    LOGGER.info("just deannounced this Data Consumer " + dataConsumer.getID());
+	    return true;
+	} catch (IOException ioe) {
+	    return false;
+	}        
     }
 
     @Override
-    public boolean addDataConsumerInfo(DataConsumer dc) {
+    public boolean addDataConsumerInfo(ControllableDataConsumer dc) {
         try {
-	    imNode.addDataConsumer(dataConsumer);
-	    System.err.println("DHTInfoPlane: just announced DataConsumer " + dataConsumer);
+	    imNode.addDataConsumer(dc);
+            imNode.addDataConsumerInfo(dc);
+            
+            imNode.announce(new AnnounceMessage(dataConsumer.getID(), AbstractAnnounceMessage.EntityType.DATACONSUMER));
+	    LOGGER.info("just announced this Data Consumer " + dc.getID());
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -104,7 +127,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     public boolean addReporterInfo(Reporter r) {
         try {
 	    imNode.addReporter((ControllableReporter)r);
-	    System.err.println("DHTInfoPlane: just added reporter " + ((ControllableReporter)r).getName());
+	    LOGGER.info("just added reporter " + ((ControllableReporter)r).getName());
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -112,10 +135,10 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     }
 
     @Override
-    public boolean removeDataConsumerInfo(DataConsumer dc) {
+    public boolean removeDataConsumerInfo(ControllableDataConsumer dc) {
         try {
 	    imNode.removeDataConsumer(dc);
-	    System.err.println("DHTInfoPlane: just removed Data Consumer " + dc);
+	    LOGGER.info("just removed Data Consumer " + dc);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -126,7 +149,7 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     public boolean removeReporterInfo(Reporter r) {
         try {
 	    imNode.addReporter((ControllableReporter)r);
-	    System.err.println("DHTInfoPlane: just removed reporter " + r);
+	    LOGGER.info("just removed reporter " + r);
 	    return true;
 	} catch (IOException ioe) {
 	    return false;
@@ -183,12 +206,22 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
     }
 
     @Override
-    public DataConsumer getDataConsumer() {
+    public boolean containsDataSource(ID dataSourceID, int timeOut) {
+        throw new UnsupportedOperationException("Not supported on a Data Consumer"); 
+    }
+
+    @Override
+    public boolean containsDataConsumer(ID dataConsumerID, int timeOut) {
+        throw new UnsupportedOperationException("Not supported on a Data Consumer");
+    } 
+
+    @Override
+    public ControllableDataConsumer getDataConsumer() {
         return this.dataConsumer;
     }
 
     @Override
-    public DataConsumer setDataConsumer(DataConsumer dc) {
+    public ControllableDataConsumer setDataConsumer(ControllableDataConsumer dc) {
         this.dataConsumer = dc;
         return dataConsumer;
     }

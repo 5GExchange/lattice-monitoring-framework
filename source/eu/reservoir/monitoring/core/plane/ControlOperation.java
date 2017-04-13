@@ -21,6 +21,7 @@ public enum ControlOperation {
     SET_PROBE_SERVICE_ID("setProbeServiceID"),
     SET_PROBE_DATA_RATE("setProbeDataRate"),
     SET_PROBE_GROUP_ID("setProbeGroupID"),
+    GET_DS_NAME("getDataSourceInfo"),
     
     // DC control service 
     GET_DC_RATE("getDCMeasurementsRate"),

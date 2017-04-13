@@ -5,21 +5,29 @@
 
 package eu.reservoir.monitoring.im.dht;
 
-import eu.reservoir.monitoring.core.DataConsumer;
+import eu.fivegex.monitoring.im.delegate.ControlInformationManager;
+import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import eu.reservoir.monitoring.core.DataSource;
+import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.Probe;
 import eu.reservoir.monitoring.core.ProbeAttribute;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
-
-import java.io.IOException;
-import eu.reservoir.monitoring.core.DataSourceInteracter;
 import eu.reservoir.monitoring.core.Reporter;
+import eu.reservoir.monitoring.core.ControllableDataConsumer;
+import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
+import eu.reservoir.monitoring.core.plane.AnnounceEventListener;
+import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegateInteracter;
+import eu.fivegex.monitoring.im.dht.tomp2p.IMNode;
 
 /**
  * A DHTInfoPlaneConsumer is an InfoPlane implementation
  * that collects data from the Information Model data.
  */
-public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPlane  {
+public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPlane, InfoPlaneDelegateInteracter, AnnounceEventListener  {
+    private InfoPlaneDelegate infoPlaneDelegate;
+    
+    AnnounceEventListener listener;
+    
     // The hostname of the DHT root.
     String rootHost;
 
@@ -33,6 +41,7 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
      * Constructor for subclasses.
      */
     DHTInfoPlaneConsumer() {
+        setInfoPlaneDelegateInteracter(new ControlInformationManager(this));
     }
 
 
@@ -47,6 +56,7 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
 	port = localPort;
 
 	imNode = new IMNode(localPort, remoteHostname, remotePort);
+        imNode.addAnnounceEventListener(this);
     }
 
 
@@ -131,7 +141,7 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
     }
 
     @Override
-    public boolean addDataConsumerInfo(DataConsumer dc) {
+    public boolean addDataConsumerInfo(ControllableDataConsumer dc) {
         return false;
     }
 
@@ -141,7 +151,7 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
     }
 
     @Override
-    public boolean removeDataConsumerInfo(DataConsumer dc) {
+    public boolean removeDataConsumerInfo(ControllableDataConsumer dc) {
         return false;
     }
 
@@ -150,7 +160,38 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
         return false;
     }
     
+    @Override
+    public boolean containsDataSource(ID dataSourceID, int timeout) {
+        return imNode.containsDataSource(dataSourceID, timeout); 
+    }
+    
+    @Override
+    public boolean containsDataConsumer(ID dataConsumerID, int timeout) {
+        return imNode.containsDataConsumer(dataConsumerID, timeout);
+    }
     
     
+    @Override
+    public void receivedAnnounceEvent(AbstractAnnounceMessage m) {
+        infoPlaneDelegate.receivedAnnounceEvent(m);
+    }
+    
+    @Override
+    public void setInfoPlaneDelegateInteracter(InfoPlaneDelegate im) {
+        this.infoPlaneDelegate = im;
+    }
 
+    @Override
+    public InfoPlaneDelegate getInfoPlaneDelegateInteracter() {
+        return this.infoPlaneDelegate;
+    }
+    
+    public void addAnnounceEventListener(AnnounceEventListener l) {
+        this.listener=l;
+    }
+    
+    protected void fireEvent(AbstractAnnounceMessage m) {
+        listener.receivedAnnounceEvent(m);
+    }
+    
 }

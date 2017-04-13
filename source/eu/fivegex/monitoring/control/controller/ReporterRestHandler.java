@@ -6,13 +6,15 @@
 package eu.fivegex.monitoring.control.controller;
 
 import cc.clayman.console.BasicRequestHandler;
+import eu.fivegex.monitoring.control.ControlInterface;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Scanner;
 import org.simpleframework.http.Path;
-import org.simpleframework.http.Query;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
@@ -22,7 +24,8 @@ import us.monoid.json.JSONObject;
  */
 class ReporterRestHandler extends BasicRequestHandler {
 
-    Controller controller_;
+    ControlInterface<JSONObject, JSONException> controllerInterface;
+    private Logger LOGGER = LoggerFactory.getLogger(ReporterRestHandler.class);
     
     public ReporterRestHandler() {
     }
@@ -30,9 +33,9 @@ class ReporterRestHandler extends BasicRequestHandler {
     @Override
     public boolean handle(Request request, Response response) {
         // get Controller
-        controller_ = (Controller) getManagementConsole().getAssociated();
+        controllerInterface = (ControlInterface<JSONObject, JSONException>) getManagementConsole().getAssociated();
         
-        System.out.println("REQUEST: " + request.getMethod() + " " +  request.getTarget());
+        LOGGER.debug("-------- REQUEST RECEIVED --------\n" + request.getMethod() + " " +  request.getTarget());
         
         
         long time = System.currentTimeMillis();
@@ -93,22 +96,20 @@ class ReporterRestHandler extends BasicRequestHandler {
             return true;
             
             } catch (IOException ex) {
-                System.out.println("IOException" + ex.getMessage());
+                LOGGER.error("IOException" + ex.getMessage());
             } catch (JSONException jex) {
-                System.out.println("JSONException" + jex.getMessage());
-            } catch (ReporterNotFoundException idEx) {
-                System.out.println("ReporterNotFoundException --- " + idEx.getMessage());
+                LOGGER.error("JSONException" + jex.getMessage());
             } finally {
                         try {
                             response.close();
                             } catch (IOException ex) {
-                                System.out.println("IOException" + ex.getMessage());
+                                LOGGER.error("IOException" + ex.getMessage());
                               }
                       }
      return false;
     }
 
-    private void reporterOperation(Request request, Response response) throws JSONException, IOException, ReporterNotFoundException {
+    private void reporterOperation(Request request, Response response) throws JSONException, IOException {
         /*
         Scanner scanner;
         boolean success = true;
@@ -138,7 +139,7 @@ class ReporterRestHandler extends BasicRequestHandler {
     
     
     
-    private void deleteReporter(Request request, Response response) throws JSONException, IOException, ReporterNotFoundException {
+    private void deleteReporter(Request request, Response response) throws JSONException, IOException {
         boolean success = true;
         String failMessage = null;
         JSONObject jsobj = null;
@@ -150,11 +151,11 @@ class ReporterRestHandler extends BasicRequestHandler {
             String reporterID = sc.next();
             sc.close();
 
-            jsobj = controller_.unloadReporter(reporterID);
+            jsobj = controllerInterface.unloadReporter(reporterID);
 
-            if (jsobj.get("success").equals("false")) {
+            if (!jsobj.getBoolean("success")) {
                 failMessage = (String)jsobj.get("msg");
-                System.out.println("ReporterRestHandler: failure detected: " + failMessage);
+                LOGGER.error("failure detected: " + failMessage);
                 success = false;   
             }
 

@@ -13,13 +13,13 @@ package eu.reservoir.monitoring.core;
 
 public interface DataConsumerInteracter {
     /**
-     * Get the DataConsumer
+     * Get the ControllableDataConsumer
      */
-    public DataConsumer getDataConsumer();
+    public ControllableDataConsumer getDataConsumer();
 
     /**
-     * Set the DataConsumer
+     * Set the ControllableDataConsumer
      */
-    public DataConsumer setDataConsumer(DataConsumer ds);
+    public ControllableDataConsumer setDataConsumer(ControllableDataConsumer ds);
 
 }

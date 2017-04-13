@@ -87,6 +87,21 @@ public abstract class AbstractDataSource implements DataSource, PlaneInteracter,
 	measurementQueue = new LinkedBlockingQueue();
 
     }
+    
+    
+    /**
+     * Construct a DataSource with a given ID.
+     */
+    public AbstractDataSource(ID id) {
+	// set the ID of this DataSource
+	myID = id;
+	// set up a default DataSourceDelegate
+	setDataSourceDelegate(new DefaultDataSourceDelegate(this));
+
+	// set up queue
+	measurementQueue = new LinkedBlockingQueue();
+
+    }
 
     /**
      * Activate the transmission from the queue to the data plane by starting the thread.
@@ -965,7 +980,7 @@ public abstract class AbstractDataSource implements DataSource, PlaneInteracter,
     }
 
     /**
-     * Connect to a delivery mechansim.
+     * Connect to a delivery mechanism.
      */
     public boolean connect() {
 	// start QueueHandling
@@ -974,14 +989,14 @@ public abstract class AbstractDataSource implements DataSource, PlaneInteracter,
     }
 
     /**
-     * Is this connected to a delivery mechansim.
+     * Is this connected to a delivery mechanism.
      */
     public boolean isConnected() {
 	return dataSourceDelegate.isConnected();
     }
 
     /**
-     * Dicconnect from a delivery mechansim.
+     * Disconnect from a delivery mechanism.
      */
     public boolean disconnect() {
         // stop QueueHandling
