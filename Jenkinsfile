@@ -10,13 +10,10 @@ timestamps {
 				docker exec ${c.id} ant -f /root/source/build.xml dist
                 mkdir -p dist
                 docker cp ${c.id}:/root/jars dist
-                cd dist/jars
-                mylib=`ls monitoring-bin-controller*.jar`
-                echo "mylib: \$mylib"   
-				version=\${mylib#monitoring-bin-controller-}
-				version=\${version%.jar}
-				echo "version: \$version"
-                docker cp  \$mylib ${c.id}:/root/.m2/repository/eu/fivegex/monitoring/control/controller/monitoring-bin-controller/\$version/
+				docker exec ${c.id} mkdir -p /root/.m2/repository/cc/clayman/logging/restconsole/0.1.0/
+                docker cp  ./libs/controller/restconsole-0.1.0.jar ${c.id}:/root/.m2/repository/cc/clayman/logging/restconsole/0.1.0/restconsole-0.1.0.jar
+				docker exec ${c.id} mkdir -p /root/.m2/repository/cc/clayman/logging/Logger/0.1.0/
+                docker cp  ./libs/misc/Logger-0.1.0.jar ${c.id}:/root/.m2/repository/cc/clayman/logging/Logger/0.1.0/Logger-0.1.0.jar
               """
             }
 			
