@@ -11,7 +11,7 @@ timestamps {
                 mkdir -p dist
                 docker cp ${c.id}:/root/jars dist
 				docker exec ${c.id} mkdir -p /root/.m2/repository/cc/clayman/logging/restconsole/0.1.0/
-                docker cp  ./libs/misc/restconsole-0.1.0.jar ${c.id}:/root/.m2/repository/cc/clayman/logging/restconsole/0.1.0/restconsole-0.1.0.jar
+                docker cp  ./libs/controller/restconsole-0.1.0.jar ${c.id}:/root/.m2/repository/cc/clayman/logging/restconsole/0.1.0/restconsole-0.1.0.jar
 				docker exec ${c.id} mkdir -p /root/.m2/repository/cc/clayman/logging/Logger/0.1.0/
                 docker cp  ./libs/misc/Logger-0.1.0.jar ${c.id}:/root/.m2/repository/cc/clayman/logging/Logger/0.1.0/Logger-0.1.0.jar
               """
