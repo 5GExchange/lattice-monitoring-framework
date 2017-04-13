@@ -10,7 +10,7 @@ timestamps {
 				docker exec ${c.id} ant -f /root/source/build.xml dist
                 mkdir -p dist
                 docker cp ${c.id}:/root/jars dist
-				docekr exec ${c.id} /bin/sh mkdir -p /root/.m2/repository/cc/clayman/logging/1.0.0/
+				docker exec ${c.id} /bin/sh mkdir -p /root/.m2/repository/cc/clayman/logging/1.0.0/
                 docker cp  ./libs/misc/restconsole-1.0.0.jar ${c.id}:/root/.m2/repository/cc/clayman/logging/1.0.0/restconsole-1.0.0.jar
               """
             }
