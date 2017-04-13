@@ -15,9 +15,6 @@ import us.monoid.json.JSONException;
 import us.monoid.web.Resty;
 import us.monoid.json.JSONObject;
 import static us.monoid.web.Resty.content;
-import static us.monoid.web.Resty.content;
-import static us.monoid.web.Resty.content;
-import static us.monoid.web.Resty.content;
 
 /**
  *
