@@ -23,6 +23,8 @@ public class DockerDataCollector {
     int coresNumber;
     long usedMemBytes;
     long maxMemBytes;
+    long txBytes;
+    long rxBytes;
     
     String containerId;
     
@@ -67,6 +69,9 @@ public class DockerDataCollector {
             this.coresNumber=jsobj.getJSONObject("cpu_stats").getJSONObject("cpu_usage").getJSONArray("percpu_usage").length();
             //System.out.println(this.coresNumber);
             
+            this.txBytes=jsobj.getJSONObject("networks").getJSONObject("eth0").getLong("tx_bytes");
+                        
+            this.rxBytes=jsobj.getJSONObject("networks").getJSONObject("eth0").getLong("rx_bytes");
             
         } catch (Exception ex) {
             System.out.println("error: " + ex.getMessage());
@@ -94,5 +99,11 @@ public class DockerDataCollector {
        return maxMemBytes;
     }
     
+    public long getTxBytes() {
+       return txBytes;
+    }
     
+    public long getRxBytes() {
+       return rxBytes;
+    }
 }

@@ -43,6 +43,9 @@ public class DockerProbe extends AbstractProbe implements Probe{
         addProbeAttribute(new DefaultProbeAttribute(2, "mem.used", ProbeAttributeType.LONG, "bytes"));
         addProbeAttribute(new DefaultProbeAttribute(3, "mem.percent", ProbeAttributeType.FLOAT, "percent"));
         
+        addProbeAttribute(new DefaultProbeAttribute(4, "tx.bytes", ProbeAttributeType.LONG, "bytes"));
+        addProbeAttribute(new DefaultProbeAttribute(5, "rx.bytes", ProbeAttributeType.LONG, "bytes"));
+        
     }
     
 
@@ -89,6 +92,9 @@ public class DockerProbe extends AbstractProbe implements Probe{
             list.add(new DefaultProbeValue(1, cpuPercent));
             list.add(new DefaultProbeValue(2, ddc.getUsedMemBytes()));
             list.add(new DefaultProbeValue(3, memPercent));
+            
+            list.add(new DefaultProbeValue(4, ddc.getTxBytes()));
+            list.add(new DefaultProbeValue(5, ddc.getRxBytes()));
 
             ProbeMeasurement m = new ProducerMeasurement(this, list, "Container");
             
