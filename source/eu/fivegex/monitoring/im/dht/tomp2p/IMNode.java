@@ -11,11 +11,14 @@ import java.io.Serializable;
 import java.io.IOException;
 import java.util.Collection;
 import eu.reservoir.monitoring.core.ControllableDataConsumer;
+import eu.reservoir.monitoring.core.DockerDataSource;
 import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import eu.reservoir.monitoring.core.plane.AnnounceEventListener;
 import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import us.monoid.json.JSONException;
+import us.monoid.json.JSONObject;
 
 /**
  * An IMNode is responsible for converting  DataSource, ControllableDataConsumer and Probe
@@ -38,6 +41,9 @@ public class IMNode implements AnnounceEventListener {
 
     // the local port
     int localPort = 0;
+    
+    int localUDPPort = 0;
+    int localTCPPort = 0;
 
     // the remote host
     String remoteHost;
@@ -54,6 +60,31 @@ public class IMNode implements AnnounceEventListener {
     public IMNode(int myPort, String remHost, int remPort) {
 	localPort = myPort;
 	remoteHost = remHost;
+	remotePort = remPort;
+    }
+    
+    /**
+     * Construct an IMNode, given local TCP and UDP ports and a remote port.
+     */
+    
+    public IMNode(int myUDPPort, int myTCPPort, int remPort) {
+	localUDPPort = myUDPPort;
+        localTCPPort = myTCPPort;
+        
+	remotePort = remPort;
+        remoteHost = null; // will be initialized after connection
+    }
+    
+    
+    /**
+     * Construct an IMNode, given local TCP and UDP ports and a remote port.
+     */
+    
+    public IMNode(int myUDPPort, int myTCPPort, String remHost, int remPort) {
+	localUDPPort = myUDPPort;
+        localTCPPort = myTCPPort;
+        remoteHost = remHost;
+        
 	remotePort = remPort;
     }
     
@@ -77,6 +108,8 @@ public class IMNode implements AnnounceEventListener {
      * Connect to the DHT peers.
      */
     public boolean connect() {
+        String remoteConnectedHost = null;
+        
 	try {
 	    // only connect if we don't already have a DHT
 	    if (dht == null) {
@@ -85,15 +118,20 @@ public class IMNode implements AnnounceEventListener {
                     remoteHost = dht.connect();
                 }
                 else {
-                    dht = new DistributedHashTable(localPort, InetAddress.getLocalHost());
-                    remoteHost = dht.connect(remotePort);
+                    if (localPort != 0)
+                        dht = new DistributedHashTable(localPort, InetAddress.getLocalHost());
+                    else
+                        dht = new DistributedHashTable(localUDPPort, localTCPPort, InetAddress.getLocalHost());
+                    if (remoteHost == null)
+                       remoteConnectedHost = dht.connect(remotePort);
+                    else
+                       remoteConnectedHost = dht.connect(remoteHost, remotePort);
                 }
-
-		LOGGER.info("Connecting port " + localPort + " to " + remoteHost + "/" + remotePort);
 
                 //setting this IMNode as a AnnounceEventListener in the DHT
                 dht.addAnnounceEventListener(this);
-		return true;
+                
+		return remoteConnectedHost != null;
 	    } else {
 		return true;
 	    }
@@ -134,7 +172,7 @@ public class IMNode implements AnnounceEventListener {
     
     public IMNode addDataConsumer(ControllableDataConsumer dc) throws IOException {
         putDHT("/dataconsumer/" + dc.getID() + "/name", dc.getName());        
-        putDHT("/dataconsumer/" + dc.getID() + "/inetSocketAddress", dc.getControlPlane().getControlEndPoint());
+        putDHT("/dataconsumer/" + dc.getID() + "/controlendpoint", dc.getControlPlane().getControlEndPoint().toString());
         
         for (ControllableReporter r: dc.getReportersCollection()) {
             if (r instanceof ControllableReporter)
@@ -165,8 +203,26 @@ public class IMNode implements AnnounceEventListener {
      * Add data for a DataSource
      */
     public IMNode addDataSource(DataSource ds) throws IOException {
-	putDHT("/datasource/" + ds.getID() + "/name", ds.getName());        
-        putDHT("/datasource/" + ds.getID() + "/inetSocketAddress", ds.getControlPlane().getControlEndPoint());
+	putDHT("/datasource/" + ds.getID() + "/name", ds.getName());     
+        
+        if (ds instanceof DockerDataSource && ((DockerDataSource) ds).getDataSourceConfigurator() != null) {
+            String externalHost = ((DockerDataSource) ds).getDataSourceConfigurator().getDockerHost();
+            int controlPort = ((DockerDataSource) ds).getDataSourceConfigurator().getControlForwardedPort();
+            
+            JSONObject controlEndPoint = new JSONObject();
+            try {
+            controlEndPoint.put("address", externalHost);
+            controlEndPoint.put("port", controlPort);
+            controlEndPoint.put("type", "socket/NAT");
+            } catch (JSONException e) {
+                return null;
+            }
+            
+            putDHT("/datasource/" + ds.getID() + "/controlendpoint", controlEndPoint.toString());
+        }
+            
+        else    
+            putDHT("/datasource/" + ds.getID() + "/controlendpoint", ds.getControlPlane().getControlEndPoint().toString());
         
 	Collection<Probe> probes = ds.getProbes();
 
@@ -252,7 +308,7 @@ public class IMNode implements AnnounceEventListener {
      */
     public IMNode removeDataSource(DataSource ds) throws IOException {
 	remDHT("/datasource/" + ds.getID() + "/name");
-        remDHT("/datasource/" + ds.getID() + "/inetSocketAddress");
+        remDHT("/datasource/" + ds.getID() + "/controlendpoint");
         remDHT("/datasource/name/" + ds.getName()); 
         
         if (ds instanceof ControllableDataSource)
@@ -305,7 +361,7 @@ public class IMNode implements AnnounceEventListener {
     
     public IMNode removeDataConsumer(ControllableDataConsumer dc) throws IOException {
 	remDHT("/dataconsumer/" + dc.getID() + "/name");
-        remDHT("/dataconsumer/" + dc.getID() + "/inetSocketAddress"); //we also need to remove the control end point
+        remDHT("/dataconsumer/" + dc.getID() + "/controlendpoint"); //we also need to remove the control end point
         remDHT("/dataconsumer/name/" + dc.getName()); 
         
         if (dc instanceof DefaultControllableDataConsumer)
@@ -391,7 +447,7 @@ public class IMNode implements AnnounceEventListener {
      */
     public boolean putDHT(String aKey, Serializable aValue) {
 	try {
-	    LOGGER.debug("put " + aKey + " => " + aValue);
+	    LOGGER.info("put " + aKey + " => " + aValue);
 	    dht.put(aKey, aValue);
 	    return true;
 	} catch (IOException ioe) {

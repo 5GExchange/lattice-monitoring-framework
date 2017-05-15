@@ -82,7 +82,7 @@ public class UDPDataConsumerControlPlaneXDRConsumer extends AbstractUDPControlPl
     @Override
     public ID loadReporter(ID dataConsumerID, String reporterClassName, Object... reporterArgs) throws ControlServiceException {
         try {
-            LOGGER.info("** invoking loadReporter **");
+            LOGGER.info("** invoking loadReporter **");            
             ReporterLoader r = new ReporterLoader(reporterClassName, reporterArgs);
             dataConsumer.addReporter(r.getReporter());
             return r.getReporter().getId();

@@ -14,7 +14,7 @@ import eu.reservoir.monitoring.appl.*;
  * and have plugins for each of the data plane, control plane, and
  * info plane.
  */
-
+@Deprecated
 public class MongoDBConsumer extends AbstractDataConsumer implements MeasurementReceiver {
 
     /**

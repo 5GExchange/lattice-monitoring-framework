@@ -14,6 +14,7 @@ import java.util.Scanner;
 /**
  * This receives measurements from a UDP Data Plane.
  */
+@Deprecated
 public class DataConsumerWithMongoDBReporter {
     // The Basic consumer
     MongoDBConsumer consumer;

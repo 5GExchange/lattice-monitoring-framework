@@ -13,6 +13,8 @@ import java.util.LinkedHashMap;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An abstract probe.
@@ -31,7 +33,7 @@ public abstract class AbstractProbe implements Probe {
     /*
      * probe status - on or off
      */
-    Probe.Status probeStatus = Probe.Status.OFF;
+    protected Probe.Status probeStatus = Probe.Status.OFF;
 
     /*
      * The data rate as a Rational.
@@ -72,7 +74,7 @@ public abstract class AbstractProbe implements Probe {
     /*
      * Thread running?
      */
-    boolean threadRunning = false;
+    protected boolean threadRunning = false;
 
     /*
      * The ProbeManager for this Probe.
@@ -125,7 +127,9 @@ public abstract class AbstractProbe implements Probe {
      */
     boolean theEnd = false;
     Object monitor = new Object();
-      
+    
+    static Logger LOGGER = LoggerFactory.getLogger(AbstractProbe.class);
+    
 
     /**
      * Construct a probe
@@ -133,7 +137,7 @@ public abstract class AbstractProbe implements Probe {
     public AbstractProbe() {
 	// convert the name into a hashcode and then into an unsigned long
 	myID = ID.generate();  // WAS new ID(0xffffffffL & getName().hashCode());
-        System.out.println("Probe: ID = " + myID);
+        LOGGER.debug("Probe: ID = " + myID);
 	serviceID = new ID(0, 0);
 	groupID = new ID(0, 0);
     }
@@ -141,7 +145,7 @@ public abstract class AbstractProbe implements Probe {
     //FT: this has been added for testing
     public AbstractProbe(String sID) {
         myID = ID.fromString(sID);
-        System.out.println("Probe: ID = " + myID);
+        LOGGER.debug("Probe: ID = " + myID);
 	serviceID = new ID(0, 0);
 	groupID = new ID(0, 0);
     }
@@ -629,7 +633,7 @@ public abstract class AbstractProbe implements Probe {
      * The thread run() method
      */
     public void run() {
-	System.out.println("Probe: enter thread loop for " + getName());
+	LOGGER.debug("Probe: enter thread loop for " + getName());
 
 	// code to run at begining of thread
 	beginThreadBody();
@@ -665,7 +669,7 @@ public abstract class AbstractProbe implements Probe {
                 try {
                     m = collectThenCheck();
                 } catch (InterruptedException ie) {
-                    System.out.println("AbstractProbe: " + getName() + ": kicked off");
+                    LOGGER.debug("AbstractProbe: " + getName() + ": kicked off");
 
                     if (!threadRunning) {
                         break;
@@ -736,7 +740,7 @@ public abstract class AbstractProbe implements Probe {
 		    try {
 			Thread.sleep(timeToSleep);
 		    } catch (InterruptedException ie) {
-			System.out.println("AbstractProbe: " + getName() + ": turned off");
+			LOGGER.info("AbstractProbe: " + getName() + ": turned off");
 		    }
 		}
 
@@ -749,7 +753,7 @@ public abstract class AbstractProbe implements Probe {
 
         //theEnd();
 
-	System.out.println("Probe: exit thread loop for " + getName());
+	LOGGER.debug("Probe: exit thread loop for " + getName());
     }
 
 
@@ -769,7 +773,7 @@ public abstract class AbstractProbe implements Probe {
     /**
      * The threads waits while the Probe.Status == OFF.
      */
-    private synchronized void waitWhileOff() throws InterruptedException {
+    protected synchronized void waitWhileOff() throws InterruptedException {
 	if (probeStatus == Probe.Status.OFF) {
 	    // wait
             waiting = true;
@@ -795,7 +799,7 @@ public abstract class AbstractProbe implements Probe {
         try {
             myThread.join();
         } catch (InterruptedException ie) {
-            System.out.println("AbstractProbe:join() in waitFor() InterruptedException");
+            LOGGER.debug("AbstractProbe:join() in waitFor() InterruptedException");
         }
 
         /*

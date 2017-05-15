@@ -9,6 +9,7 @@ import eu.reservoir.monitoring.core.Probe;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -37,21 +38,27 @@ public final class ProbeLoader implements Serializable {
     
     public void initProbe() throws ProbeLoaderException {
         try {
-            System.out.println("Loading Class: " + probeClassName);
+            LoggerFactory.getLogger(ProbeLoader.class).info("Loading Class: " + probeClassName);
             clazz = Class.forName(probeClassName);
             // check if the class implements the right interface
             probeClazz = clazz.asSubclass(Probe.class);
             
-            // we build an array with the Class types of the provided Parameters
-            Class [] paramsTypes = new Class[constructorParameters.length];
-            
-            for (int i=0; i<constructorParameters.length; i++)
-                paramsTypes[i]=constructorParameters[i].getClass();
-            
-            cons0 = probeClazz.getConstructor(paramsTypes);
-            
-            // create an instance of the Probe
-            probe = cons0.newInstance(constructorParameters);
+            if (constructorParameters == null) {
+                cons0 = probeClazz.getConstructor();
+                probe = cons0.newInstance();
+            }
+            else {
+                // we build an array with the Class types of the provided Parameters
+                Class [] paramsTypes = new Class[constructorParameters.length];
+
+                for (int i=0; i<constructorParameters.length; i++)
+                    paramsTypes[i]=constructorParameters[i].getClass();
+
+                cons0 = probeClazz.getConstructor(paramsTypes);
+
+                // create an instance of the Probe
+                probe = cons0.newInstance(constructorParameters);
+            }
             
             } catch (ClassNotFoundException | InstantiationException | NoSuchMethodException | IllegalAccessException ex) {
                 throw new ProbeLoaderException(ex);

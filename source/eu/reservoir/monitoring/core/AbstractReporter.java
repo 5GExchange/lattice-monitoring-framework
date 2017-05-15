@@ -5,6 +5,8 @@
  */
 package eu.reservoir.monitoring.core;
 
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author uceeftu
@@ -20,10 +22,10 @@ public abstract class AbstractReporter implements ControllableReporter {
     */
     ID dcId;
         
-    
+
     public AbstractReporter(String name) {
         myId = ID.generate();
-        System.out.println("Reporter ID = " + myId);
+        LoggerFactory.getLogger(AbstractReporter.class).debug("Reporter ID: " + myId);
         this.name = name;
     }
     
@@ -59,7 +61,7 @@ public abstract class AbstractReporter implements ControllableReporter {
     public void setDcId(ID dcId) {
         this.dcId = dcId;
     }
-
+    
     @Override
     public abstract void report(Measurement m);
     

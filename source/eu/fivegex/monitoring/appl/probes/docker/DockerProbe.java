@@ -20,7 +20,7 @@ public class DockerProbe extends AbstractProbe implements Probe{
     String containerId;
 
     // the container name
-    String containerName;
+    String resourceId;
     
     long previousContainerCPUTime;
     long previousSystemCPUTime;
@@ -28,13 +28,13 @@ public class DockerProbe extends AbstractProbe implements Probe{
     DockerDataCollector ddc;
     
     
-    public DockerProbe(String dockerURI, String dockerPort, String probeName, String cId, String cName) throws UnknownHostException { // double check exception management        
+    public DockerProbe(String dockerURI, String dockerPort, String probeName, String cId, String resourceId) throws UnknownHostException { // double check exception management        
         setName(probeName);
         setDataRate(new Rational(360, 1));
         //setDataRate(new EveryNSeconds(3));
         
         this.containerId=cId;
-        this.containerName = cName;
+        this.resourceId = resourceId;
         
         ddc = new DockerDataCollector(dockerURI, Integer.valueOf(dockerPort), this.containerId);
         
@@ -48,7 +48,6 @@ public class DockerProbe extends AbstractProbe implements Probe{
 
     @Override
     public void beginThreadBody() {
-	System.out.println("DockerProbe: beginThread " + this.containerName + " with ID " + this.containerId);
         ddc.collectValues();
         previousContainerCPUTime = ddc.getContainerCpuTime();
         previousSystemCPUTime = ddc.getSystemCpuTime();
@@ -86,7 +85,7 @@ public class DockerProbe extends AbstractProbe implements Probe{
             
             ArrayList<ProbeValue> list = new ArrayList<ProbeValue>(4);
 
-            list.add(new DefaultProbeValue(0, this.containerName));
+            list.add(new DefaultProbeValue(0, this.resourceId));
             list.add(new DefaultProbeValue(1, cpuPercent));
             list.add(new DefaultProbeValue(2, ddc.getUsedMemBytes()));
             list.add(new DefaultProbeValue(3, memPercent));

@@ -5,8 +5,6 @@
 
 package eu.reservoir.monitoring.distribution.udp;
 
-import eu.reservoir.monitoring.core.Measurement;
-import eu.reservoir.monitoring.core.DataSourceDelegate;
 import eu.reservoir.monitoring.core.DataSourceDelegateInteracter;
 import eu.reservoir.monitoring.core.ProbeMeasurement;
 import eu.reservoir.monitoring.core.TypeException;
@@ -14,10 +12,7 @@ import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.plane.*;
 import eu.reservoir.monitoring.distribution.*;
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.io.DataOutput;
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.InetSocketAddress;
 
 /**

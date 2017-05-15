@@ -138,15 +138,15 @@ public abstract class AbstractRestConsole implements Container, ManagementConsol
             }
 
 
-            // if we fall through @TODO: use logger
+            // if we fall through
             {
                 LOGGER.error("AbstractRestConsole error: " + "no command");
 
-                LOGGER.error("method: " + request.getMethod());
-                LOGGER.error("path: " + request.getPath());
-                LOGGER.error("query: " + request.getQuery());
-                LOGGER.error("target: " + request.getTarget());
-                LOGGER.error("directory: " + request.getPath().getDirectory());
+                LOGGER.error("method: " + request.getMethod() + 
+                             " path: " + request.getPath() +
+                             " query: " + request.getQuery() +
+                             " target: " + request.getTarget() +
+                             " directory: " + request.getPath().getDirectory());
 
                 //fetch the UnknownCommand
                 PrintStream out = response.getPrintStream();
@@ -156,8 +156,6 @@ public abstract class AbstractRestConsole implements Container, ManagementConsol
                 out.println(jsobj.toString());
                 response.close();
             }
-
-
         } catch (IOException ioe) {
             LOGGER.error(ioe.getMessage());
         } catch (JSONException jex) {

@@ -29,11 +29,13 @@ import us.monoid.json.JSONObject;
 import eu.fivegex.monitoring.control.deployment.EntityDeploymentDelegate;
 import eu.fivegex.monitoring.control.deployment.ssh.SSHServerEntityInfo;
 import eu.fivegex.monitoring.control.deployment.ssh.SSHDeploymentManager;
+import eu.fivegex.monitoring.control.zmq.ZMQControlPlaneXDRProducer;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegateInteracter;
+import eu.fivegex.monitoring.im.zmq.ZMQControllerInfoPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 
 /**
@@ -57,7 +59,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
 
     private Controller() {}
      
-    private void init(/*String infoPlaneAddr,*/ int infoPlanePort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {  
+    private void init(int infoPlanePort, int controlLocalPort, int managementPort, String probesPackage, String probesSuffix, Properties pr) {  
         
         this.usingDeploymentManager = Boolean.valueOf(pr.getProperty("deployment.enabled", "false"));
         
@@ -71,13 +73,15 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         Integer transmitterPoolSize = (Integer) pr.getOrDefault("control.poolsize", 8);
         
         // Controller is the root of the infoPlane - other nodes use it to perform bootstrap
-        InfoPlane infoPlane = new DHTInfoPlaneRoot(/*infoPlaneAddr,*/ infoPlanePort);
+        //InfoPlane infoPlane = new DHTInfoPlaneRoot(infoPlanePort);
+        InfoPlane infoPlane = new ZMQControllerInfoPlane(infoPlanePort);
         
         // we get the ControlInformationManager from the InfoPlane
-        controlInformationManager = ((InfoPlaneDelegateInteracter) infoPlane).getInfoPlaneDelegateInteracter();
+        controlInformationManager = ((InfoPlaneDelegateInteracter) infoPlane).getInfoPlaneDelegate();
         
         // setting the InfoPlane to send announce events to the ControlInformationManager
-        ((DHTInfoPlaneRoot) infoPlane).addAnnounceEventListener(controlInformationManager);
+        //((DHTInfoPlaneRoot) infoPlane).addAnnounceEventListener(controlInformationManager);
+        
 	setInfoPlane(infoPlane);
         
         // create a control plane producer 
@@ -86,10 +90,11 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         // ControlPlane controlPlane = new UDPControlPlaneXDRProducer(8888, transmitterPoolSize);
         
         // create a control plane producer without announce listening capabilities 
-        ControlPlane controlPlane = new UDPControlPlaneXDRProducer(transmitterPoolSize);
+        //ControlPlane controlPlane = new UDPControlPlaneXDRProducer(transmitterPoolSize);
+        ControlPlane controlPlane = new ZMQControlPlaneXDRProducer(transmitterPoolSize, controlLocalPort); // FIXME: to be passed as property
         
         // setting the InfoPlaneDelegate to the Control Plane
-        ((InfoPlaneDelegateInteracter) controlPlane).setInfoPlaneDelegateInteracter(controlInformationManager);
+        ((InfoPlaneDelegateInteracter) controlPlane).setInfoPlaneDelegate(controlInformationManager);
         //((UDPControlPlaneXDRProducer) controlPlane).addAnnounceEventListener(controlInformationManager);
         setControlPlane(controlPlane);
         
@@ -221,9 +226,9 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         result.put("operation", "loadProbe");
         result.put("probeClassName",probeClassName);
         
-        Object [] probeArgsAsObjects = new Object[0];
+        Object [] probeArgsAsObjects = (Object[]) null;//new Object[0];
         
-        if (probeArgs != null) {
+        if (!probeArgs.isEmpty()) {
             probeArgsAsObjects = (Object[])probeArgs.split(" ");
         }
         
@@ -462,9 +467,9 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         result.put("operation", "loadReporter");
         result.put("reporterClassName",reporterClassName);
         
-        Object [] reporterArgsAsObjects = new Object[0];
+        Object [] reporterArgsAsObjects = (Object[]) null; //= new Object[0];
         
-        if (reporterArgs != null) {
+        if (!reporterArgs.isEmpty()) {
             reporterArgsAsObjects = (Object[])reporterArgs.split(" ");
         }
         
@@ -572,8 +577,9 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         
         // setting some default values
         String remoteInfoHost = InetAddress.getLoopbackAddress().getHostName();
-        int infoPlanePort = 6969; // the same port is used as remote and local by DHTInfoPlaneRoot
+        int infoPlanePort = 6699; // the same port is used as remote and local by DHTInfoPlaneRoot
         int restConsolePort = 6666;
+        int controlLocalPort = 5555;
         String probePackage = "eu.fivegex.monitoring.appl.probes";
         String probeSuffix = "Probe";
         
@@ -618,6 +624,6 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         }
         
         Controller myController = Controller.getInstance();
-        myController.init(/*remoteInfoHost,*/ infoPlanePort, restConsolePort, probePackage, probeSuffix, prop);
+        myController.init(infoPlanePort, controlLocalPort, restConsolePort, probePackage, probeSuffix, prop);
     }
 }

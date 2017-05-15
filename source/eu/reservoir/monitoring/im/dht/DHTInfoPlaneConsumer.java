@@ -41,7 +41,7 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
      * Constructor for subclasses.
      */
     DHTInfoPlaneConsumer() {
-        setInfoPlaneDelegateInteracter(new ControlInformationManager(this));
+        setInfoPlaneDelegate(new ControlInformationManager(this));
     }
 
 
@@ -177,12 +177,12 @@ public class DHTInfoPlaneConsumer extends AbstractDHTInfoPlane implements InfoPl
     }
     
     @Override
-    public void setInfoPlaneDelegateInteracter(InfoPlaneDelegate im) {
+    public void setInfoPlaneDelegate(InfoPlaneDelegate im) {
         this.infoPlaneDelegate = im;
     }
 
     @Override
-    public InfoPlaneDelegate getInfoPlaneDelegateInteracter() {
+    public InfoPlaneDelegate getInfoPlaneDelegate() {
         return this.infoPlaneDelegate;
     }
     

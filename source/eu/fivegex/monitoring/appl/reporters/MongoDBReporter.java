@@ -61,22 +61,22 @@ public class MongoDBReporter extends AbstractReporter implements Reporter {
     
     @Override
     public void report(Measurement m) {
-            String probeName = ((ConsumerMeasurementWithMetadataAndProbeName)m).getProbeName();
-            
-            Timestamp t = ((ConsumerMeasurementWithMetadataAndProbeName)m).getTimestamp();
-            
-            Document attributes = new Document();
-            for (ProbeValue attribute : m.getValues()) {
-                attributes.append(((ProbeValueWithName)attribute).getName(), attribute.getValue());
-            }
-            
-            Bson doc1 = new Document("$set",
-                                    new Document(probeName + "." + t.toString(),       
-                                    // first arg was probeName      
-                                    // new Document().append(((ProbeValueWithName)m.getValues().get(0)).getName(), m.getValues().get(0).getValue())));
-                                    attributes));
-            
-            collection.updateOne(new Document("_id", m.getServiceID().toString()), doc1);
+        String probeName = ((ConsumerMeasurementWithMetadataAndProbeName)m).getProbeName();
+
+        Timestamp t = ((ConsumerMeasurementWithMetadataAndProbeName)m).getTimestamp();
+
+        Document attributes = new Document();
+        for (ProbeValue attribute : m.getValues()) {
+            attributes.append(((ProbeValueWithName)attribute).getName(), attribute.getValue());
+        }
+
+        Bson doc1 = new Document("$set",
+                                new Document(probeName + "." + t.toString(),       
+                                // first arg was probeName      
+                                // new Document().append(((ProbeValueWithName)m.getValues().get(0)).getName(), m.getValues().get(0).getValue())));
+                                attributes));
+
+        collection.updateOne(new Document("_id", m.getServiceID().toString()), doc1);
     }
 
 

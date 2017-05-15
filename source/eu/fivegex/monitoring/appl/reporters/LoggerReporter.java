@@ -1,8 +1,3 @@
-// PrintReporter.java
-// Author: Stuart Clayman
-// Email: sclayman@ee.ucl.ac.uk
-// Date: Sept 2009
-
 package eu.fivegex.monitoring.appl.reporters;
 
 import eu.reservoir.monitoring.core.AbstractReporter;
@@ -19,7 +14,7 @@ public final class LoggerReporter extends AbstractReporter {
      * In a LoggerReporter, report() just logs the Measurement to the log file.
      */
     
-    private static Logger LOGGER = LoggerFactory.getLogger(LoggerReporter.class);;
+    private static Logger LOGGER = LoggerFactory.getLogger(LoggerReporter.class);
     
     
     public LoggerReporter(String reporterName) {

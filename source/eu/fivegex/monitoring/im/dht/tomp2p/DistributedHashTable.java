@@ -5,7 +5,6 @@ import eu.reservoir.monitoring.core.plane.AbstractAnnounceMessage;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
-import java.util.List;
 import java.util.Random;
 import net.tomp2p.connection.Bindings;
 import net.tomp2p.futures.FutureBootstrap;
@@ -32,6 +31,9 @@ public class DistributedHashTable implements ObjectDataReply {
     
     int localPort = 0;
     
+    int localUDPPort = 0;
+    int localTCPPort = 0;
+    
     AnnounceEventListener listener;
     
     static Logger LOGGER = LoggerFactory.getLogger(DistributedHashTable.class);
@@ -44,6 +46,20 @@ public class DistributedHashTable implements ObjectDataReply {
 	this.localPort = port;
         
         peer = new PeerMaker(new Number160(new Random())).setPorts(port)
+                                                         .makeAndListen();
+    }
+    
+    
+    public DistributedHashTable(int UDPPort, int TCPPort, InetAddress localAddress)  throws IOException {
+	this.localUDPPort = UDPPort;
+        this.localTCPPort = TCPPort;
+
+        Bindings binding = new Bindings();
+        binding.addAddress(localAddress); //binding the specified address
+        
+        peer = new PeerMaker(new Number160(new Random())).setTcpPort(TCPPort)
+                                                         .setUdpPort(UDPPort)
+                                                         .setBindings(binding)
                                                          .makeAndListen();
     }
     
@@ -61,25 +77,10 @@ public class DistributedHashTable implements ObjectDataReply {
 
 
     /**
-     * Start the bootstrap process to a well known peer (address and port)
+     * Start the connection (used by the root node)
      */
     
-    public String connect(/*String remAddress, int remPort*/)  {
-        /*
-        InetAddress remoteAddress = InetAddress.getByName(remAddress);
-        
-	FutureBootstrap bootstrap = peer.bootstrap()//.setInetAddress(remoteAddress)
-                                                    .setBroadcast()
-                                                    .setPorts(remPort)
-                                                    .start();
-        
-        bootstrap.awaitUninterruptibly();
-        if (bootstrap.getBootstrapTo() != null) {
-            rootPeer = bootstrap.getBootstrapTo().iterator().next();
-            peer.discover().setPeerAddress(rootPeer).start().awaitUninterruptibly();
-        }
-        else // we are on the root node
-          */  
+    public String connect()  {
         setupReplyHandler(); // used by the root node to receive Announce/Deannounce messages
         return peer.getPeerAddress().getInetAddress().getHostName();
     }
@@ -88,8 +89,25 @@ public class DistributedHashTable implements ObjectDataReply {
      * Start the bootstrap process broadcasting to a given remote port
      */
     
-    public String connect(int remPort) throws IOException {
+    public String connect(int remPort) {
         FutureBootstrap bootstrap = peer.bootstrap().setBroadcast(true)
+                                                    .setPorts(remPort)
+                                                    .start();
+        
+        bootstrap.awaitUninterruptibly();
+        if (bootstrap.getBootstrapTo() != null) {
+            rootPeer = bootstrap.getBootstrapTo().iterator().next();
+            peer.discover().setPeerAddress(rootPeer).start().awaitUninterruptibly();
+        }
+        
+        return rootPeer.getInetAddress().getHostName();
+    }
+    
+    
+    public String connect(String remAddress, int remPort)  throws IOException {
+        InetAddress remoteAddress = InetAddress.getByName(remAddress);
+        
+	FutureBootstrap bootstrap = peer.bootstrap().setInetAddress(remoteAddress)
                                                     .setPorts(remPort)
                                                     .start();
         
@@ -100,11 +118,6 @@ public class DistributedHashTable implements ObjectDataReply {
         }
         
         return rootPeer.getInetAddress().getHostName();
-        /*
-        else { // we are on the root node
-            setupReplyHandler(); // used by the root node to receive Announce/Deannounce messages
-            return peer.getPeerAddress().getInetAddress().getHostName();
-        }*/
     }
     
     
@@ -130,7 +143,8 @@ public class DistributedHashTable implements ObjectDataReply {
      * Close the peer connection
      */
     public void close() throws IOException {
-	peer.shutdown();
+        LOGGER.info("DHT Shutdown");
+	peer.shutdown(); 
     }
 
     /**
@@ -194,10 +208,6 @@ public class DistributedHashTable implements ObjectDataReply {
             FutureDHT futureSend = peer.send(rootPeer.getID()).setObject(AbstractAnnounceMessage.toString(m)).start();
             futureSend.awaitUninterruptibly();
             LOGGER.debug(m.getMessageType() + " message sent for this " + m.getEntity());
-            
-            // waiting for ACK here - should re-transmit in case
-            //for (Object o: futureSend.getRawDirectData2().values())
-            //    System.out.println(" ----- " + o + " ----- ");
             
         } catch (IOException e) {
             LOGGER.error("Error while sending " + m.getMessageType() + "message " + e.getMessage());

@@ -14,7 +14,7 @@ import eu.fivegex.monitoring.control.ProbeLoader;
  */
 public class DefaultControllableDataSource extends BasicDataSource implements ControllableDataSource {
    private int myPID;
-    
+   
    public DefaultControllableDataSource (String dsName) {
        super(dsName);
    } 
@@ -39,4 +39,5 @@ public class DefaultControllableDataSource extends BasicDataSource implements Co
     public void setMyPID(int myPID) {
         this.myPID = myPID;
     }
+    
 }

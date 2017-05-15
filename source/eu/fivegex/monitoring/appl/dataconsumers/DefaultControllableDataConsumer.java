@@ -5,7 +5,9 @@
  */
 package eu.fivegex.monitoring.appl.dataconsumers;
 
+import eu.fivegex.monitoring.im.delegate.ReporterInformationManager;
 import eu.reservoir.monitoring.core.AbstractDataConsumer;
+import eu.reservoir.monitoring.core.AbstractReporterWithInfoPlaneDelegate;
 import eu.reservoir.monitoring.core.MeasurementReceiver;
 import eu.reservoir.monitoring.core.ControllableReporter;
 import eu.reservoir.monitoring.core.ID;
@@ -166,7 +168,14 @@ public final class DefaultControllableDataConsumer extends AbstractDataConsumer 
 
     @Override
     public void addReporter(ControllableReporter l) {
+        //setting Data Consumer ID in the Reporter
         l.setDcId(myID);
+        
+        // setting InfoPlane Delegate reference to allow Probe name and
+        // attribute resolution
+        if (l instanceof AbstractReporterWithInfoPlaneDelegate)
+            ((AbstractReporterWithInfoPlaneDelegate)l).setInfoPlaneDelegate(new ReporterInformationManager(this.getInfoPlane()));
+        
         super.addReporter(l);
         reporters.put(l.getId(), l);
         if (this.getInfoPlane() != null)

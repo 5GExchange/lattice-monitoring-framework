@@ -12,8 +12,8 @@ package eu.fivegex.monitoring.im.delegate;
  */
 public interface InfoPlaneDelegateInteracter {
     
-    public InfoPlaneDelegate getInfoPlaneDelegateInteracter();
+    public InfoPlaneDelegate getInfoPlaneDelegate();
     
-    public void setInfoPlaneDelegateInteracter(InfoPlaneDelegate im);
+    public void setInfoPlaneDelegate(InfoPlaneDelegate im);
     
 }

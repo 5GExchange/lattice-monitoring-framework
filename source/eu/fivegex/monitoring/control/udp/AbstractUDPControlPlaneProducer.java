@@ -5,6 +5,7 @@
  */
 package eu.fivegex.monitoring.control.udp;
 
+import eu.fivegex.monitoring.control.SynchronousTransmitting;
 import eu.fivegex.monitoring.control.ControlPlaneConsumerException;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegateInteracter;
@@ -16,13 +17,17 @@ import eu.reservoir.monitoring.distribution.MetaData;
 import eu.reservoir.monitoring.distribution.Receiving;
 import eu.reservoir.monitoring.distribution.udp.UDPReceiver;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.io.ByteArrayInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import us.monoid.json.JSONObject;
 
 /**
- *
+ * UDP based request-reply protocol to send control messages to Data Sources
+ * connected to the control plane.
+ * It also allows listeners to be added and called back when an announce message
+ * is received from a Data Source on this plane (useful when the info plane 
+ * implementation does not provide that functionality)
  * @author uceeftu
  */
 public abstract class AbstractUDPControlPlaneProducer implements 
@@ -107,18 +112,18 @@ public abstract class AbstractUDPControlPlaneProducer implements
     
     
     @Override
-    public InetSocketAddress getControlEndPoint() {
+    public JSONObject getControlEndPoint() {
         throw new UnsupportedOperationException("Abstract UDP Control Plane Producer: getting control endpoint is not supported");
     }
     
 
     @Override
-    public InfoPlaneDelegate getInfoPlaneDelegateInteracter() {
+    public InfoPlaneDelegate getInfoPlaneDelegate() {
         return infoPlaneDelegate;
     }
 
     @Override
-    public void setInfoPlaneDelegateInteracter(InfoPlaneDelegate im) {
+    public void setInfoPlaneDelegate(InfoPlaneDelegate im) {
         this.infoPlaneDelegate = im;
     }
     

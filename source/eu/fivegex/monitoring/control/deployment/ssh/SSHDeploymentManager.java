@@ -88,8 +88,8 @@ public class SSHDeploymentManager implements EntityDeploymentDelegate {
         // checking if a Data Source is already running/being started on that Resource address/port
         existingDataSource = this.resourcesDataSources.putIfAbsent(resource.getAddress(), dataSource);
 
-        if (existingDataSource != null)
-           dataSource = existingDataSource; // there is a DS on that resource - using that one
+        if (existingDataSource != null && infoPlaneDelegate.containsDataSource(existingDataSource.getId()))
+           dataSource = existingDataSource; // there is a DS on that host/resource - re-using that one
         
         synchronized(dataSource)
             {
@@ -224,7 +224,7 @@ public class SSHDeploymentManager implements EntityDeploymentDelegate {
         // checking if a Data Consumer is already running/being started on that Resource address/port
         existingDataConsumer = this.resourcesDataConsumers.putIfAbsent(resource.getAddress(), dataConsumer);
 
-        if (existingDataConsumer != null)
+        if (existingDataConsumer != null && infoPlaneDelegate.containsDataConsumer(existingDataConsumer.getId()))
            dataConsumer = existingDataConsumer; // there is a DC on that resource - using that one
         
         synchronized(dataConsumer)
