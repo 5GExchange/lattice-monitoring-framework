@@ -249,7 +249,13 @@ public class GrafanaDashboard {
     }
     
     public static void main(String [] args) {
-        GrafanaDashboard g = new GrafanaDashboard("localhost", 3000, "TestService");
+        
+        String grafanaHost = args[0];
+        int grafanaPort = Integer.valueOf(args[1]);
+        String serviceName = args[2];
+        String vnfName = args[3];
+        
+        GrafanaDashboard g = new GrafanaDashboard(grafanaHost, grafanaPort, serviceName);
         
         List<String> NFs = new ArrayList<>();
         List<String> KPIs = new ArrayList<>();
@@ -257,7 +263,7 @@ public class GrafanaDashboard {
         
         NFs.add("host1ID");
         NFs.add("host2ID");
-        //NFs.add("host3ID");
+        NFs.add(vnfName);
         
         KPIs.add("cpu.percent");
         KPIs.add("mem.percent");
