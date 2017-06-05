@@ -73,7 +73,7 @@ public class DockerDataCollector {
                         
             this.rxBytes=jsobj.getJSONObject("networks").getJSONObject("eth0").getLong("rx_bytes");
             
-        } catch (Exception ex) {
+        } catch (Exception ex) { // TODO: should propagate and exception that will end-up with stopping the current probe
             System.out.println("error: " + ex.getMessage());
         }
     }

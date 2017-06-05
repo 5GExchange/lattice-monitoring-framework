@@ -121,8 +121,8 @@ public final class ZMQDataSourceDaemon extends Thread {
         LOGGER.info("Connecting to the Control Plane: " + ctrlPair.getHostName() + ":" + ctrlPair.getPort());
         
 	// set up the planes
-	dataSource.setDataPlane(new UDPDataPlaneProducer(dataConsumerPair));
-        //dataSource.setDataPlane(new ZMQDataPlaneProducer(dataConsumerPair.getAddress().getHostAddress(), dataConsumerPair.getPort()));
+	//dataSource.setDataPlane(new UDPDataPlaneProducer(dataConsumerPair));
+        dataSource.setDataPlane(new ZMQDataPlaneProducer(dataConsumerPair.getAddress().getHostAddress(), dataConsumerPair.getPort()));
         
         // ZMQ Info Plane
         dataSource.setInfoPlane(new ZMQDataSourceInfoPlane(remoteInfoHost, remoteInfoPort));

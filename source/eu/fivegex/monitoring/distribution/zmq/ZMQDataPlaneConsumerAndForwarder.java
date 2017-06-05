@@ -140,7 +140,7 @@ public class ZMQDataPlaneConsumerAndForwarder extends AbstractZMQDataPlaneConsum
 
 	    case MEASUREMENT:
 		// decode the bytes into a measurement object
-		MeasurementDecoder decoder = new MeasurementDecoder();
+		MeasurementDecoder decoder = new MeasurementDecoderWithNames();
 		Measurement measurement = decoder.decode(dataIn);
 
 		if (measurement instanceof ConsumerMeasurementWithMetaData) {

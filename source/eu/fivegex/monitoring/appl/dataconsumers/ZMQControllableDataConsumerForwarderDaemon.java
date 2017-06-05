@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This receives measurements from a UDP Data Plane.
  */
-public final class ZMQControllableDataConsumerDaemon extends Thread {
+public final class ZMQControllableDataConsumerForwarderDaemon extends Thread {
     DefaultControllableDataConsumer consumer;
     
     ID dataConsumerID;
@@ -56,7 +56,7 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
     PrintStream errStream;
 
     
-    public ZMQControllableDataConsumerDaemon(String myID,
+    public ZMQControllableDataConsumerForwarderDaemon(String myID,
                                           int dataPort, 
                                           String infoPlaneRootName,   
                                           int infoPlaneRootPort,
@@ -77,7 +77,7 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
     
     
     
-    public ZMQControllableDataConsumerDaemon(String myID,
+    public ZMQControllableDataConsumerForwarderDaemon(String myID,
                                           int dataPort, 
                                           String infoPlaneRootName,   
                                           int infoPlaneRootPort,
@@ -104,7 +104,9 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
         LOGGER.info("Connecting to the Control Plane using: " + localCtrlPair.getPort() + ":" + localCtrlPair.getHostName());
         
         // set up data plane listening on *:port
-        consumer.setDataPlane(new ZMQDataPlaneConsumer(dataPort));
+	//consumer.setDataPlane(new UDPDataPlaneConsumer(dataPort));
+        //consumer.setDataPlane(new ZMQDataPlaneConsumer(dataPort));
+        consumer.setDataPlane(new ZMQDataPlaneConsumerAndForwarder(dataPort));
        
         //InfoPlane infoPlane = new DHTDataConsumerInfoPlane(remoteInfoHost, remoteInfoPort, localInfoPort);
         //InfoPlane infoPlane = new DHTDataConsumerInfoPlane(remoteInfoPort, localInfoPort); // announcing to broadcast
@@ -152,7 +154,7 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
         System.setProperty(org.slf4j.impl.SimpleLogger.SHOW_THREAD_NAME_KEY, "false");
         //System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "debug");
         
-        LOGGER = LoggerFactory.getLogger(ZMQControllableDataConsumerDaemon.class);
+        LOGGER = LoggerFactory.getLogger(ZMQControllableDataConsumerForwarderDaemon.class);
     }
     
     
@@ -225,7 +227,7 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
                     LOGGER.error("usage: ControllableDataConsumerDaemon [dcID] localdataPort infoRemotePort infoLocalPort controlLocalPort");
                     System.exit(1);
             }
-            ZMQControllableDataConsumerDaemon dataConsumer = new ZMQControllableDataConsumerDaemon(dcID, 
+            ZMQControllableDataConsumerForwarderDaemon dataConsumer = new ZMQControllableDataConsumerForwarderDaemon(dcID, 
                                                                                    dataPort, 
                                                                                    infoHost, 
                                                                                    infoRemotePort, 

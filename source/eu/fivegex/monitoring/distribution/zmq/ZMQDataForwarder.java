@@ -38,6 +38,9 @@ public class ZMQDataForwarder extends Thread {
     
     public boolean startProxy() {
         this.setName("zmq-data-forwarder");
+        frontend.bind("tcp://*:" + localPort);
+        backend.bind("tcp://*:" + (localPort + 1));
+        backend.bind(internalURI);
         this.start();
         return true;
     }
@@ -51,9 +54,6 @@ public class ZMQDataForwarder extends Thread {
     
     @Override
     public void run() {
-        frontend.bind("tcp://*:" + localPort);
-        backend.bind("tcp://*:" + (localPort + 1));
-        backend.bind(internalURI);
         ZMQ.proxy(frontend, backend, null);
     }
 }

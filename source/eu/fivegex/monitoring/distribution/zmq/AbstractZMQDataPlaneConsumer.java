@@ -15,12 +15,15 @@ import eu.reservoir.monitoring.distribution.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractZMQDataPlaneConsumer implements DataPlane, MeasurementReporting, Receiving {
     ZMQDataSubscriber subscriber;
     
     int port;
 
+    String remoteHost;
+    
     // the MeasurementReceiver
     MeasurementReceiver measurementReceiver;
 
@@ -36,6 +39,16 @@ public abstract class AbstractZMQDataPlaneConsumer implements DataPlane, Measure
         this.port = port;
 	seqNoMap = new HashMap<ID, Integer>();
     }
+    
+    
+    /**
+     * Construct a AbstractUDPDataPlaneConsumer connecting to a remote host.
+     */
+    public AbstractZMQDataPlaneConsumer(String remoteHost, int port) {
+        this.port = port;
+        this.remoteHost = remoteHost;
+	seqNoMap = new HashMap<ID, Integer>();
+    }
 
     /**
      * Connect to a delivery mechanism.
@@ -45,9 +58,18 @@ public abstract class AbstractZMQDataPlaneConsumer implements DataPlane, Measure
 	    // only connect if we're not already connected
 	    if (subscriber == null) {
                 
-                subscriber = new ZMQDataSubscriber(this, port);
-                subscriber.bind();
+                if (remoteHost != null) {
+                    subscriber = new ZMQDataSubscriber(this, remoteHost, port);
+                    subscriber.connect();
+                }
+                    
+                else {
+                    subscriber = new ZMQDataSubscriber(this, port);
+                    subscriber.bind();
+                }
+                
                 subscriber.listen();
+                
 		return true;
 	    } else {
 		return true;
@@ -146,7 +168,6 @@ public abstract class AbstractZMQDataPlaneConsumer implements DataPlane, Measure
      * Receiver of a measurement, with an extra object that has context info
      */
     public Measurement report(Measurement m) {
-	//System.out.println("FT: AbstractUDPDataPlaneConsumer.report - UDPDataPlaneConsumer: got " + m);
 	measurementReceiver.report(m);
 	return m;
     }

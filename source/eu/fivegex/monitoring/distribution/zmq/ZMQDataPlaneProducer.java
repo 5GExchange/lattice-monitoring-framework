@@ -64,7 +64,7 @@ public class ZMQDataPlaneProducer extends AbstractZMQDataPlaneProducer implement
 		// extract Measurement from message object
 		ProbeMeasurement measurement = ((MeasurementMessage)dsp).getMeasurement();
 		// encode the measurement, ready for transmission
-		MeasurementEncoder encoder = new MeasurementEncoder(measurement);
+		MeasurementEncoder encoder = new MeasurementEncoderWithNames(measurement);
 		encoder.encode(dataOutput);
 
 		break;

@@ -12,6 +12,7 @@ import eu.reservoir.monitoring.distribution.udp.UDPTransmissionMetaData;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import org.slf4j.LoggerFactory;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
@@ -53,12 +54,9 @@ public class ZMQDataSubscriber implements Runnable {
     
     
     public ZMQDataSubscriber(Receiving receiver, String remoteHost, int remotePort) {
-        this.receiver = receiver;
+        this(receiver, remotePort);
         this.remoteHost = remoteHost;
         this.remotePort = remotePort;
-        
-        context = ZMQ.context(1);
-        subscriberSocket = context.socket(ZMQ.SUB);
     }
     
     public ZMQDataSubscriber(Receiving receiver, String uri, ZMQ.Context ctx) {
@@ -84,7 +82,8 @@ public class ZMQDataSubscriber implements Runnable {
             subscriberSocket.connect(remoteURI);
         }
         else {
-            subscriberSocket.connect("tcp://" + remoteHost + ":" + localPort);
+            LoggerFactory.getLogger(ZMQDataSubscriber.class).debug(" --- connecting to: " + remoteHost + ":" + remotePort);
+            subscriberSocket.connect("tcp://" + remoteHost + ":" + remotePort);
         }
     }
     

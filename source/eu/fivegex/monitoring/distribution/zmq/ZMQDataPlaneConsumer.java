@@ -9,6 +9,7 @@ import eu.reservoir.monitoring.distribution.*;
 import java.io.DataInput;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import org.slf4j.LoggerFactory;
 
 public class ZMQDataPlaneConsumer extends AbstractZMQDataPlaneConsumer implements DataPlane, MeasurementReporting, Receiving {
     /**
@@ -18,6 +19,9 @@ public class ZMQDataPlaneConsumer extends AbstractZMQDataPlaneConsumer implement
         super(port);
     }
 
+    public ZMQDataPlaneConsumer(String remoteHost, int port) {
+        super(remoteHost, port);
+    }
 
     /**
      * This method is called just after a packet
@@ -91,8 +95,8 @@ public class ZMQDataPlaneConsumer extends AbstractZMQDataPlaneConsumer implement
 		break;
 
 	    case MEASUREMENT:
-		// decode the bytes into a measurement object
-		MeasurementDecoder decoder = new MeasurementDecoder();
+		// decode the bytes into a measurement object            
+		MeasurementDecoder decoder = new MeasurementDecoderWithNames();
 		Measurement measurement = decoder.decode(dataIn);
 
 		if (measurement instanceof ConsumerMeasurementWithMetaData) {
@@ -103,7 +107,7 @@ public class ZMQDataPlaneConsumer extends AbstractZMQDataPlaneConsumer implement
 
 		
 		//System.err.println("DC: datainputstream left = " + dataIn.available());
-		// report the measurement
+		// report the measurement   
 		report(measurement);
 		//System.err.println("DC: m = " + measurement);
 		break;

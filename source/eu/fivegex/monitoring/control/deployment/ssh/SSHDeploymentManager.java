@@ -167,6 +167,7 @@ public class SSHDeploymentManager implements EntityDeploymentDelegate {
         DataSourceInfo dataSource = null;
         
         resourceAddressFromDSID = this.dsIDsAddresses.get(dataSourceID);
+        LOGGER.debug(resourceAddressFromDSID.toString());
         
         try {
             if (resourceAddressFromDSID == null)
@@ -181,6 +182,7 @@ public class SSHDeploymentManager implements EntityDeploymentDelegate {
                 session = this.connectWithKey(resources.get(resourceAddressFromDSID));
                 LOGGER.debug("Stopping " + dataSource.getEntityType());
                 String command = "kill " + dataSource.getpID();
+                LOGGER.debug(command);
                 channel = session.openChannel("exec");
                 ((ChannelExec) channel).setCommand(command);
                 channel.connect(3000);

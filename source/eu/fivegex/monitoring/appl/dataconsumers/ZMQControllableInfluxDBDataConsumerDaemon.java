@@ -10,17 +10,16 @@ package eu.fivegex.monitoring.appl.dataconsumers;
  * @author uceeftu
  */
 
-import eu.fivegex.monitoring.control.udp.UDPDataConsumerControlPlaneXDRConsumer;
+import eu.fivegex.monitoring.appl.reporters.InfluxDBReporter;
+import eu.fivegex.monitoring.appl.reporters.LoggerReporter;
 import eu.fivegex.monitoring.control.zmq.ZMQDataConsumerControlPlaneXDRConsumer;
 import eu.fivegex.monitoring.distribution.zmq.ZMQDataPlaneConsumer;
-import eu.fivegex.monitoring.distribution.zmq.ZMQDataPlaneConsumerAndForwarder;
 import eu.fivegex.monitoring.im.zmq.ZMQDataConsumerInfoPlane;
 import eu.reservoir.monitoring.core.DataConsumerInteracter;
 import eu.reservoir.monitoring.core.ID;
+import eu.reservoir.monitoring.core.Reporter;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
-import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneConsumer;
-import eu.reservoir.monitoring.im.dht.DHTDataConsumerInfoPlane;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -34,12 +33,12 @@ import org.slf4j.LoggerFactory;
 /**
  * This receives measurements from a UDP Data Plane.
  */
-public final class ZMQControllableDataConsumerDaemon extends Thread {
+public final class ZMQControllableInfluxDBDataConsumerDaemon extends Thread {
     DefaultControllableDataConsumer consumer;
     
     ID dataConsumerID;
     
-    String dataConsumerName = "controllable-DC";
+    String dataConsumerName = "controllable-influxDB-DC";
     
     int dataPort;
     
@@ -56,7 +55,7 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
     PrintStream errStream;
 
     
-    public ZMQControllableDataConsumerDaemon(String myID,
+    public ZMQControllableInfluxDBDataConsumerDaemon(String myID,
                                           int dataPort, 
                                           String infoPlaneRootName,   
                                           int infoPlaneRootPort,
@@ -77,7 +76,7 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
     
     
     
-    public ZMQControllableDataConsumerDaemon(String myID,
+    public ZMQControllableInfluxDBDataConsumerDaemon(String myID,
                                           int dataPort, 
                                           String infoPlaneRootName,   
                                           int infoPlaneRootPort,
@@ -104,7 +103,9 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
         LOGGER.info("Connecting to the Control Plane using: " + localCtrlPair.getPort() + ":" + localCtrlPair.getHostName());
         
         // set up data plane listening on *:port
+	//consumer.setDataPlane(new UDPDataPlaneConsumer(dataPort));
         consumer.setDataPlane(new ZMQDataPlaneConsumer(dataPort));
+        //consumer.setDataPlane(new ZMQDataPlaneConsumerAndForwarder(dataPort));
        
         //InfoPlane infoPlane = new DHTDataConsumerInfoPlane(remoteInfoHost, remoteInfoPort, localInfoPort);
         //InfoPlane infoPlane = new DHTDataConsumerInfoPlane(remoteInfoPort, localInfoPort); // announcing to broadcast
@@ -131,6 +132,7 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
     }
     
     
+    
     void setLogger() throws IOException {
         String logFileName = "data-consumer-" + dataConsumerID + ".log";
         File logFile;
@@ -152,7 +154,7 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
         System.setProperty(org.slf4j.impl.SimpleLogger.SHOW_THREAD_NAME_KEY, "false");
         //System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "debug");
         
-        LOGGER = LoggerFactory.getLogger(ZMQControllableDataConsumerDaemon.class);
+        LOGGER = LoggerFactory.getLogger(ZMQControllableInfluxDBDataConsumerDaemon.class);
     }
     
     
@@ -178,6 +180,11 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
     }
     
     
+    private void loadReporter(Reporter r) {
+        consumer.addReporter(r);
+    }
+    
+    
     public static void main(String [] args) {
         try {
             String dcID = ID.generate().toString();
@@ -189,6 +196,10 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
             String controlEndPoint = null;
             int controlRemotePort = 5555;
             
+            String dbServer = "localhost";
+            String dbPort = "8086";
+            String dbName = "fgx";
+            
             Scanner sc;
                     
             switch (args.length) {
@@ -196,7 +207,7 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
                     String loopBack = InetAddress.getLoopbackAddress().getHostName();
                     infoHost = controlEndPoint = loopBack;
                     break;
-                case 5:
+                case 8:
                     sc = new Scanner(args[0]);
                     dataPort = sc.nextInt();
                     infoHost = args[1];
@@ -207,8 +218,12 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
                     sc= new Scanner(args[4]);
                     controlRemotePort = sc.nextInt();
                     controlEndPoint = infoHost;
+                    
+                    dbServer = args[5];
+                    dbPort = args[6];
+                    dbName = args[7];
                     break;
-                case 6:
+                case 9:
                     dcID = args[0];
                     sc = new Scanner(args[1]);
                     dataPort = sc.nextInt();
@@ -220,12 +235,15 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
                     sc= new Scanner(args[5]);
                     controlRemotePort = sc.nextInt();
                     controlEndPoint = infoHost;
+                    dbServer = args[6];
+                    dbPort = args[7];
+                    dbName = args[8];
                     break;
                 default:
                     LOGGER.error("usage: ControllableDataConsumerDaemon [dcID] localdataPort infoRemotePort infoLocalPort controlLocalPort");
                     System.exit(1);
             }
-            ZMQControllableDataConsumerDaemon dataConsumer = new ZMQControllableDataConsumerDaemon(dcID, 
+            ZMQControllableInfluxDBDataConsumerDaemon dataConsumer = new ZMQControllableInfluxDBDataConsumerDaemon(dcID, 
                                                                                    dataPort, 
                                                                                    infoHost, 
                                                                                    infoRemotePort, 
@@ -233,6 +251,10 @@ public final class ZMQControllableDataConsumerDaemon extends Thread {
                                                                                    controlEndPoint, 
                                                                                    controlRemotePort);
             dataConsumer.init();
+            Reporter influxDB = new InfluxDBReporter(dbServer, dbPort, dbName);
+            Reporter logger = new LoggerReporter("logger-reporter");
+            dataConsumer.loadReporter(logger);
+            dataConsumer.loadReporter(influxDB);
             
         } catch (Exception e) {
             LOGGER.error("Error " + e.getMessage());
