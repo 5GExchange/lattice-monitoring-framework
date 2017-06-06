@@ -203,11 +203,10 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 	/*
 	 * now try the disconnects.
 	 */
-
+        
 	// connect to data plane
 	if (dataPlane != null) {
 	    dataPlaneStatus = PlaneConnectStatus.DISCONNECTING;
-
 	    conn = dataPlane.disconnect();
 
 	    if (!conn) { 
@@ -221,7 +220,6 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
 	// connect to control plane
 	if (controlPlane != null) {
 	    controlPlaneStatus = PlaneConnectStatus.DISCONNECTING;
-
 	    conn = controlPlane.disconnect();
 
 	    if (!conn) { 
@@ -235,7 +233,6 @@ public abstract class AbstractPlaneInteracter implements PlaneInteracter {
         // connect to info plane
 	if (infoPlane != null) {
 	    infoPlaneStatus = PlaneConnectStatus.DISCONNECTING;
-
 	    conn = infoPlane.disconnect();
 
 	    if (!conn) { 

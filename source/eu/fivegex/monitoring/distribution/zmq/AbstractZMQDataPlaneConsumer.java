@@ -15,7 +15,6 @@ import eu.reservoir.monitoring.distribution.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import org.slf4j.LoggerFactory;
 
 public abstract class AbstractZMQDataPlaneConsumer implements DataPlane, MeasurementReporting, Receiving {
     ZMQDataSubscriber subscriber;

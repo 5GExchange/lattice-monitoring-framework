@@ -40,6 +40,7 @@ public class ZMQPublisher {
         
         context = ZMQ.context(1);
         publisherSocket = context.socket(ZMQ.PUB);
+        publisherSocket.setLinger(0);
     }
     
 
@@ -61,7 +62,6 @@ public class ZMQPublisher {
      */
     public boolean disconnect() {
         publisherSocket.close();
-        //context.term();
         return true;
     }
 

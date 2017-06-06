@@ -8,11 +8,10 @@ package eu.fivegex.monitoring.control.zmq;
 import eu.reservoir.monitoring.core.TypeException;
 import eu.reservoir.monitoring.distribution.ExposedByteArrayInputStream;
 import eu.reservoir.monitoring.distribution.Receiving;
-import eu.reservoir.monitoring.distribution.udp.UDPTransmissionMetaData;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.DatagramPacket;
+import org.slf4j.LoggerFactory;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
@@ -43,6 +42,7 @@ public class ZMQReceiver implements Runnable {
         this.receiver = receiver;
         this.context = ZMQ.context(1);
         this.receiverSocket = context.socket(ZMQ.REQ);
+        receiverSocket.setLinger(0);
         this.routerAddress = routerAddress;
         this.routerPort = port;
     }
@@ -63,7 +63,6 @@ public class ZMQReceiver implements Runnable {
     
     
     public void end()  throws IOException {
-	// stop the thread and close the ZMQ stuff
         threadRunning = false;
         receiverSocket.close();
         context.term();
@@ -92,10 +91,13 @@ public class ZMQReceiver implements Runnable {
 	    return true;
             
 	} catch (ZMQException e) {
+            LoggerFactory.getLogger(ZMQReceiver.class).debug(e.getMessage());
+            lastException = e;
             return false; // generated when closing the context
         } 
          catch (Exception e) {
 	    // something went wrong
+            LoggerFactory.getLogger(ZMQReceiver.class).debug(e.getMessage());
 	    lastException = e;
 	    return false;
 	}
@@ -141,9 +143,10 @@ public class ZMQReceiver implements Runnable {
 	    } else {
 		// the receive() failed
 		// we find the exception in lastException
-                // we notify the receiver only if the socket was not explicitly closed
-                if (threadRunning)
+                // we notify the receiver only if the socket was not explicitly closed                
+                if (threadRunning) {
                     receiver.error(lastException);
+                }
 	    }
 	}
     }    

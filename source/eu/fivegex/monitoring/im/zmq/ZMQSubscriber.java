@@ -78,6 +78,7 @@ public class ZMQSubscriber extends Thread {
         
         this.context = context;
         subscriberSocket = this.context.socket(ZMQ.SUB);
+        subscriberSocket.setLinger(0);
     }
     
     
@@ -102,6 +103,7 @@ public class ZMQSubscriber extends Thread {
         
         this.context = context;
         subscriberSocket = this.context.socket(ZMQ.SUB);
+        subscriberSocket.setLinger(0);
     }
     
 
@@ -143,6 +145,8 @@ public class ZMQSubscriber extends Thread {
      */
     public boolean disconnect() {
         threadRunning = false;
+        subscriberSocket.close();
+        context.close();
         return true;
     }
 
@@ -227,11 +231,9 @@ public class ZMQSubscriber extends Thread {
                 messageHandler(content);
             }
             } catch (ZMQException e) {
-                // we won't do anything
+                // we won't do anything except logging the exception
+                LOGGER.debug(e.getMessage());
             }
-        
-        subscriberSocket.close();
-        context.close();
     }
     
     

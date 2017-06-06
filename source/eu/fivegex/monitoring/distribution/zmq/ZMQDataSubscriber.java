@@ -50,6 +50,7 @@ public class ZMQDataSubscriber implements Runnable {
         
         context = ZMQ.context(1);
         subscriberSocket = context.socket(ZMQ.SUB);
+        subscriberSocket.setLinger(0);
     }
     
     
@@ -82,7 +83,7 @@ public class ZMQDataSubscriber implements Runnable {
             subscriberSocket.connect(remoteURI);
         }
         else {
-            LoggerFactory.getLogger(ZMQDataSubscriber.class).debug(" --- connecting to: " + remoteHost + ":" + remotePort);
+            LoggerFactory.getLogger(ZMQDataSubscriber.class).debug("Connecting to: " + remoteHost + ":" + remotePort);
             subscriberSocket.connect("tcp://" + remoteHost + ":" + remotePort);
         }
     }
@@ -92,9 +93,12 @@ public class ZMQDataSubscriber implements Runnable {
         myThread.start();
     }
     
-    public void end() {
+    public void end() throws InterruptedException {
         threadRunning = false;
+        subscriberSocket.close();
+        context.term();
     }
+    
     protected boolean receive() {
 	try {
 	    // clear lastException
@@ -116,10 +120,13 @@ public class ZMQDataSubscriber implements Runnable {
 
 	    return true;
 	} catch (ZMQException ze) {
+            LoggerFactory.getLogger(ZMQDataSubscriber.class).debug(ze.getMessage());
+            lastException = ze;
            return false;         
           } 
           catch (Exception e) {
 	    // something went wrong
+            LoggerFactory.getLogger(ZMQDataSubscriber.class).debug(e.getMessage());
 	    lastException = e;
 	    return false;
 	}
@@ -132,7 +139,6 @@ public class ZMQDataSubscriber implements Runnable {
         threadRunning = true;
         subscriberSocket.subscribe("data".getBytes());
 	while (threadRunning) {
-            
 	    if (receive()) {
 		// now notify the receiver with the replyMessage
 		// and the address it came in on
@@ -152,14 +158,11 @@ public class ZMQDataSubscriber implements Runnable {
 		// the receive() failed
 		// we find the exception in lastException
                 // we notify the receiver only if the socket was not explicitly closed
-                if (threadRunning)
+                if (threadRunning) {
                     receiver.error(lastException);
+                }
 	    }
-	}
-        
-        subscriberSocket.close();
-        context.term();
-        
+	}        
     }
     
 }
