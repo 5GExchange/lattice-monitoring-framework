@@ -50,7 +50,6 @@ public class ZMQDataSubscriber implements Runnable {
         
         context = ZMQ.context(1);
         subscriberSocket = context.socket(ZMQ.SUB);
-        subscriberSocket.setLinger(0);
     }
     
     
@@ -95,7 +94,7 @@ public class ZMQDataSubscriber implements Runnable {
     
     public void end() throws InterruptedException {
         threadRunning = false;
-        subscriberSocket.close();
+        subscriberSocket.setLinger(0);
         context.term();
     }
     
@@ -120,13 +119,15 @@ public class ZMQDataSubscriber implements Runnable {
 
 	    return true;
 	} catch (ZMQException ze) {
-            LoggerFactory.getLogger(ZMQDataSubscriber.class).debug(ze.getMessage());
+            LoggerFactory.getLogger(ZMQDataSubscriber.class).debug("ZMQException: " + ze.getMessage());
+            subscriberSocket.close();
+            LoggerFactory.getLogger(ZMQDataSubscriber.class).debug("Socket closed");
             lastException = ze;
            return false;         
           } 
           catch (Exception e) {
-	    // something went wrong
-            LoggerFactory.getLogger(ZMQDataSubscriber.class).debug(e.getMessage());
+	    // something else went wrong
+            LoggerFactory.getLogger(ZMQDataSubscriber.class).debug("Exception: " + e.getMessage());
 	    lastException = e;
 	    return false;
 	}

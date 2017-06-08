@@ -8,6 +8,7 @@ package eu.fivegex.monitoring.distribution.zmq;
 import eu.reservoir.monitoring.distribution.Transmitting;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import org.slf4j.LoggerFactory;
 import org.zeromq.ZMQ;
 
 /**
@@ -44,6 +45,7 @@ public class ZMQDataPublisher {
     
     
     public void end() throws IOException {
+        publisherSocket.setLinger(0);
         publisherSocket.close();
         context.term();
     }

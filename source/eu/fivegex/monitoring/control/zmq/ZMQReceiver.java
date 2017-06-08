@@ -42,7 +42,6 @@ public class ZMQReceiver implements Runnable {
         this.receiver = receiver;
         this.context = ZMQ.context(1);
         this.receiverSocket = context.socket(ZMQ.REQ);
-        receiverSocket.setLinger(0);
         this.routerAddress = routerAddress;
         this.routerPort = port;
     }
@@ -64,7 +63,7 @@ public class ZMQReceiver implements Runnable {
     
     public void end()  throws IOException {
         threadRunning = false;
-        receiverSocket.close();
+        receiverSocket.setLinger(0);
         context.term();
     }
     
@@ -92,6 +91,7 @@ public class ZMQReceiver implements Runnable {
             
 	} catch (ZMQException e) {
             LoggerFactory.getLogger(ZMQReceiver.class).debug(e.getMessage());
+            receiverSocket.close();
             lastException = e;
             return false; // generated when closing the context
         } 
@@ -143,7 +143,7 @@ public class ZMQReceiver implements Runnable {
 	    } else {
 		// the receive() failed
 		// we find the exception in lastException
-                // we notify the receiver only if the socket was not explicitly closed                
+                // we notify the receiver only if the socket was not explicitly closed  
                 if (threadRunning) {
                     receiver.error(lastException);
                 }

@@ -40,7 +40,6 @@ public class ZMQPublisher {
         
         context = ZMQ.context(1);
         publisherSocket = context.socket(ZMQ.PUB);
-        publisherSocket.setLinger(0);
     }
     
 
@@ -61,6 +60,7 @@ public class ZMQPublisher {
      * Disconnect from the DHT peers.
      */
     public boolean disconnect() {
+        publisherSocket.setLinger(0);
         publisherSocket.close();
         return true;
     }

@@ -46,9 +46,11 @@ public class ZMQDataForwarder extends Thread {
     }
     
     public boolean stopProxy() {
+        frontend.setLinger(0);
         frontend.close();
+        backend.setLinger(0);
         backend.close();
-        //context.term();
+        context.term();
         return true;
     }
     
