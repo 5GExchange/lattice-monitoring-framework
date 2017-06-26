@@ -1,12 +1,10 @@
 package eu.fivegex.monitoring.appl.datasources;
 
 import eu.reservoir.monitoring.core.DefaultControllableDataSource;
-import eu.fivegex.monitoring.control.udp.UDPDataSourceControlPlaneXDRConsumer;
 import eu.fivegex.monitoring.control.zmq.ZMQDataSourceControlPlaneXDRConsumer;
 import eu.fivegex.monitoring.distribution.zmq.ZMQDataPlaneProducer;
 import eu.reservoir.monitoring.core.ControllableDataSource;
 import eu.reservoir.monitoring.core.ID;
-import eu.reservoir.monitoring.distribution.udp.UDPDataPlaneProducer;
 import eu.fivegex.monitoring.im.zmq.ZMQDataSourceInfoPlane;
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +56,6 @@ public final class ZMQDataSourceDaemon extends Thread {
                            int dataConsumerPort,
                            String infoPlaneRootName,   
                            int infoPlaneRootPort,
-                           int infoPlaneLocalPort,
                            String controlHostAddress,
                            int controlHostPort
                            ) throws UnknownHostException {
@@ -71,7 +68,6 @@ public final class ZMQDataSourceDaemon extends Thread {
         this.ctrlPair = new InetSocketAddress(InetAddress.getByName(controlHostAddress), controlHostPort);
         
         this.remoteInfoHost = infoPlaneRootName;
-        this.localInfoPort = infoPlaneLocalPort;
         this.remoteInfoPort = infoPlaneRootPort;
     }
      
@@ -104,7 +100,7 @@ public final class ZMQDataSourceDaemon extends Thread {
                            int controlPlaneLocalPort,
                            int controlRemotePort) throws UnknownHostException {
     
-        this(myID, myDSName, dataConsumerName, dataConsumerPort, infoPlaneRootName, infoPlaneRootPort, infoPlaneLocalPort,localControlEndPoint, controlPlaneLocalPort);
+        this(myID, myDSName, dataConsumerName, dataConsumerPort, infoPlaneRootName, infoPlaneRootPort,localControlEndPoint, controlPlaneLocalPort);
     }
 
 
@@ -121,17 +117,10 @@ public final class ZMQDataSourceDaemon extends Thread {
         LOGGER.info("Connecting to the Control Plane: " + ctrlPair.getHostName() + ":" + ctrlPair.getPort());
         
 	// set up the planes
-	//dataSource.setDataPlane(new UDPDataPlaneProducer(dataConsumerPair));
         dataSource.setDataPlane(new ZMQDataPlaneProducer(dataConsumerPair.getAddress().getHostAddress(), dataConsumerPair.getPort()));
         
         // ZMQ Info Plane
         dataSource.setInfoPlane(new ZMQDataSourceInfoPlane(remoteInfoHost, remoteInfoPort));
-        //
-        
-        // if (this.remoteCtrlPair != null)
-        //    dataSource.setControlPlane(new UDPDataSourceControlPlaneXDRConsumer(ctrlPair, remoteCtrlPair));
-        // else
-            //dataSource.setControlPlane(new UDPDataSourceControlPlaneXDRConsumer(ctrlPair));
             
         // ZMQ Control Plane    
         dataSource.setControlPlane(new ZMQDataSourceControlPlaneXDRConsumer(ctrlPair));
@@ -195,7 +184,6 @@ public final class ZMQDataSourceDaemon extends Thread {
             int dataConsumerPort = 22997;
             String infoHost = null;
             int infoRemotePort= 6699;
-            int infoLocalPort = 9999;
             String controllerHost = null;
             int controllerPort = 5555;
             
@@ -208,7 +196,7 @@ public final class ZMQDataSourceDaemon extends Thread {
                     dsName = dataConsumerAddr = controllerHost = loopBack;
                     infoHost = InetAddress.getLocalHost().getHostName();
                     break;
-                case 6:
+                case 5:
                     dataConsumerAddr = args[0];
                     sc = new Scanner(args[1]);
                     dataConsumerPort = sc.nextInt();
@@ -216,12 +204,10 @@ public final class ZMQDataSourceDaemon extends Thread {
                     sc = new Scanner(args[3]);
                     infoRemotePort = sc.nextInt();
                     sc= new Scanner(args[4]);
-                    infoLocalPort = sc.nextInt();
-                    sc= new Scanner(args[5]);
                     controllerPort = sc.nextInt();
                     dsName = InetAddress.getLocalHost().getHostName();
                     break;
-                case 7:
+                case 6:
                     dsID = args[0];
                     dataConsumerAddr = args[1];
                     sc = new Scanner(args[2]);
@@ -230,8 +216,6 @@ public final class ZMQDataSourceDaemon extends Thread {
                     sc = new Scanner(args[4]);
                     infoRemotePort = sc.nextInt();
                     sc= new Scanner(args[5]);
-                    infoLocalPort = sc.nextInt();
-                    sc= new Scanner(args[6]);
                     controllerPort = sc.nextInt();
                     dsName = InetAddress.getLocalHost().getHostName();
                     break;
@@ -247,8 +231,7 @@ public final class ZMQDataSourceDaemon extends Thread {
                                                             dataConsumerAddr, 
                                                             dataConsumerPort, 
                                                             infoHost, 
-                                                            infoRemotePort, 
-                                                            infoLocalPort, // remove me 
+                                                            infoRemotePort,
                                                             controllerHost, 
                                                             controllerPort);
             dataSourceDaemon.init();

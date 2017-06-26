@@ -159,24 +159,18 @@ public class ZMQDataSourceControlPlaneXDRConsumer extends AbstractZMQControlPlan
     public boolean turnOnProbe(ID probeID) {
         DataSource dataSource = dataSourceDelegate.getDataSource();
         LOGGER.info("** invoking turnOnProbe **");
-        if (!dataSource.isProbeOn(probeID)) {
+        if (!dataSource.isProbeOn(probeID))
             dataSource.turnOnProbe(probeID);
-            return true;
-        }
-        else 
-            return true;
+        return true;
     }
 
     @Override
     public boolean turnOffProbe(ID probeID) {
         DataSource dataSource = dataSourceDelegate.getDataSource();
         LOGGER.info("** invoking turnOffProbe **");
-        if (dataSource.isProbeOn(probeID)) {
+        if (dataSource.isProbeOn(probeID))
             dataSource.turnOffProbe(probeID);
-            return true;
-        }
-        else
-            return false;
+        return true;
     }
 
     @Override
