@@ -7,6 +7,7 @@ package eu.fivegex.monitoring.appl.probes;
 
 import eu.reservoir.monitoring.core.*;
 import eu.reservoir.monitoring.appl.datarate.*;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -27,8 +28,10 @@ public class RandomProbe extends AbstractProbe implements Probe  {
      */
     public RandomProbe(String name, String fieldName, int scaleFactor) {
         setName(name);
-        setDataRate(new EveryNSeconds(2));
-        addProbeAttribute(new DefaultProbeAttribute(0, fieldName, ProbeAttributeType.FLOAT, "milliseconds"));
+        setDataRate(new EveryNSeconds(5));
+        
+        addProbeAttribute(new DefaultProbeAttribute(0, "FQN", ProbeAttributeType.STRING, "name"));
+        addProbeAttribute(new DefaultProbeAttribute(1, fieldName, ProbeAttributeType.FLOAT, "milliseconds"));
 	randomNo = new Random();
 	this.scaleFactor = scaleFactor;
     }
@@ -36,8 +39,10 @@ public class RandomProbe extends AbstractProbe implements Probe  {
     
     public RandomProbe(String name, String fieldName, Integer scaleFactor) {
         setName(name);
-        setDataRate(new EveryNSeconds(2));
-        addProbeAttribute(new DefaultProbeAttribute(0, fieldName, ProbeAttributeType.FLOAT, "milliseconds"));
+        setDataRate(new EveryNSeconds(5));
+        
+        addProbeAttribute(new DefaultProbeAttribute(0, "FQN", ProbeAttributeType.STRING, "name"));
+        addProbeAttribute(new DefaultProbeAttribute(1, fieldName, ProbeAttributeType.FLOAT, "milliseconds"));
 	randomNo = new Random();
 	this.scaleFactor = scaleFactor;
     }
@@ -56,7 +61,8 @@ public class RandomProbe extends AbstractProbe implements Probe  {
 
 	    //System.err.println("rand = " + next);
 
-	    list.add(new DefaultProbeValue(0, next));
+            list.add(new DefaultProbeValue(0, InetAddress.getLocalHost().getHostName()));
+	    list.add(new DefaultProbeValue(1, next));
 
 	    return new ProducerMeasurement(this, list); // we could use the constructor that includes the Measurement type
 	} catch (Exception e) {

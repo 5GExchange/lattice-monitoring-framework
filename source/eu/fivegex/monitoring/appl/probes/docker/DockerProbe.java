@@ -39,12 +39,12 @@ public class DockerProbe extends AbstractProbe implements Probe{
         ddc = new DockerDataCollector(dockerURI, Integer.valueOf(dockerPort), this.containerId);
         
         addProbeAttribute(new DefaultProbeAttribute(0, "FQN", ProbeAttributeType.STRING, "name")); // we need to double check what info is needed here
-        addProbeAttribute(new DefaultProbeAttribute(1, "cpu.percent", ProbeAttributeType.FLOAT, "percent"));
-        addProbeAttribute(new DefaultProbeAttribute(2, "mem.used", ProbeAttributeType.LONG, "bytes"));
-        addProbeAttribute(new DefaultProbeAttribute(3, "mem.percent", ProbeAttributeType.FLOAT, "percent"));
+        addProbeAttribute(new DefaultProbeAttribute(1, "cpu_percent", ProbeAttributeType.FLOAT, "percent"));
+        addProbeAttribute(new DefaultProbeAttribute(2, "mem_used", ProbeAttributeType.LONG, "bytes"));
+        addProbeAttribute(new DefaultProbeAttribute(3, "mem_percent", ProbeAttributeType.FLOAT, "percent"));
         
-        addProbeAttribute(new DefaultProbeAttribute(4, "tx.bytes", ProbeAttributeType.LONG, "bytes"));
-        addProbeAttribute(new DefaultProbeAttribute(5, "rx.bytes", ProbeAttributeType.LONG, "bytes"));
+        addProbeAttribute(new DefaultProbeAttribute(4, "tx_bytes", ProbeAttributeType.LONG, "bytes"));
+        addProbeAttribute(new DefaultProbeAttribute(5, "rx_bytes", ProbeAttributeType.LONG, "bytes"));
         
     }
     
