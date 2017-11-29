@@ -30,7 +30,7 @@ public final class ZMQDataSourceDaemon extends Thread {
     InetSocketAddress remoteCtrlPair;
     
     String remoteInfoHost;
-    int localInfoPort;
+    //int localInfoPort;
     int remoteInfoPort;
     
     private static Logger LOGGER;
@@ -44,7 +44,6 @@ public final class ZMQDataSourceDaemon extends Thread {
      * @param dataConsumerPort the port of the Data Consumer to connect to
      * @param infoPlaneRootName the host name of the Info Plane node to bootstrap to (i.e., the Controller)
      * @param infoPlaneRootPort the port of the Info Plane node to bootstrap to (i.e., the Controller)
-     * @param infoPlaneLocalPort the port to be used locally to connect to the Info Plane
      * @param controlHostAddress the Control Plane address visible to the other nodes
      * @param controlHostPort the Control Plane port visible to the other nodes
      **/
@@ -130,7 +129,7 @@ public final class ZMQDataSourceDaemon extends Thread {
             System.exit(1); //terminating as there was an error while connecting to the planes
         }
         
-        LOGGER.info("Connected to the Info Plane using: " + localInfoPort + ":" + dataSource.getInfoPlane().getInfoRootHostname() + ":" + remoteInfoPort);
+        LOGGER.info("Connected to the Info Plane using: " + dataSource.getInfoPlane().getInfoRootHostname() + ":" + remoteInfoPort);
     }
     
     
