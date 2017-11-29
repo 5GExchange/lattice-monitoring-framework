@@ -164,8 +164,10 @@ public class ZMQSubscriber extends Thread {
     
     public Object getDataSourceInfo(ID dataSourceID, String info) {
         try {
-            return dataSources.get(dataSourceID).get(info);
-        } catch (JSONException e) {
+            JSONObject dataSource = dataSources.get(dataSourceID);
+            Object dataSourceInfo = dataSource.get(info);
+            return dataSourceInfo;
+        } catch (JSONException | NullPointerException e) {
             LOGGER.error("Error while retrieving Data Source info '" + info + "': " + e.getMessage());
             return null;
         }
@@ -174,8 +176,10 @@ public class ZMQSubscriber extends Thread {
     
     public Object getProbeInfo(ID probeID, String info) {
         try {
-            return probes.get(probeID).get(info);
-        } catch (JSONException e) {
+            JSONObject probe = probes.get(probeID);
+            Object probeInfo = probe.get(info);
+            return probeInfo;
+        } catch (JSONException | NullPointerException e) {
             LOGGER.error("Error while retrieving Probe info '" + info + "': " + e.getMessage());
             return null;
         }
@@ -185,8 +189,10 @@ public class ZMQSubscriber extends Thread {
     
     public Object getProbeAttributeInfo(ID probeID, Integer field, String info) {
         try {
-            return probeAttributes.get(probeID).getJSONObject(field.toString()).get(info);
-        } catch (JSONException e) {
+            JSONObject probeAttribute = probeAttributes.get(probeID);
+            Object probeAttributeInfo = probeAttribute.getJSONObject(field.toString()).get(info);
+            return probeAttributeInfo;
+        } catch (JSONException | NullPointerException e) {
             LOGGER.error("Error while retrieving Attribute info '" + info + "': " + e.getMessage());
             return null;
         }
@@ -195,8 +201,10 @@ public class ZMQSubscriber extends Thread {
     
     public Object getDataConsumerInfo(ID dataConsumerID, String info) {
         try {
-            return dataConsumers.get(dataConsumerID).get(info);
-        } catch (JSONException e) {
+            JSONObject dataConsumer = dataConsumers.get(dataConsumerID);
+            Object dataConsumerInfo = dataConsumer.get(info);
+            return dataConsumerInfo;
+        } catch (JSONException | NullPointerException e) {
             LOGGER.error("Error while retrieving Data Consumer info '" + info + "': " + e.getMessage());
             return null;
         }
@@ -205,8 +213,10 @@ public class ZMQSubscriber extends Thread {
     
     public Object getReporterInfo(ID reporterID, String info) {
         try {
-            return reporters.get(reporterID).get(info);
-        } catch (JSONException e) {
+            JSONObject reporter = reporters.get(reporterID);
+            Object reporterInfo = reporter.get(info);
+            return reporterInfo;
+        } catch (JSONException | NullPointerException e) {
             LOGGER.error("Error while retrieving Probe info '" + info + "': " + e.getMessage());
             return null;
         }
