@@ -6,9 +6,8 @@
 package eu.fivegex.monitoring.im.delegate;
 
 import eu.reservoir.monitoring.core.ID;
-import java.net.InetSocketAddress;
+import us.monoid.json.JSONArray;
 import us.monoid.json.JSONException;
-import us.monoid.json.JSONObject;
 
 /**
  *
@@ -19,9 +18,9 @@ public interface InfoPlaneDelegateConsumer {
         
     public boolean containsDataConsumer(ID id);
     
-    public JSONObject getDataSources() throws JSONException;
+    public JSONArray getDataSources() throws JSONException;
     
-    public JSONObject getDataConsumers() throws JSONException;
+    public JSONArray getDataConsumers() throws JSONException;
     
     public ControlEndPointMetaData getDSAddressFromProbeID(ID probe) throws ProbeNotFoundException, DSNotFoundException;
     

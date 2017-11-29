@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegateInteracter;
 import eu.fivegex.monitoring.im.zmq.ZMQControllerInfoPlane;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
+import us.monoid.json.JSONArray;
 
 /**
  *
@@ -513,7 +514,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         result.put("operation", "getDataSources");
         
         try {
-            JSONObject dataSources = this.controlInformationManager.getDataSources();
+            JSONArray dataSources = this.controlInformationManager.getDataSources();
             result.put("datasources", dataSources);
             result.put("success", true);
         } catch (JSONException ex) {
@@ -531,7 +532,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         result.put("operation", "getDataConsumers");
         
         try {
-            JSONObject dataConsumers = this.controlInformationManager.getDataConsumers();
+            JSONArray dataConsumers = this.controlInformationManager.getDataConsumers();
             result.put("dataconsumers", dataConsumers);
             result.put("success", true);
         } catch (JSONException ex) {

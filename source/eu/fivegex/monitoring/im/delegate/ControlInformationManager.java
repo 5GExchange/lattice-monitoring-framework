@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import us.monoid.json.JSONArray;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
@@ -96,10 +97,11 @@ public class ControlInformationManager implements InfoPlaneDelegate {
     
     
     @Override
-    public JSONObject getDataSources() throws JSONException {
-        JSONObject obj = new JSONObject();
+    public JSONArray getDataSources() throws JSONException {
+        JSONArray obj = new JSONArray();
         for (ID id: getDataSourcesList()) {
             JSONObject dsAddr = new JSONObject();
+            JSONObject dataSourceInfo = new JSONObject();
             try {
                 ControlEndPointMetaData dsInfo = getDSAddressFromID(id);
                 if (dsInfo instanceof ZMQControlEndPointMetaData)
@@ -108,20 +110,23 @@ public class ControlInformationManager implements InfoPlaneDelegate {
                     dsAddr.put("host", ((SocketControlEndPointMetaData)dsInfo).getHost().getHostAddress());
                     dsAddr.put("port", ((SocketControlEndPointMetaData)dsInfo).getPort());
                 }
-                obj.put(id.toString(), dsAddr);
+                dataSourceInfo.put("id", id.toString());
+                dataSourceInfo.put("info", dsAddr);
             } catch (DSNotFoundException ex) {
-                System.out.println(ex.getMessage());
+                LOGGER.error(ex.getMessage());
                 deleteDataSource(id);
               }
+            obj.put(dataSourceInfo);
         }
         return obj;
     }
     
     @Override
-    public JSONObject getDataConsumers() throws JSONException {
-        JSONObject obj = new JSONObject();
+    public JSONArray getDataConsumers() throws JSONException {
+        JSONArray obj = new JSONArray();
         for (ID id: getDataConsumersList()) {
             JSONObject dcAddr = new JSONObject();
+            JSONObject dataConsumerInfo = new JSONObject();
             try {
                 ControlEndPointMetaData dcInfo = getDCAddressFromID(id);
                 if (dcInfo instanceof ZMQControlEndPointMetaData)
@@ -130,11 +135,13 @@ public class ControlInformationManager implements InfoPlaneDelegate {
                     dcAddr.put("host", ((SocketControlEndPointMetaData)dcInfo).getHost().getHostAddress());
                     dcAddr.put("port", ((SocketControlEndPointMetaData)dcInfo).getPort());
                 }
-                obj.put(id.toString(), dcAddr);
+                dataConsumerInfo.put("id", id.toString());
+                dataConsumerInfo.put("info", dcAddr);
             } catch (DCNotFoundException ex) {
-                System.out.println(ex.getMessage());
+                LOGGER.error(ex.getMessage());
                 deleteDataConsumer(id);
               }
+            obj.put(dataConsumerInfo);
             }
         return obj;
     }
@@ -157,8 +164,10 @@ public class ControlInformationManager implements InfoPlaneDelegate {
             else
                 throw new DSNotFoundException("Data Source with ID " + dataSourceID.toString() + " not found in the infoplane");
         }
-        else
+        else {
+            LOGGER.error("Probe ID error");
             throw new ProbeNotFoundException("Probe with ID " + probe.toString() + " not found in the infoplane");
+        }
     }
     
     @Override
