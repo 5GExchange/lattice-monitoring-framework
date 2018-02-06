@@ -77,7 +77,7 @@ public class SSHDeploymentManager implements EntityDeploymentDelegate {
 
     
     @Override
-    public ID startDataSource(MonitorableEntityInfo resource, DataSourceInfo dataSource) throws DeploymentException {
+    public ID startDataSourceIfDoesNotExist(MonitorableEntityInfo resource, DataSourceInfo dataSource) throws DeploymentException {
         DataSourceInfo existingDataSource;
         Session session = null;
         Channel channel = null;
@@ -155,6 +155,13 @@ public class SSHDeploymentManager implements EntityDeploymentDelegate {
                   }
             return dataSource.getId();
             }
+    }
+
+    
+    
+    @Override
+    public ID startDataSource(MonitorableEntityInfo resource, DataSourceInfo dataSource) throws DeploymentException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
 

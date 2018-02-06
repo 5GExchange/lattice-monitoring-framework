@@ -12,6 +12,8 @@ import eu.reservoir.monitoring.core.ID;
  * @author uceeftu
  */
 public interface EntityDeploymentDelegate {
+    public ID startDataSourceIfDoesNotExist(MonitorableEntityInfo resource, DataSourceInfo dataSource) throws DeploymentException;
+    
     public ID startDataSource(MonitorableEntityInfo resource, DataSourceInfo dataSource) throws DeploymentException;
     
     public boolean stopDataSource(ID dataSourceID) throws DeploymentException;

@@ -147,7 +147,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
 
         if (this.usingDeploymentManager) {
             try {
-                startedDsID = this.deploymentManager.startDataSource(new SSHServerEntityInfo(endPoint, Integer.valueOf(port), userName), 
+                startedDsID = this.deploymentManager.startDataSourceIfDoesNotExist(new SSHServerEntityInfo(endPoint, Integer.valueOf(port), userName), 
                                                                        new DataSourceInfo(dsClassName, args));
 
                 if (startedDsID == null) {

@@ -37,15 +37,16 @@ public final class ZMQDataSourceDaemon extends Thread {
     
     
     /**
-     * Construct a SimpleDataSource with no pre-loaded probes running as a daemon 
+     * Construct a ZMQDataSourceDaemon with no pre-loaded probes running as a daemon 
      * @param myID the UUID of the Data Source
      * @param myDSName the Name of the Data Source
-     * @param dataConsumerName the host name of the Data Consumer to connect to
+     * @param dataConsumerName the Data Consumer to connect to
      * @param dataConsumerPort the port of the Data Consumer to connect to
-     * @param infoPlaneRootName the host name of the Info Plane node to bootstrap to (i.e., the Controller)
-     * @param infoPlaneRootPort the port of the Info Plane node to bootstrap to (i.e., the Controller)
-     * @param controlHostAddress the Control Plane address visible to the other nodes
-     * @param controlHostPort the Control Plane port visible to the other nodes
+     * @param infoPlaneRootName the host name of the Info Plane node to connect/bootstrap to (i.e., the Controller)
+     * @param infoPlaneRootPort the port of the Info Plane node to connect/bootstrap to (i.e., the Controller)
+     * @param controlHostAddress the Controller address
+     * @param controlHostPort the Controller port
+     * @throws UnknownHostException
      **/
     
     public ZMQDataSourceDaemon(
@@ -70,37 +71,6 @@ public final class ZMQDataSourceDaemon extends Thread {
         this.remoteInfoPort = infoPlaneRootPort;
     }
      
-    
-    
-    /**
-    * Construct a SimpleDataSource with no pre-loaded probes running as a daemon and sending
-    * Announce Messages on the Control Plane. 
-    * @param myID the UUID of the Data Source
-    * @param myDSName the Name of the Data Source
-    * @param dataConsumerName the host name of the Data Consumer to connect to
-    * @param dataConsumerPort the port of the Data Consumer to connect to
-    * @param infoPlaneRootName the host name of the Info Plane node to bootstrap to (i.e., the Controller)
-    * @param infoPlaneRootPort the port of the Info Plane node to bootstrap to (i.e., the Controller)
-    * @param infoPlaneLocalPort the port to be used locally to connect to the Info Plane
-    * @param localControlEndPoint the Control Plane address visible to the other nodes
-    * @param controlPlaneLocalPort the Control Plane port visible to the other nodes
-    * @param controlRemotePort the Controller port to send the Announce Messages to
-    **/
-    
-    public ZMQDataSourceDaemon(
-                           String myID,
-                           String myDSName, 
-                           String dataConsumerName, 
-                           int dataConsumerPort,
-                           String infoPlaneRootName,   
-                           int infoPlaneRootPort,
-                           int infoPlaneLocalPort,
-                           String localControlEndPoint,
-                           int controlPlaneLocalPort,
-                           int controlRemotePort) throws UnknownHostException {
-    
-        this(myID, myDSName, dataConsumerName, dataConsumerPort, infoPlaneRootName, infoPlaneRootPort,localControlEndPoint, controlPlaneLocalPort);
-    }
 
 
     public void init() throws IOException {
@@ -219,8 +189,7 @@ public final class ZMQDataSourceDaemon extends Thread {
                     dsName = InetAddress.getLocalHost().getHostName();
                     break;
                 default:
-                    // TODO: fixme
-                    System.err.println("use: SimpleDataSourceDaemon [dsID] dcAddress dcPort infoRemotePort infoLocalPort controlLocalPort");
+                    System.err.println("use: ZMQDataSourceDaemon [UUID] dcAddress dcPort infoHost infoPort controllerHost controllerPort");
                     System.exit(1);
             }
             
