@@ -134,7 +134,9 @@ public class ZMQDataSourceControlPlaneXDRConsumer extends AbstractZMQControlPlan
 
     @Override
     public Rational getProbeDataRate(ID probeID) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        DataSource dataSource = dataSourceDelegate.getDataSource();
+        LOGGER.info("** invoking getProbeDataRate **");
+        return dataSource.getProbeDataRate(probeID);
     }
 
     @Override

@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
+import us.monoid.json.JSONArray;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
@@ -220,6 +221,22 @@ public class ZMQSubscriber extends Thread {
             LOGGER.error("Error while retrieving Probe info '" + info + "': " + e.getMessage());
             return null;
         }
+    }
+    
+    
+    public Object getProbesOnDS(ID dataSourceID) {
+        JSONArray probesOnDS = new JSONArray();
+        try {
+            for (ID probeID : probes.keySet()) {
+                if (probes.get(probeID).get("datasource").equals(dataSourceID.toString()))
+                    probesOnDS.put(probeID.toString());
+                }
+                    
+            } catch (JSONException e) {
+                LOGGER.error("Error while retrieving Probe info" + e.getMessage());
+                return null;
+            }
+        return probesOnDS;       
     }
     
     

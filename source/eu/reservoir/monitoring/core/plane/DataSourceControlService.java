@@ -79,7 +79,7 @@ public interface DataSourceControlService {
      * The data rate is a Rational.
      * Specified in measurements per hour
      */
-    public Rational getProbeDataRate(ID probeID);
+    public Rational getProbeDataRate(ID probeID) throws ControlServiceException;
 
     /**
      * Set the data rate for a Probe

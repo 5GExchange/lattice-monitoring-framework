@@ -62,6 +62,8 @@ public interface InfoService {
     public Object lookupReporterInfo(ID reporterID, String info);
     
     
+    
+    public Object lookupProbesOnDS(ID dataSourceID);
 
     /*
      * Add things

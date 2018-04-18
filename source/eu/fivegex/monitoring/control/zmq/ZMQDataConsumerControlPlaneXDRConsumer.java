@@ -68,7 +68,7 @@ public class ZMQDataConsumerControlPlaneXDRConsumer extends AbstractZMQControlPl
     }  
     
     @Override
-    public float getDCMeasurementsRate(ID dcID) {
+    public Long getDCMeasurementsRate(ID dcID) {
         LOGGER.info("** invoking getDCMeasurementsRate **");
         return dataConsumer.getMeasurementsRate();
     }

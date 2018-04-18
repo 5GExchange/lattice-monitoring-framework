@@ -226,6 +226,11 @@ public class DHTDataConsumerInfoPlane extends AbstractDHTInfoPlane implements In
         return dataConsumer;
     }
 
+    @Override
+    public Object lookupProbesOnDS(ID dataSourceID) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
 
  
 

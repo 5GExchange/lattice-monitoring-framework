@@ -74,7 +74,7 @@ public class UDPDataConsumerControlPlaneXDRConsumer extends AbstractUDPControlPl
     }  
     
     @Override
-    public float getDCMeasurementsRate(ID dcID) {
+    public Long getDCMeasurementsRate(ID dcID) {
         LOGGER.info("** invoking getDCMeasurementsRate **");
         return dataConsumer.getMeasurementsRate();
     }

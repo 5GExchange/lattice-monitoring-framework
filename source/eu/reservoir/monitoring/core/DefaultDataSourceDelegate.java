@@ -579,6 +579,11 @@ public class DefaultDataSourceDelegate extends AbstractPlaneInteracter implement
     public boolean containsDataConsumer(ID dataConsumerID, int timeOut) {
         throw new UnsupportedOperationException("Not supported on a Data Source"); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public Object lookupProbesOnDS(ID dataSourceID) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
     
 }

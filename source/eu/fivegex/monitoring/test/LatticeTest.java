@@ -9,8 +9,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.util.Properties;
-import org.bson.Document;
-import org.bson.json.JsonWriterSettings;
 import us.monoid.json.JSONArray;
 
 import us.monoid.json.JSONException;
@@ -49,7 +47,7 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     String controllerInfoPlanePort;
     
     String DSInfoPlanePort;
-    String DSControlPlanePort;
+    String controllerControlPlanePort;
     
     String DCInfoPlanePort;
     String DCControlPlanePort;
@@ -76,12 +74,11 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
         
         controllerInfoPlaneAddress = configuration.getProperty("controller.infoplane.address");
         controllerInfoPlanePort = configuration.getProperty("controller.infoplane.port");
+        controllerControlPlanePort = configuration.getProperty("controller.controlplane.port");
         
         DSEndPointAddress = configuration.getProperty("ds.endpoint.address");
         DSEndPointName = configuration.getProperty("ds.endpoint.name");
         DSEndPointUserName = configuration.getProperty("ds.endpoint.user");
-        DSInfoPlanePort = configuration.getProperty("ds.infoplane.port");
-        DSControlPlanePort = configuration.getProperty("ds.controlplane.port");
         
         DCEndPointAddress = configuration.getProperty("dc.endpoint.address");
         DCEndPointName = configuration.getProperty("dc.endpoint.name");
@@ -90,15 +87,17 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
         DCDataPlaneAddress = configuration.getProperty("dc.dataplane.address");
         DCDataPlanePort = configuration.getProperty("dc.dataplane.port");
         
-        DCInfoPlanePort = configuration.getProperty("dc.infoplane.port");
-        DCControlPlanePort = configuration.getProperty("dc.controlplane.port");
+        try {
+            dockerHost = configuration.getProperty("dockerHost");
+            dockerPort = configuration.getProperty("dockerPort");
+            dockerContainerID = configuration.getProperty("dockerContainerID");
+            dockerContainerName = configuration.getProperty("dockerContainerName");   
+
+            mongoAddress = configuration.getProperty("mongodb.address");
+        } catch (Exception e) {
+            System.out.println("Warning: Docker / MongoDB configuration error");
+        }
         
-        dockerHost = configuration.getProperty("dockerHost");
-        dockerPort = configuration.getProperty("dockerPort");
-        dockerContainerID = configuration.getProperty("dockerContainerID");
-        dockerContainerName = configuration.getProperty("dockerContainerName");   
-        
-        mongoAddress = configuration.getProperty("mongodb.address");
         mongoPort = "27017";
         mongoDBName = "test";
         mongoCollection = "cs";
@@ -166,7 +165,15 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     
     @Override
     public JSONObject getDataSourceInfo(String dsID) throws JSONException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            String uri = vimURI + "/datasource/" + dsID;
+            
+            JSONObject jsobj = rest.json(uri).toObject();
+
+            return jsobj;
+        } catch (IOException ioe) {
+            throw new JSONException("getDataSourceInfo FAILED" + " IOException: " + ioe.getMessage());
+        }
     }
 
     
@@ -263,7 +270,15 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
 
     @Override
     public JSONObject setProbeDataRate(String probeID, String dataRate) throws JSONException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            String uri = vimURI + "/probe/" + probeID + "/?datarate=" + dataRate;
+            
+            JSONObject jsobj = rest.json(uri, put(content(""))).toObject();
+
+            return jsobj;
+        } catch (IOException ioe) {
+            throw new JSONException("setProbeDataRate FAILED" + " IOException: " + ioe.getMessage());
+        }
     }
 
     @Override
@@ -296,7 +311,15 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     
     @Override
     public JSONObject getDataConsumerMeasurementRate(String dcID) throws JSONException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            String uri = vimURI + "/dataconsumer/" + dcID + "/rate/";
+            
+            JSONObject jsobj = rest.json(uri).toObject();
+
+            return jsobj;
+        } catch (IOException ioe) {
+            throw new JSONException("getDataConsumerMeasurementRate FAILED" + " IOException: " + ioe.getMessage());
+        }
     }
 
     @Override
@@ -351,7 +374,21 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     }
     
     
-    private void testMemoryInfoProbe(String probeName, String dsID, String serviceID, String sliceID) throws Exception {
+    @Override
+    public JSONObject getProbeDataRate(String probeID) throws JSONException {
+         try {
+            String uri = vimURI + "/probe/" + probeID + "/rate/";
+            
+            JSONObject jsobj = rest.json(uri).toObject();
+
+            return jsobj;
+        } catch (IOException ioe) {
+            throw new JSONException("getProbeDataRate FAILED" + " IOException: " + ioe.getMessage());
+        }
+    }
+    
+    
+    void testMemoryInfoProbe(String probeName, String dsID, String serviceID, String sliceID) throws Exception {
         String probeClassName = "eu.fivegex.monitoring.appl.probes.MemoryInfoProbe";
         JSONObject out = new JSONObject();
         
@@ -385,7 +422,7 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
         }  
     }
     
-    private void testDockerProbe(String probeName, String dsID, String serviceID, String sliceID) throws Exception { 
+    void testDockerProbe(String probeName, String dsID, String serviceID, String sliceID) throws Exception { 
         String probeClassName = "eu.fivegex.monitoring.appl.probes.docker.DockerProbe";
         JSONObject out;
         
@@ -425,7 +462,7 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     }
     
     
-    private String instantiateDS() throws Exception { // we should create a Lattice test exception 
+    String instantiateDS() throws Exception { // we should create a Lattice test exception 
         JSONObject out = new JSONObject();
         
         System.out.println("Deploying DS on endpoint: " + DSEndPointName);
@@ -436,8 +473,7 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
                                                                                  DCDataPlanePort + "+" +
                                                                                  controllerInfoPlaneAddress + "+" +
                                                                                  controllerInfoPlanePort + "+" +
-                                                                                 DSInfoPlanePort + "+" +
-                                                                                 DSControlPlanePort
+                                                                                 controllerControlPlanePort
                          );
             
             return out.getString("ID");
@@ -448,7 +484,7 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     }
     
     
-    private void unloadDS(String dsID) throws Exception {
+    void unloadDS(String dsID) throws Exception {
         JSONObject out;
         System.out.println("Stopping DS on endpoint: "  + DSEndPointAddress + " - DS id: " + dsID);
         try {
@@ -463,7 +499,7 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     }
     
     
-    private String instantiateDC() throws Exception { // we should create a Lattice test exception 
+    String instantiateDC() throws Exception { // we should create a Lattice test exception 
         JSONObject out = new JSONObject();
         
         System.out.println("Deploying DC on endpoint: " + DCEndPointName);
@@ -472,8 +508,7 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
             out = startDC(DCEndPointAddress, DCEndPointPort, DCEndPointUserName, DCDataPlanePort + "+" +
                                                                  controllerInfoPlaneAddress + "+" +
                                                                  controllerInfoPlanePort + "+" +
-                                                                 DCInfoPlanePort + "+" +
-                                                                 DCControlPlanePort
+                                                                 controllerControlPlanePort
                          );
             
             return out.getString("ID");
@@ -484,7 +519,7 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     }
     
     
-    private void unloadDC(String dcID) throws Exception {
+    void unloadDC(String dcID) throws Exception {
         JSONObject out;
         System.out.println("Stopping DC on endpoint: "  + DCEndPointAddress + " - DC id: " + dcID);
         try {
@@ -499,7 +534,7 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     }
     
     
-    private String loadMongoDBReporter(String dcID) throws Exception {
+    String loadMongoDBReporter(String dcID) throws Exception {
         String reporterClassName = "eu.fivegex.monitoring.appl.reporters.MongoDBReporter";
         
         JSONObject out;
@@ -526,7 +561,7 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     }
     
     
-    private MongoDBInteracter createMongoDBEntry(String serviceID, String probeName) throws JSONException, ParseException, IOException {
+    MongoDBInteracter createMongoDBEntry(String serviceID, String probeName) throws JSONException, ParseException, IOException {
         
         JSONObject obj = new JSONObject();
         obj.put("agreementId", serviceID);

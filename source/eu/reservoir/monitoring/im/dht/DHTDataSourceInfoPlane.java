@@ -321,5 +321,10 @@ public class DHTDataSourceInfoPlane extends AbstractDHTInfoPlane implements Info
     public boolean containsDataConsumer(ID dataConsumerID, int timeOut) {
         throw new UnsupportedOperationException("Not supported on a Data Source");
     }
+
+    @Override
+    public Object lookupProbesOnDS(ID dataSourceID) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
 }

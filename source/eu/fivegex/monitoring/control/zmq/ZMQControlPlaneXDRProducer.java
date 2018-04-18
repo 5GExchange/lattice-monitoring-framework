@@ -263,8 +263,26 @@ public class ZMQControlPlaneXDRProducer extends AbstractZMQControlPlaneProducer 
     }
 
     @Override
-    public Rational getProbeDataRate(ID probeID) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public Rational getProbeDataRate(ID probeID) throws ControlServiceException {
+        List<Object> args = new ArrayList();
+        args.add(probeID);
+        Rational result;
+        
+        ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.GET_PROBE_DATA_RATE, args);
+        
+        try {
+            ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
+            
+            MetaData mData = new ZMQControlMetaData(dstAddr.getId().toString());
+            result = (Rational) synchronousTransmit(m, mData);
+        } 
+          catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
+            LOGGER.error("Error while performing get probe data rate  command " + ex.getMessage());
+            throw new ControlServiceException(ex);
+          }
+        
+        return result;
+        
     }
 
     @Override
@@ -283,7 +301,7 @@ public class ZMQControlPlaneXDRProducer extends AbstractZMQControlPlaneProducer 
             result = (Boolean) synchronousTransmit(m, mData);
         } 
           catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
-            LOGGER.error("Error while performing turn on probe command " + ex.getMessage());
+            LOGGER.error("Error while performing set probe data rate command " + ex.getMessage());
             throw new ControlServiceException(ex);
           }
         
@@ -394,18 +412,18 @@ public class ZMQControlPlaneXDRProducer extends AbstractZMQControlPlaneProducer 
     /* DC Control Service methods */
     
     @Override
-    public float getDCMeasurementsRate(ID dcId) throws ControlServiceException {
+    public Long getDCMeasurementsRate(ID dcId) throws ControlServiceException {
         List<Object> args = new ArrayList();
         args.add(dcId);
         
-        Float rate;
+        Long rate;
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.GET_DC_RATE, args);
         
         try {
             ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDCAddressFromID(dcId);
             MetaData mData = new ZMQControlMetaData(dstAddr.getId().toString());    
-            rate = (Float) synchronousTransmit(m, mData);
+            rate = (Long) synchronousTransmit(m, mData);
         } catch (IOException | DCNotFoundException | ControlPlaneConsumerException ex) {
             LOGGER.error("Error while performing getDCMeasurementsRate command " + ex.getMessage());
             throw new ControlServiceException(ex);

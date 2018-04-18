@@ -13,7 +13,7 @@ import eu.reservoir.monitoring.core.ID;
  * @author uceeftu
  */
 public interface DataConsumerControlService {
-    public float getDCMeasurementsRate(ID dcID) throws ControlServiceException; 
+    public Long getDCMeasurementsRate(ID dcID) throws ControlServiceException; 
     
     public ID loadReporter(ID dataConsumerID, String reporterClassName, Object ... reporterArgs) throws ControlServiceException;
     

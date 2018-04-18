@@ -31,6 +31,8 @@ public interface ControlInterface<ReturnType, ExceptionType extends Throwable> {
     
     ReturnType setProbeDataRate(String probeID, String dataRate) throws ExceptionType;
     
+    ReturnType getProbeDataRate(String probeID) throws ExceptionType;
+    
     ReturnType startDC(String endPoint, String port, String userName, String args) throws ExceptionType;
     
     ReturnType stopDC(String dcID) throws ExceptionType;

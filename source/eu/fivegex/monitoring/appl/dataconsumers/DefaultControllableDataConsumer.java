@@ -49,7 +49,7 @@ public final class DefaultControllableDataConsumer extends AbstractDataConsumer 
     /**
      *The last computed measurement rate 
      */
-    float lastMeasurementRate = 0f;
+    Long lastMeasurementRate = 0L;
     
     
     /**
@@ -102,13 +102,13 @@ public final class DefaultControllableDataConsumer extends AbstractDataConsumer 
         Thread t = new Thread(new Runnable () {
                                     @Override
                                     public void run() { 
-                                        long t1 = System.nanoTime();
+                                        Long t1 = System.nanoTime();
                                         while(true) {
                                             try {
                                                 Thread.sleep(mReportingInterval*1000);
-                                                long t2 = System.nanoTime();
-                                                long tDelta = t2 - t1;
-                                                computeMeasurementsRate(tDelta/(1000*1000*1000)); // convert in seconds
+                                                Long t2 = System.nanoTime();
+                                                Long tDelta = t2 - t1;
+                                                computeMeasurementsRate(tDelta/(1000*1000*1000));
                                                 t1 = t2;
                                                 setMeasurementsCounter(0L);
                                             } catch (InterruptedException ex) { }
@@ -120,13 +120,12 @@ public final class DefaultControllableDataConsumer extends AbstractDataConsumer 
     }
     
    
-    private void computeMeasurementsRate(long interval) {
-        this.lastMeasurementRate = (float)this.getMeasurementsCounter()/interval;
-        //System.out.println("Current Measurement Rate (measurements/sec): " + lastMeasurementRate);
+    private void computeMeasurementsRate(Long interval) {
+        this.lastMeasurementRate = 60 * this.getMeasurementsCounter() / interval; // convert to samples / min
     }
 
     @Override
-    public float getMeasurementsRate() {
+    public Long getMeasurementsRate() {
         return this.lastMeasurementRate;
     }
 

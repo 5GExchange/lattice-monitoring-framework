@@ -20,6 +20,7 @@ public enum ControlOperation {
     UNLOAD_PROBE("unloadProbe"),
     SET_PROBE_SERVICE_ID("setProbeServiceID"),
     SET_PROBE_DATA_RATE("setProbeDataRate"),
+    GET_PROBE_DATA_RATE("getProbeDataRate"),
     SET_PROBE_GROUP_ID("setProbeGroupID"),
     GET_DS_NAME("getDataSourceInfo"),
     

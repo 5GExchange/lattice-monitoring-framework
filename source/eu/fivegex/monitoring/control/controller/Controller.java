@@ -13,13 +13,10 @@ import eu.fivegex.monitoring.control.deployment.DataSourceInfo;
 import eu.fivegex.monitoring.control.deployment.DeploymentException;
 import eu.fivegex.monitoring.control.probescatalogue.CatalogueException;
 import eu.fivegex.monitoring.control.probescatalogue.JSONProbeCatalogue;
-import eu.reservoir.monitoring.appl.datarate.EveryNSeconds;
-import eu.fivegex.monitoring.control.udp.UDPControlPlaneXDRProducer;
 import eu.reservoir.monitoring.core.AbstractPlaneInteracter;
 import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.plane.ControllerControlPlane;
 import eu.reservoir.monitoring.core.plane.InfoPlane;
-import eu.reservoir.monitoring.im.dht.DHTInfoPlaneRoot;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,12 +27,15 @@ import eu.fivegex.monitoring.control.deployment.EntityDeploymentDelegate;
 import eu.fivegex.monitoring.control.deployment.ssh.SSHServerEntityInfo;
 import eu.fivegex.monitoring.control.deployment.ssh.SSHDeploymentManager;
 import eu.fivegex.monitoring.control.zmq.ZMQControlPlaneXDRProducer;
+import eu.fivegex.monitoring.im.delegate.DSNotFoundException;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegate;
 import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegateInteracter;
 import eu.fivegex.monitoring.im.zmq.ZMQControllerInfoPlane;
+import eu.reservoir.monitoring.appl.datarate.SamplesPerMinute;
+import eu.reservoir.monitoring.core.Rational;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import us.monoid.json.JSONArray;
 
@@ -209,11 +209,15 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         try {
             dsName = (String) this.getControlHandle().getDataSourceInfo(ID.fromString(dsID));
             result.put("name", dsName);
+            
+            JSONArray info = this.controlInformationManager.getProbesOnDS(ID.fromString(dsID));
+            result.put("probes", info);
+            
             result.put("success", true);
-        } catch (ControlServiceException ex) {
+        } catch (ControlServiceException | DSNotFoundException ex) {
             result.put("success", false);
             result.put("msg", ex.getMessage());
-        } 
+        }
         return result;
      }
     
@@ -363,7 +367,8 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         result.put("rate",dataRate);
         
         try {
-            invocationResult = this.getControlHandle().setProbeDataRate(ID.fromString(probeID), new EveryNSeconds(Integer.valueOf(dataRate)));
+            //invocationResult = this.getControlHandle().setProbeDataRate(ID.fromString(probeID), new EveryNSeconds(Integer.valueOf(dataRate)));
+            invocationResult = this.getControlHandle().setProbeDataRate(ID.fromString(probeID), new SamplesPerMinute(Integer.valueOf(dataRate)));
             result.put("success", invocationResult);
         } catch (ControlServiceException ex) {
             result.put("success", false);
@@ -372,6 +377,30 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         
         return result;
     }
+    
+    
+    
+    @Override
+    public JSONObject getProbeDataRate(String probeID) throws JSONException {
+        JSONObject result = new JSONObject();
+        Rational dataRate;
+        
+        result.put("operation", "getProbeDataRate");
+        result.put("probeID",probeID);
+        
+        try {
+            dataRate = this.getControlHandle().getProbeDataRate(ID.fromString(probeID));
+            result.put("rate", dataRate.div(60)); //convert from "samples per hour" to "samples per minute"
+            result.put("success", true);
+        } catch (ControlServiceException ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+        }
+        
+        return result;
+    }
+    
+    
 
     
     @Override
@@ -439,7 +468,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
     @Override
     public JSONObject getDataConsumerMeasurementRate(String dcID) throws JSONException {
         JSONObject result = new JSONObject();
-        Float rate;
+        Long rate;
         
         result.put("operation", "getDataConsumerMeasurementRate");
         

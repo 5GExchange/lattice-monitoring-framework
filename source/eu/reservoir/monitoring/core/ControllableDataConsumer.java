@@ -39,7 +39,7 @@ public interface ControllableDataConsumer extends PlaneInteracter {
     /**
      * Get the current rate of received measurements
      */
-    public float getMeasurementsRate(); 
+    public Long getMeasurementsRate(); 
     
     
     /**

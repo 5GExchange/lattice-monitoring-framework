@@ -70,7 +70,10 @@ public abstract class AbstractZMQInfoPlane implements InfoPlane  {
         return zmqSubscriber.getReporterInfo(reporterID, info);
     }
     
-    
+    @Override
+    public Object lookupProbesOnDS(ID dataSourceID) {
+        return zmqSubscriber.getProbesOnDS(dataSourceID);
+    }
     
     @Override
     public boolean putInfo(String key, Serializable value) {

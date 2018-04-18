@@ -299,6 +299,17 @@ public class ControlInformationManager implements InfoPlaneDelegate {
             throw new DCNotFoundException("Data Consumer with ID " + dataConsumer.toString() + " not found in the infoplane or missing pid entry");
     }
     
+
+    @Override
+    public JSONArray getProbesOnDS(ID dataSource) throws DSNotFoundException {
+        if (!containsDataSource(dataSource))
+            throw new DSNotFoundException("Data Source with ID " + dataSource.toString() + " was de-announced");
+        
+        JSONArray probes = (JSONArray) info.lookupProbesOnDS(dataSource);
+        return probes;
+    }
+    
+    
     @Override
     public boolean containsDataSource(ID id) {
         return dataSources.contains(id);

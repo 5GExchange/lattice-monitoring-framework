@@ -87,7 +87,10 @@ class ProbeRestHandler extends BasicRequestHandler {
                     if (name == null && segments.length == 2)
                         getProbesCatalogue(request, response);
                     else
-                        notFound(response, "GET bad request");  
+                        if (name == null && segments.length == 3)
+                            getProbeRate(request, response);
+                        else
+                            notFound(response, "GET bad request");  
                     break;
                 default:
                     badRequest(response, "Unknown method" + method);
@@ -319,5 +322,60 @@ class ProbeRestHandler extends BasicRequestHandler {
         }
 
     }
+    
+    private void getProbeRate(Request request, Response response) throws JSONException, IOException {
+        Scanner scanner;
+        boolean success = true;
+        String failMessage = null;
+        JSONObject jsobj = new JSONObject();
+        
+        Query query = request.getQuery();
+        Path path = request.getPath();
+        String[] segments = path.getSegments(); 
+        
+        String probeID;
+        
+        scanner = new Scanner (segments[1]);
+        if (scanner.hasNext("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")) {
+            probeID = scanner.next();
+            scanner.close();
+        }
+        else {
+            LOGGER.error("probe ID is not a valid UUID");
+            scanner.close();
+            complain(response, "probe ID is not a valid UUID: " + segments[1]);
+            return;
+        }
+        
+        if (segments[2].equals("rate")) {
+            jsobj = controllerInterface.getProbeDataRate(probeID);
+
+            if (!jsobj.getBoolean("success")) {
+                failMessage = (String)jsobj.get("msg");
+                LOGGER.error("getProbesCatalogue: failure detected: " + failMessage);
+                success = false;   
+            }
+
+            if (success) {
+                PrintStream out = response.getPrintStream();       
+                out.println(jsobj.toString());
+            }
+
+            else {
+                response.setCode(302);
+                PrintStream out = response.getPrintStream();       
+                out.println(jsobj.toString());
+            }
+        }
+        
+        else {
+            badRequest(response, segments[2] + "is not a valid path");
+            response.close();
+        }
+            
+        
+    }
+    
+    
     
 }

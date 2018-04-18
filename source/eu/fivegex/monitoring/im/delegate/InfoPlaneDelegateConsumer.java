@@ -35,4 +35,6 @@ public interface InfoPlaneDelegateConsumer {
     public Integer getDSPIDFromID(ID dataSource) throws DSNotFoundException;
     
     public int getDCPIDFromID(ID dataConsumer) throws DCNotFoundException;  
+    
+    public JSONArray getProbesOnDS(ID dataSource) throws DSNotFoundException; 
 }
