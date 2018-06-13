@@ -17,6 +17,7 @@ import eu.reservoir.monitoring.core.plane.DeannounceMessage;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import eu.reservoir.monitoring.core.ControllableDataConsumer;
+import eu.reservoir.monitoring.core.Rational;
 
 
 
@@ -74,7 +75,7 @@ public class UDPDataConsumerControlPlaneXDRConsumer extends AbstractUDPControlPl
     }  
     
     @Override
-    public Long getDCMeasurementsRate(ID dcID) {
+    public Rational getDCMeasurementsRate(ID dcID) {
         LOGGER.info("** invoking getDCMeasurementsRate **");
         return dataConsumer.getMeasurementsRate();
     }

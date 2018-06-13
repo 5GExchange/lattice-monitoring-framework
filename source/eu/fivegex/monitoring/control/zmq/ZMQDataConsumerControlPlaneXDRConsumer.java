@@ -13,6 +13,7 @@ import eu.reservoir.monitoring.core.ID;
 import eu.reservoir.monitoring.core.plane.DataConsumerControlPlane;
 import java.net.InetSocketAddress;
 import eu.reservoir.monitoring.core.ControllableDataConsumer;
+import eu.reservoir.monitoring.core.Rational;
 import java.io.IOException;
 
 
@@ -68,7 +69,7 @@ public class ZMQDataConsumerControlPlaneXDRConsumer extends AbstractZMQControlPl
     }  
     
     @Override
-    public Long getDCMeasurementsRate(ID dcID) {
+    public Rational getDCMeasurementsRate(ID dcID) {
         LOGGER.info("** invoking getDCMeasurementsRate **");
         return dataConsumer.getMeasurementsRate();
     }

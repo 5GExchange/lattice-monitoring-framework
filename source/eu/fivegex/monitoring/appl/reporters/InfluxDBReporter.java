@@ -74,6 +74,8 @@ public class InfluxDBReporter extends AbstractReporter {
             resty.json(influxDBURI, form(formattedMeasurement.toString()));
         } catch (IOException e) {
             LOGGER.error("Error while writing measurement to the DB: " + e.getMessage());
+            for (int i=0; i< e.getStackTrace().length; i++)
+                LOGGER.error(e.getStackTrace()[i].toString());
         }
     }
     

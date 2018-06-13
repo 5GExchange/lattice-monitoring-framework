@@ -1,10 +1,10 @@
 package eu.fivegex.monitoring.test;
 
-import eu.reservoir.monitoring.appl.datarate.SamplesPerMinute;
 import eu.reservoir.monitoring.core.Rational;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,12 +21,16 @@ import us.monoid.json.JSONObject;
 public class DataRateController implements Runnable {
     LatticeTest restClient = null;
     String dataConsumerID;
-    int maxRate = 8;
-    int nProbes = 1;
+    String dataSourceID;
+    Rational maxRate = new Rational("1000");
+    int nProbes = 100;
     
     Boolean threadRunning;
     
-    Map<String, Integer> probesMap;
+    Map<String, Rational> probesMap;
+    
+    PrintWriter outFile = new PrintWriter("measurements");
+    Long tStart = 0L;
     
     
     public DataRateController(Properties configuration) throws UnknownHostException, IOException {
@@ -35,19 +39,12 @@ public class DataRateController implements Runnable {
         probesMap = new HashMap<>();
     }
 
-    public String getDataConsumerID() {
-        return dataConsumerID;
-    }
-
-    public void setDataConsumerID(String dataConsumerID) {
-        this.dataConsumerID = dataConsumerID;
-    }
-
     
     private void loadRandomProbe(String dsID, String probeName, String probeAttributeName, String value) throws JSONException {
         String probeClassName = "eu.fivegex.monitoring.appl.probes.RandomProbe";
         
         JSONObject out = restClient.loadProbe(dsID, probeClassName, probeName + "+" + probeAttributeName + "+" + value);
+        //System.out.println(out);
         String probeID = out.getString("createdProbeID");
         
         restClient.turnOnProbe(probeID);
@@ -60,20 +57,40 @@ public class DataRateController implements Runnable {
     }
     
     
+    private void checkProbesRate() throws JSONException {
+        JSONArray probes = getProbesOnDS(dataSourceID);
+        String probeID;
+        Rational probeRate;
+        JSONObject out;
+        for (int i=0; i < probes.length(); i++) {
+            probeID = (String) probes.get(i);
+            out = restClient.getProbeDataRate(probeID);
+            System.out.println(out);
+            probeRate = new Rational((String) out.get("rate"));
+            probesMap.put(probeID, probeRate);
+            System.out.println("Probe: " + probeID + " - rate: " + probeRate);
+            outFile.println((System.currentTimeMillis() - tStart)/1000 + " Probe: " + probeID + " - rate: " + probeRate);
+            }
+    }
+    
+    
     private void adjustProbesRate() {
         Rational scalingFactor;
-        Integer rateSum = 0;
-        Integer rate;
+        Rational rateSum = new Rational(0, 1);
         
-        for (Integer probeRate : probesMap.values())
-            rateSum += probeRate;
+        for (Rational probeRate : probesMap.values())
+            rateSum = rateSum.plus(probeRate);
         
-        scalingFactor = new Rational(maxRate * nProbes, rateSum);
+        System.out.println(rateSum);
+        
+        scalingFactor = maxRate.multiply(new Rational(8, 10)).div(rateSum); // scaling to 0.8 of max rate
+        System.out.println("scalingFactor: " + scalingFactor);
         
         Rational newRate;
         for (String probeID : probesMap.keySet()) {
             newRate = scalingFactor.multiply(probesMap.get(probeID));
-            System.out.println(newRate);
+            System.out.println("newRate: " + newRate);
+            
             try {
                 restClient.setProbeDataRate(probeID, newRate.toString());
             } catch (JSONException e) {
@@ -87,17 +104,24 @@ public class DataRateController implements Runnable {
     
     @Override
     public void run() {
-        Integer currentRate;
+        Rational currentRate;
         JSONObject out;
         
+        tStart = System.currentTimeMillis();
         while (threadRunning) {
             try {
-                System.out.println("Checking rate");
-                out = restClient.getDataConsumerMeasurementRate(dataConsumerID);
-                currentRate = Integer.valueOf((String) out.get("rate"));
                 
-                System.out.println("Current rate: " + currentRate);
-                if (currentRate > maxRate) {
+                System.out.println("Checking probes rate");
+                checkProbesRate();
+                
+                System.out.println("Checking DC rate");
+                out = restClient.getDataConsumerMeasurementRate(dataConsumerID);
+                currentRate = new Rational((String) out.get("rate"));
+                System.out.println("Current DC rate: " + currentRate);
+                outFile.println((System.currentTimeMillis() - tStart)/1000 +  " DC rate: " + currentRate);
+                outFile.println((System.currentTimeMillis() - tStart)/1000 + " Nprobes: " + probesMap.size());
+                
+                if (currentRate.compareTo(maxRate) > 0) {
                     // should change rate on probes
                     System.out.println("Changing probes rate");
                     adjustProbesRate();
@@ -108,9 +132,9 @@ public class DataRateController implements Runnable {
               }
             finally {
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(30000);
                     } catch (InterruptedException ie) {
-                        return;
+                        threadRunning=false;
                         
                       } 
             }
@@ -132,13 +156,16 @@ public class DataRateController implements Runnable {
             InputStream input = null;
             String propertiesFile = null;
             
-            if (args.length == 0)
-                propertiesFile = System.getProperty("user.home") + "/rate.properties";
-            else if (args.length == 1)
-                propertiesFile = args[0];
-            else {
-                System.out.println("Please use: java LatticeTest [file.properties]");
-                System.exit(1);
+            switch (args.length) {
+                case 0:
+                    propertiesFile = System.getProperty("user.home") + "/rate.properties";
+                    break;
+                case 1:
+                    propertiesFile = args[0];
+                    break;
+                default:
+                    System.out.println("Please use: java DataRateController [file.properties]");
+                    System.exit(1);
             }
             
             input = new FileInputStream(propertiesFile);
@@ -151,33 +178,21 @@ public class DataRateController implements Runnable {
             
             dcID = rateController.restClient.instantiateDC();
             
-            rateController.setDataConsumerID(dcID);
-            
-            for (Integer i=0; i < rateController.nProbes; i++)
-                rateController.loadRandomProbe(dsID, "RandomProbe" + i, "RandomAttribute", i.toString());
-            
-            JSONArray probes = rateController.getProbesOnDS(dsID);
-            
-            
+            rateController.dataConsumerID = dcID;
+            rateController.dataSourceID= dsID;
             
             Thread t = new Thread(rateController);
             t.start();
-                        
-            System.in.read();
             
-            String probeID;
-            int probeRate;
-            JSONObject out;
-            for (int i=0; i < probes.length(); i++) {
-                probeID = (String) probes.get(i);
-                out = rateController.restClient.getProbeDataRate(probeID);
-                probeRate = out.getInt("rate");
-                rateController.probesMap.put(probeID, probeRate);
-                System.out.println("Probe: " + probeID + "- rate: " + probeRate);
+            for (Integer i=0; i < rateController.nProbes; i++) {
+                rateController.loadRandomProbe(dsID, "RandomProbe" + i, "RandomAttribute", i.toString());
+                Thread.sleep(2000);
             }
-            
+               
             System.in.read();
+            rateController.outFile.flush();
             rateController.threadRunning = false;
+            t.interrupt();
         }
         catch (Exception e) {
             System.out.println("*TEST FAILED*\n" + e.getMessage());

@@ -15,6 +15,7 @@ import eu.reservoir.monitoring.core.Measurement;
 import java.util.HashMap;
 import java.util.Map;
 import eu.reservoir.monitoring.core.ControllableDataConsumer;
+import eu.reservoir.monitoring.core.Rational;
 import java.util.Collection;
 
 /**
@@ -49,7 +50,7 @@ public final class DefaultControllableDataConsumer extends AbstractDataConsumer 
     /**
      *The last computed measurement rate 
      */
-    Long lastMeasurementRate = 0L;
+    Rational lastMeasurementRate;
     
     
     /**
@@ -60,7 +61,7 @@ public final class DefaultControllableDataConsumer extends AbstractDataConsumer 
     
     
     public DefaultControllableDataConsumer(String name) {
-        this(name, 20); //default interval every 20 sec
+        this(name, 30); //default interval every 30 sec
     }
     
     
@@ -70,7 +71,7 @@ public final class DefaultControllableDataConsumer extends AbstractDataConsumer 
     
     
     public DefaultControllableDataConsumer(String dcName, ID id) {
-        this(dcName, id, 20);
+        this(dcName, id, 30);
     }
     
     
@@ -85,6 +86,7 @@ public final class DefaultControllableDataConsumer extends AbstractDataConsumer 
     }
     
     private void init() {
+        lastMeasurementRate = new Rational(0, 1);
         startMeasurementsRateThread();
     } 
 
@@ -121,11 +123,11 @@ public final class DefaultControllableDataConsumer extends AbstractDataConsumer 
     
    
     private void computeMeasurementsRate(Long interval) {
-        this.lastMeasurementRate = 60 * this.getMeasurementsCounter() / interval; // convert to samples / min
+        this.lastMeasurementRate = new Rational (60 * this.getMeasurementsCounter().intValue(), interval.intValue()); // convert to samples / min
     }
 
     @Override
-    public Long getMeasurementsRate() {
+    public Rational getMeasurementsRate() {
         return this.lastMeasurementRate;
     }
 

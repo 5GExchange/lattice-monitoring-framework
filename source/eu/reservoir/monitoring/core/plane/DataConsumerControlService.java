@@ -7,13 +7,14 @@ package eu.reservoir.monitoring.core.plane;
 
 import eu.fivegex.monitoring.control.ControlServiceException;
 import eu.reservoir.monitoring.core.ID;
+import eu.reservoir.monitoring.core.Rational;
 
 /**
  *
  * @author uceeftu
  */
 public interface DataConsumerControlService {
-    public Long getDCMeasurementsRate(ID dcID) throws ControlServiceException; 
+    public Rational getDCMeasurementsRate(ID dcID) throws ControlServiceException; 
     
     public ID loadReporter(ID dataConsumerID, String reporterClassName, Object ... reporterArgs) throws ControlServiceException;
     

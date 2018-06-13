@@ -34,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import eu.fivegex.monitoring.im.delegate.InfoPlaneDelegateInteracter;
 import eu.fivegex.monitoring.im.zmq.ZMQControllerInfoPlane;
-import eu.reservoir.monitoring.appl.datarate.SamplesPerMinute;
 import eu.reservoir.monitoring.core.Rational;
 import eu.reservoir.monitoring.core.plane.ControlPlane;
 import us.monoid.json.JSONArray;
@@ -367,8 +366,8 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         result.put("rate",dataRate);
         
         try {
-            //invocationResult = this.getControlHandle().setProbeDataRate(ID.fromString(probeID), new EveryNSeconds(Integer.valueOf(dataRate)));
-            invocationResult = this.getControlHandle().setProbeDataRate(ID.fromString(probeID), new SamplesPerMinute(Integer.valueOf(dataRate)));
+            Rational actualRate = (new Rational(dataRate)).multiply(60); // convert from measurements/min to measurements/hour
+            invocationResult = this.getControlHandle().setProbeDataRate(ID.fromString(probeID), actualRate);
             result.put("success", invocationResult);
         } catch (ControlServiceException ex) {
             result.put("success", false);
@@ -390,7 +389,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         
         try {
             dataRate = this.getControlHandle().getProbeDataRate(ID.fromString(probeID));
-            result.put("rate", dataRate.div(60)); //convert from "samples per hour" to "samples per minute"
+            result.put("rate", dataRate.div(60)); //convert from measurements/hour to measurements/min
             result.put("success", true);
         } catch (ControlServiceException ex) {
             result.put("success", false);
@@ -468,14 +467,13 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
     @Override
     public JSONObject getDataConsumerMeasurementRate(String dcID) throws JSONException {
         JSONObject result = new JSONObject();
-        Long rate;
+        Rational rate;
         
         result.put("operation", "getDataConsumerMeasurementRate");
         
         result.put("ID",dcID);
         
         try {
-            System.out.println("Invoking getDataConsumerMeasurementRate: " + dcID);
             rate = this.getControlHandle().getDCMeasurementsRate(ID.fromString(dcID));
             result.put("rate", rate.toString());
             result.put("success", true);

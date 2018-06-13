@@ -432,18 +432,18 @@ public class UDPControlPlaneXDRProducer extends AbstractUDPControlPlaneProducer 
     /* DC Control Service methods */
     
     @Override
-    public Long getDCMeasurementsRate(ID dcId) throws ControlServiceException {
+    public Rational getDCMeasurementsRate(ID dcId) throws ControlServiceException {
         List<Object> args = new ArrayList();
         args.add(dcId);
         
-        Long rate;
+        Rational rate;
         
         ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.GET_DC_RATE, args);
         
         try {
             SocketControlEndPointMetaData dstAddr = (SocketControlEndPointMetaData)infoPlaneDelegate.getDCAddressFromID(dcId);
             MetaData mData = new UDPControlMetaData(dstAddr.getHost(), dstAddr.getPort());            
-            rate = (Long) synchronousTransmit(m, mData);
+            rate = (Rational) synchronousTransmit(m, mData);
         } catch (IOException | DCNotFoundException | ControlPlaneConsumerException ex) {
             LOGGER.error("Error while performing getDCMeasurementsRate command " + ex.getMessage());
             throw new ControlServiceException(ex);

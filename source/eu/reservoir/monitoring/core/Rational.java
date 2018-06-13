@@ -47,7 +47,35 @@ public class Rational implements Comparable<Rational>, Serializable {
         // only needed for negative numbers
         if (den < 0) { den = -den; num = -num; }
     }
+    
+    
+    public Rational(String fraction) {
+        int numerator=1, denominator=1;
+        
+        fraction = fraction.replaceAll(" ","");
+        
+        if (!fraction.contains("/")) {
+            this.num = Integer.valueOf(fraction);
+            this.den = 1;
+        }
+        else {
+             String[] fraction1 = fraction.split(("/"));
+             if (fraction1[1].equals("0"))
+                 throw new IllegalArgumentException("The denominator can't be ZERO.");
+             
+             numerator = Integer.valueOf(fraction1[0]);
+             denominator = Integer.valueOf(fraction1[1]);
+             
+             int g = gcd(numerator, denominator);
+             num = numerator   / g;
+             den = denominator / g;
 
+             // only needed for negative numbers
+             if (den < 0) { den = -den; num = -num; }
+             }
+    }
+
+    
     // return the numerator and denominator of (this)
     public int numerator()   { return num; }
     public int denominator() { return den; }

@@ -7,14 +7,18 @@ package eu.fivegex.monitoring.appl.probes.docker;
 
 import eu.reservoir.monitoring.appl.datarate.EveryNSeconds;
 import eu.reservoir.monitoring.core.*;
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import us.monoid.json.JSONException;
 
 /**
  *
  * @author uceeftu
  */
-public class DockerProbe extends AbstractProbe implements Probe{
+public class DockerProbe extends AbstractProbe implements Probe {
     
     // the container ID
     String containerId;
@@ -27,16 +31,29 @@ public class DockerProbe extends AbstractProbe implements Probe{
     
     DockerDataCollector ddc;
     
+    private Logger LOGGER = LoggerFactory.getLogger(DockerProbe.class);
     
-    public DockerProbe(String dockerURI, String dockerPort, String probeName, String cId, String resourceId) throws UnknownHostException { // double check exception management        
+    
+    public DockerProbe(String dockerHost, String dockerPort, String probeName, String cId, String resourceId)  {       
+        
+        LOGGER.info("dockerHost => " + dockerHost);
+        LOGGER.info("dockerPort => " + dockerPort);
+        LOGGER.info("resource ID => " + resourceId);
+        LOGGER.info("container ID => " + cId);
+        LOGGER.info("probeName => " + probeName);
+        
+        
         setName(probeName);
-        setDataRate(new Rational(360, 1));
-        //setDataRate(new EveryNSeconds(3));
+        setDataRate(new EveryNSeconds(10));
         
         this.containerId=cId;
         this.resourceId = resourceId;
         
-        ddc = new DockerDataCollector(dockerURI, Integer.valueOf(dockerPort), this.containerId);
+        try {
+            ddc = new DockerDataCollector(dockerHost, Integer.valueOf(dockerPort), this.containerId);
+        } catch (UnknownHostException e) {
+            LOGGER.error("Error while resolving docker host: " + e.getMessage());
+        }
         
         addProbeAttribute(new DefaultProbeAttribute(0, "FQN", ProbeAttributeType.STRING, "name")); // we need to double check what info is needed here
         addProbeAttribute(new DefaultProbeAttribute(1, "cpu_percent", ProbeAttributeType.FLOAT, "percent"));
@@ -51,7 +68,14 @@ public class DockerProbe extends AbstractProbe implements Probe{
 
     @Override
     public void beginThreadBody() {
-        ddc.collectValues();
+        try {
+            ddc.collectValues();
+        } catch (IOException ioe) {
+            LOGGER.error("Error while contacting DOCKER API: " + ioe.getMessage());
+        } catch (JSONException je) {
+            LOGGER.error("Error while parsing DOCKER API response: " + je.getMessage());
+        }
+        
         previousContainerCPUTime = ddc.getContainerCpuTime();
         previousSystemCPUTime = ddc.getSystemCpuTime();
     }
@@ -105,10 +129,14 @@ public class DockerProbe extends AbstractProbe implements Probe{
             
             return m;
         }
-        catch (Exception e)
-            {
-                System.out.println("Error in DockerProbe" + e.getMessage());
-            }
+        catch (IOException ioe) {
+            LOGGER.error("Error while contacting DOCKER API: " + ioe.getMessage());
+        } catch (JSONException je) {
+            LOGGER.error("Error while parsing DOCKER API response: " + je.getMessage());
+        } catch (TypeException te) {
+            LOGGER.error("Error while adding probe attribute: " + te.getMessage());
+        }
+        
     return null;
     }   
 }
