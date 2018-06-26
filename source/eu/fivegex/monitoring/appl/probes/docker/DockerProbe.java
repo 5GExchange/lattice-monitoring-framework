@@ -122,8 +122,6 @@ public class DockerProbe extends AbstractProbe implements Probe {
 
             ProbeMeasurement m = new ProducerMeasurement(this, list, "Container");
             
-            System.out.println(m.getValues());
-            
             previousContainerCPUTime = ddc.getContainerCpuTime();
             previousSystemCPUTime = ddc.getSystemCpuTime();
             

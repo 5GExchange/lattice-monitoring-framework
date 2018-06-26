@@ -378,8 +378,7 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
     }
     
     
-    
-    @Override
+        @Override
     public JSONObject getProbeDataRate(String probeID) throws JSONException {
         JSONObject result = new JSONObject();
         Rational dataRate;
@@ -390,6 +389,28 @@ public class Controller extends AbstractPlaneInteracter implements ControlInterf
         try {
             dataRate = this.getControlHandle().getProbeDataRate(ID.fromString(probeID));
             result.put("rate", dataRate.div(60)); //convert from measurements/hour to measurements/min
+            result.put("success", true);
+        } catch (ControlServiceException ex) {
+            result.put("success", false);
+            result.put("msg", ex.getMessage());
+        }
+        
+        return result;
+    }
+    
+    
+    
+    @Override
+    public JSONObject getProbeServiceID(String probeID) throws JSONException {
+        JSONObject result = new JSONObject();
+        ID serviceID;
+        
+        result.put("operation", "getProbeServiceID");
+        result.put("probeID",probeID);
+        
+        try {
+            serviceID = this.getControlHandle().getProbeServiceID(ID.fromString(probeID));
+            result.put("serviceID", serviceID.toString());
             result.put("success", true);
         } catch (ControlServiceException ex) {
             result.put("success", false);

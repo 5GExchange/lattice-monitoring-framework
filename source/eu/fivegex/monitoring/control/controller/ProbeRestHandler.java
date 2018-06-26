@@ -88,7 +88,7 @@ class ProbeRestHandler extends BasicRequestHandler {
                         getProbesCatalogue(request, response);
                     else
                         if (name == null && segments.length == 3)
-                            getProbeRate(request, response);
+                            getProbeInfo(request, response);
                         else
                             notFound(response, "GET bad request");  
                     break;
@@ -323,7 +323,7 @@ class ProbeRestHandler extends BasicRequestHandler {
 
     }
     
-    private void getProbeRate(Request request, Response response) throws JSONException, IOException {
+    private void getProbeInfo(Request request, Response response) throws JSONException, IOException {
         Scanner scanner;
         boolean success = true;
         String failMessage = null;
@@ -347,35 +347,32 @@ class ProbeRestHandler extends BasicRequestHandler {
             return;
         }
         
-        if (segments[2].equals("rate")) {
+        if (segments[2].equals("rate")) 
             jsobj = controllerInterface.getProbeDataRate(probeID);
-
-            if (!jsobj.getBoolean("success")) {
-                failMessage = (String)jsobj.get("msg");
-                LOGGER.error("getProbesCatalogue: failure detected: " + failMessage);
-                success = false;   
-            }
-
-            if (success) {
-                PrintStream out = response.getPrintStream();       
-                out.println(jsobj.toString());
-            }
-
-            else {
-                response.setCode(302);
-                PrintStream out = response.getPrintStream();       
-                out.println(jsobj.toString());
-            }
-        }
-        
+            
+        else if (segments[2].equals("service"))    
+            jsobj = controllerInterface.getProbeServiceID(probeID);
+            
         else {
             badRequest(response, segments[2] + "is not a valid path");
             response.close();
+        }    
+
+        if (!jsobj.getBoolean("success")) {
+            failMessage = (String)jsobj.get("msg");
+            LOGGER.error("getProbeRate: failure detected: " + failMessage);
+            success = false;   
         }
-            
-        
+
+        if (success) {
+            PrintStream out = response.getPrintStream();
+            out.println(jsobj.toString());
+        }
+
+        else {
+            response.setCode(302);
+            PrintStream out = response.getPrintStream();       
+            out.println(jsobj.toString());
+        }
     }
-    
-    
-    
 }

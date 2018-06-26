@@ -56,7 +56,7 @@ public interface DataSourceControlService {
     /**
      * Get the Service ID of the Probe.
      */
-    public ID getProbeServiceID(ID probeID);
+    public ID getProbeServiceID(ID probeID) throws ControlServiceException;
 
     /**
      * Set the Service ID for a Probe

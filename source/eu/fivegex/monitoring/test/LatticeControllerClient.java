@@ -629,4 +629,9 @@ public class LatticeControllerClient implements ControlInterface<JSONObject, JSO
     public JSONObject getProbeDataRate(String probeID) throws JSONException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public JSONObject getProbeServiceID(String probeID) throws JSONException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

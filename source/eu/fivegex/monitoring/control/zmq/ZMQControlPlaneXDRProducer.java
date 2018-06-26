@@ -208,11 +208,6 @@ public class ZMQControlPlaneXDRProducer extends AbstractZMQControlPlaneProducer 
     }
 
     @Override
-    public ID getProbeServiceID(ID probeID) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public boolean setProbeServiceID(ID probeID, ID id) throws ControlServiceException {
         List<Object> args = new ArrayList();
         args.add(probeID);
@@ -234,6 +229,31 @@ public class ZMQControlPlaneXDRProducer extends AbstractZMQControlPlaneProducer 
         return result;
         
     }
+    
+    
+    @Override
+    public ID getProbeServiceID(ID probeID) throws ControlServiceException {
+        List<Object> args = new ArrayList();
+        args.add(probeID);
+        ID result;
+        
+        ControlPlaneMessage m=new ControlPlaneMessage(ControlOperation.GET_PROBE_SERVICE_ID, args);
+        
+        try {
+            ZMQControlEndPointMetaData dstAddr = (ZMQControlEndPointMetaData)infoPlaneDelegate.getDSAddressFromProbeID(probeID);
+            
+            MetaData mData = new ZMQControlMetaData(dstAddr.getId().toString());
+            result = (ID) synchronousTransmit(m, mData);
+        } 
+          catch (IOException | DSNotFoundException | ProbeNotFoundException | ControlPlaneConsumerException ex) {
+            LOGGER.error("Error while performing get probe Service ID command " + ex.getMessage());
+            throw new ControlServiceException(ex);
+          }
+        
+        return result;
+        
+    }
+    
 
     @Override
     public ID getProbeGroupID(ID probeID) {
@@ -261,7 +281,7 @@ public class ZMQControlPlaneXDRProducer extends AbstractZMQControlPlaneProducer 
         
         return result;    
     }
-
+    
     @Override
     public Rational getProbeDataRate(ID probeID) throws ControlServiceException {
         List<Object> args = new ArrayList();

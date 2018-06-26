@@ -388,6 +388,12 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     }
     
     
+    @Override
+    public JSONObject getProbeServiceID(String probeID) throws JSONException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    
     void testMemoryInfoProbe(String probeName, String dsID, String serviceID, String sliceID) throws Exception {
         String probeClassName = "eu.fivegex.monitoring.appl.probes.MemoryInfoProbe";
         JSONObject out = new JSONObject();
@@ -659,4 +665,6 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     if (errorStatus)
         System.exit(1);
     }
+
+    
 }
