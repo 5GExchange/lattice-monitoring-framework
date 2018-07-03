@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.appl.probes.rtt;
+package eu.fivegex.monitoring.appl.probes.rtt.bidirectional;
 
 import eu.reservoir.monitoring.core.AbstractProbe;
 import eu.reservoir.monitoring.core.Probe;

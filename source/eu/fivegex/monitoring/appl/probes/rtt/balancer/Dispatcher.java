@@ -79,8 +79,10 @@ public class Dispatcher implements Runnable {
     }
     
     public void stop() {
-        if (queues.isEmpty())
+        if (queues.isEmpty()) {
             isRunning = false;
+            serverSocket.close();
+        }
     }
     
     
@@ -103,11 +105,14 @@ public class Dispatcher implements Runnable {
                             LOGGER.info("Added: " + report + " to the queue " + containerId);
                         }
                    }
-            }
+            }  
+        } catch (SocketException so) {
+            LOGGER.info("UDP Socket has been closed");
         } catch (IOException e) {
             LOGGER.error("Error: " + e.getMessage()); 
         } catch (InterruptedException ie) {
             LOGGER.error("Error adding to the queue: " + ie.getMessage()); 
-        }  
+        
+        }
     }
 }

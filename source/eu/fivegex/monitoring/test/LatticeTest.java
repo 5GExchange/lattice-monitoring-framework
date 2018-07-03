@@ -69,7 +69,7 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
      * Construct a LatticeTest
      * using defaults of localhost and port 6666
      */
-    public LatticeTest(Properties configuration) throws UnknownHostException, IOException {
+    public LatticeTest(Properties configuration) throws IOException {
         this(configuration.getProperty("controller.infoplane.address"), Integer.valueOf(configuration.getProperty("controller.rest.port")));
         
         controllerInfoPlaneAddress = configuration.getProperty("controller.infoplane.address");
@@ -107,12 +107,12 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     }
 
  
-    public LatticeTest(String addr, int port) throws UnknownHostException, IOException  {
+    public LatticeTest(String addr, int port) throws IOException  {
         initialize(InetAddress.getByName(addr), port);
     }
 
 
-    public LatticeTest(InetAddress addr, int port) throws UnknownHostException, IOException  {
+    public LatticeTest(InetAddress addr, int port) throws IOException  {
         initialize(addr, port);
     }
 
@@ -120,9 +120,13 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
      * Initialize
      */
     private synchronized void initialize(InetAddress addr, int port) {
-        this.port = port;
-        vimURI = "http://" + addr.getHostName() + ":" + Integer.toString(port);
-        rest = new Resty();
+        try {
+            this.port = port;
+            vimURI = "http://" + addr.getHostName() + ":" + Integer.toString(port);
+            rest = new Resty();
+        } catch (Exception e) {
+            System.out.println("Error while initializing the rest client:" + e.getMessage());
+        }
     }
 
     /**
@@ -326,7 +330,6 @@ public class LatticeTest implements ControlInterface<JSONObject, JSONException> 
     public JSONObject loadReporter(String id, String reporterClassName, String reporterArgs) throws JSONException {
         try {
             String uri = vimURI + "/dataconsumer/" + id + "/reporter/?className=" + reporterClassName + "&args=" + java.net.URLEncoder.encode(reporterArgs, "UTF-8");
-            System.out.println(uri);
             JSONObject jsobj = rest.json(uri, form("")).toObject();
 
             return jsobj;
