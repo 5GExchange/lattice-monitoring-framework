@@ -91,11 +91,12 @@ public class UDPReceiver implements Runnable {
                         LOGGER.warn("Timeout receiving packet => " + sequenceNumber);
                         break;
                     }
-                } while (receivedPackets < packets); //TODO check
+                } while (receivedPackets < packets);
                 
                 avgDelayMs = dataDelaySum/receivedPackets/(1000*1000);
                 queue.put(avgDelayMs);
-                LOGGER.info("measurement just added to the queue – queue size: " + queue.size());
+                LOGGER.info("measurement " + avgDelayMs + " just added to the queue");
+                LOGGER.info("queue size: " + queue.size());
                 socket.setSoTimeout(0);
             }
         }
