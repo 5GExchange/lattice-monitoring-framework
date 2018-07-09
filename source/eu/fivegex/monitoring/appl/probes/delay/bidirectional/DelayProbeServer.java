@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.appl.probes.rtt.bidirectional;
+package eu.fivegex.monitoring.appl.probes.delay.bidirectional;
 
 import eu.reservoir.monitoring.core.AbstractProbe;
 import eu.reservoir.monitoring.core.Probe;
@@ -21,12 +21,12 @@ import org.slf4j.LoggerFactory;
  * it only listens for UDP packets from the DelayProbeClient
  */
 
-public class RTTProbeServer extends AbstractProbe {
+public class DelayProbeServer extends AbstractProbe {
     int port;
     DatagramSocket socket;
     
 
-    public RTTProbeServer(String name, String port) throws SocketException {
+    public DelayProbeServer(String name, String port) throws SocketException {
         this.port = Integer.valueOf(port);
         socket = new DatagramSocket(this.port);
         
@@ -39,7 +39,7 @@ public class RTTProbeServer extends AbstractProbe {
     public void run() {
 	beginThreadBody();
         
-        LoggerFactory.getLogger(RTTProbeServer.class).info("Starting UDP server");
+        LoggerFactory.getLogger(DelayProbeServer.class).info("Starting UDP server");
 
 	while (threadRunning) {
 	    if (probeStatus == Probe.Status.OFF) {
@@ -71,9 +71,9 @@ public class RTTProbeServer extends AbstractProbe {
                     DatagramPacket reply = new DatagramPacket(buf, buf.length, clientHost, clientPort);
                     socket.send(reply);
 
-                    LoggerFactory.getLogger(RTTProbeServer.class).debug("Sent reply" );
+                    LoggerFactory.getLogger(DelayProbeServer.class).debug("Sent reply" );
                 } catch (IOException e) {
-                   LoggerFactory.getLogger(RTTProbeServer.class).error(e.getMessage());
+                   LoggerFactory.getLogger(DelayProbeServer.class).error(e.getMessage());
                     
                 }
             }

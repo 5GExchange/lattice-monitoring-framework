@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.appl.probes.rtt.bidirectional;
+package eu.fivegex.monitoring.appl.probes.delay.bidirectional;
 
 import eu.reservoir.monitoring.core.AbstractProbe;
 import eu.reservoir.monitoring.core.DefaultProbeAttribute;
@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author uceeftu
  */
-public class RTTProbeClient extends AbstractProbe implements Probe  {
+public class DelayProbeClient extends AbstractProbe implements Probe  {
     
     DatagramSocket socket;
     
@@ -36,7 +36,7 @@ public class RTTProbeClient extends AbstractProbe implements Probe  {
     InetAddress serverHost;
     int serverPort;
 
-    public RTTProbeClient(String name, String serverHost, String serverPort) throws UnknownHostException, SocketException {
+    public DelayProbeClient(String name, String serverHost, String serverPort) throws UnknownHostException, SocketException {
         socket = new DatagramSocket();
         this.serverHost = InetAddress.getByName(serverHost);
         this.serverPort = Integer.valueOf(serverPort);
@@ -44,7 +44,8 @@ public class RTTProbeClient extends AbstractProbe implements Probe  {
         setName(name);
         setDataRate(new Rational(360, 1));
 
-        addProbeAttribute(new DefaultProbeAttribute(0, "mean_rtt", ProbeAttributeType.FLOAT, "msec"));
+        addProbeAttribute(new DefaultProbeAttribute(0, "link", ProbeAttributeType.STRING, "id"));
+        addProbeAttribute(new DefaultProbeAttribute(1, "delay", ProbeAttributeType.FLOAT, "milliseconds"));
     }
     
     private float measureMeanDelay() {
@@ -89,28 +90,29 @@ public class RTTProbeClient extends AbstractProbe implements Probe  {
 		} catch (IOException e) {
                     // Print which packet has timed out
                     timedOut++;
-                    LoggerFactory.getLogger(RTTProbeClient.class).debug("Timeout for packet " + sequence_number);
+                    LoggerFactory.getLogger(DelayProbeClient.class).debug("Timeout for packet " + sequence_number);
 		}
             
 		// next packet
 		sequence_number ++;
 	}
         
-        return delaySum/(REQUESTS_NUM - timedOut); //filtering out the timed out pings
+        return delaySum/(REQUESTS_NUM - timedOut)/2; //filtering out the timed out pings
         
     }
     
     
     @Override
     public ProbeMeasurement collect() {
-        int attrCount = 1;
+        int attrCount = 2;
         ArrayList<ProbeValue> list = new ArrayList<ProbeValue>(attrCount);
         
         try {
-            list.add(new DefaultProbeValue(0, measureMeanDelay()));
+            list.add(new DefaultProbeValue(0, "linkId")); // TODO: this has to be passed as parameter of the probe!
+            list.add(new DefaultProbeValue(1, measureMeanDelay()));
         } catch (Exception e) {
             return null;
         }
-        return new ProducerMeasurement(this, list, "MeanRTT");	
+        return new ProducerMeasurement(this, list, "Link");	
     }  
 }

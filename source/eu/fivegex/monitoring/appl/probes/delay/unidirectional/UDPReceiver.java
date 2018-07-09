@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.appl.probes.rtt.unidirectional;
+package eu.fivegex.monitoring.appl.probes.delay.unidirectional;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -21,8 +21,8 @@ import org.slf4j.LoggerFactory;
  * @author uceeftu
  */
 public class UDPReceiver implements Runnable {
-    private static final int MAX_TIMEOUT = 5000;
-    private static final int REQUESTS_NUM = 20;
+    int packets;
+    int timeout;
     
     DatagramSocket socket;
     Boolean isRunning = false;
@@ -33,9 +33,11 @@ public class UDPReceiver implements Runnable {
     
     private Logger LOGGER = LoggerFactory.getLogger(UDPReceiver.class);
     
-    public UDPReceiver(int port, String address, LinkedBlockingQueue<Long> q) throws SocketException, UnknownHostException {
+    public UDPReceiver(int port, String address, LinkedBlockingQueue<Long> q, int packets, int timeout) throws SocketException, UnknownHostException {
         socket = new DatagramSocket(port, InetAddress.getByName(address));
         queue = q;
+        this.packets = packets;
+        this.timeout = timeout;
     }
     
     
@@ -62,7 +64,7 @@ public class UDPReceiver implements Runnable {
         try {
             while (isRunning) {
                 
-                int sequenceNumber=0; //check
+                int sequenceNumber = 0;
                 long dataDelay;
                 long dataDelaySum = 0;
                 int receivedPackets = 0;
@@ -80,21 +82,20 @@ public class UDPReceiver implements Runnable {
                         sequenceNumber = Integer.valueOf(receivedDataFields[1]);
                         long nsSent = Long.valueOf(receivedDataFields[2]);
                         dataDelay = nsReceived - nsSent;
-                        //System.out.println("dataDelay => " + dataDelay);
                         dataDelaySum += dataDelay;
                         receivedPackets++;
                         if (socket.getSoTimeout() == 0) {
-                            socket.setSoTimeout(MAX_TIMEOUT);
+                            socket.setSoTimeout(timeout);
                         }
                     } catch (SocketTimeoutException e) {
-                        LOGGER.warn("Timeout!");
+                        LOGGER.warn("Timeout receiving packet => " + sequenceNumber);
                         break;
                     }
-                } while (sequenceNumber < REQUESTS_NUM-1); //TODO check
+                } while (receivedPackets < packets); //TODO check
                 
                 avgDelayMs = dataDelaySum/receivedPackets/(1000*1000);
-                LOGGER.debug("AVG delay => " + avgDelayMs);
                 queue.put(avgDelayMs);
+                LOGGER.info("measurement just added to the queue – queue size: " + queue.size());
                 socket.setSoTimeout(0);
             }
         }

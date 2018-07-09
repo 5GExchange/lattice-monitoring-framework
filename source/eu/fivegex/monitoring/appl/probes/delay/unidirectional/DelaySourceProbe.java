@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.appl.probes.rtt.unidirectional;
+package eu.fivegex.monitoring.appl.probes.delay.unidirectional;
 
 import eu.reservoir.monitoring.appl.datarate.EveryNSeconds;
 import eu.reservoir.monitoring.core.AbstractProbe;
@@ -23,9 +23,10 @@ import org.slf4j.LoggerFactory;
  *
  * @author uceeftu
  */
-public class RTTSourceProbe extends AbstractProbe implements Probe {
-    private static final int MAX_TIMEOUT = 5000;
-    private static final int REQUESTS_NUM = 20;
+public class DelaySourceProbe extends AbstractProbe implements Probe {
+    int packets;
+    int timeout;
+    int dataRate;
     
     DatagramSocket dataSocket;
     DatagramSocket mgmSocket;
@@ -33,18 +34,20 @@ public class RTTSourceProbe extends AbstractProbe implements Probe {
     InetAddress dataDestinationAddr;
     int dataDestinationPort;
     
-    private Logger LOGGER = LoggerFactory.getLogger(RTTSourceProbe.class);
+    private Logger LOGGER = LoggerFactory.getLogger(DelaySourceProbe.class);
     
     
-    public RTTSourceProbe(String probeName, 
+    
+    public DelaySourceProbe(String probeName, 
                           String mgmLocalAddr,
                           String mgmLocalPort,
                           String dataLocalAddr,
                           String dataLocalPort,
                           String dataDestinationAddr, 
-                          String dataDestinationPort) throws SocketException, UnknownHostException {
-        
-        
+                          String dataDestinationPort,
+                          String packets,
+                          String timeout,
+                          String dataRate) throws SocketException, UnknownHostException {
         
         dataSocket = new DatagramSocket(Integer.valueOf(dataLocalPort), InetAddress.getByName(dataLocalAddr));
         mgmSocket = new DatagramSocket(Integer.valueOf(mgmLocalPort), InetAddress.getByName(mgmLocalAddr));
@@ -52,14 +55,26 @@ public class RTTSourceProbe extends AbstractProbe implements Probe {
         this.dataDestinationAddr = InetAddress.getByName(dataDestinationAddr);
         this.dataDestinationPort = Integer.valueOf(dataDestinationPort);
         
+        this.packets = Integer.valueOf(packets);
+        this.timeout = Integer.valueOf(timeout);
+        this.dataRate = Integer.valueOf(dataRate);
+        
         setName(probeName);
-        setDataRate(new EveryNSeconds(60));
+        setDataRate(new EveryNSeconds(this.dataRate));
     }
+    
+    
     
     
     @Override
     public void beginThreadBody() {
-        LOGGER.info("Calculating time offset: " + mgmReceiveAndReply());
+        int timedOut = mgmReceiveAndReply();
+        if (timedOut == 0) {
+            LOGGER.info("Time offset was calculated with no packet loss");
+        }
+        else {
+            LOGGER.warn("Time offset was calculated with " + timedOut + " timed out packets");
+        }
     }
     
 
@@ -67,7 +82,7 @@ public class RTTSourceProbe extends AbstractProbe implements Probe {
     @Override
     public ProbeMeasurement collect() {
         dataSend();
-        //does not provide any measurements, it only sents measurement packets periodically
+        //does not provide any measurements, it only sends measurement packets periodically
         return null;
     }
     
@@ -77,9 +92,9 @@ public class RTTSourceProbe extends AbstractProbe implements Probe {
         DatagramPacket pingPacket;
         String pingPayload;
         int sequenceNumber = 0;
-        
+        LOGGER.info("Sending measurements packets");
         try {
-            while (sequenceNumber < REQUESTS_NUM) {
+            while (sequenceNumber < packets) {
                 long nsSend = System.nanoTime();
                 pingPayload = "PING " + sequenceNumber + " " + nsSend + " \n";
                 byte[] sendBuf = pingPayload.getBytes();
@@ -88,65 +103,60 @@ public class RTTSourceProbe extends AbstractProbe implements Probe {
                 LOGGER.debug("Sending Packet =>" + sequenceNumber);
                 sequenceNumber++;
             }
+            LOGGER.info("Done");
         } catch (IOException e) {
             LOGGER.error("Error while sending messages: " + e.getMessage());
         }
     }
     
     
-    private boolean mgmReceiveAndReply() {
+    private int mgmReceiveAndReply() {
         DatagramPacket pingPacket;
-        DatagramPacket pongPacket;
-        Integer sequenceNumberValue=0;
-        Integer lastTimedOut;
-        Integer timedOut=0;
+        DatagramPacket replyPacket;
         
-        while (true) {
+        Integer sequenceNumber = 0;
+        Integer timedOut = 0;
+        Integer received = 0;
+        
+        do {
             try {
                 byte[] rcvBuf = new byte[1024];
                 pingPacket = new DatagramPacket(rcvBuf, rcvBuf.length);
                 mgmSocket.receive(pingPacket);
                 long nsReceived = System.nanoTime();
+                received++;
                 
                 String pingPayload = new String(pingPacket.getData());
                 String [] pingPayloadFields = pingPayload.split(" ");
-                
-                String sequenceNumber = pingPayloadFields[1];
-                sequenceNumberValue = Integer.valueOf(sequenceNumber);
-                
-                if (sequenceNumberValue < 0) {
-                    break;
-                }
+
+                sequenceNumber = Integer.valueOf(pingPayloadFields[1]);
                 
                 String nsDestinationSent = pingPayloadFields[2];
                 LOGGER.debug("sequenceNumber => " + sequenceNumber);
                                 
                 InetAddress destinationHost = pingPacket.getAddress();
                 int destinationPort = pingPacket.getPort();
-                String pongPayload = "REPLY " + sequenceNumber + " " + nsDestinationSent + " " + nsReceived + " \n";
-                byte [] sendBuf = pongPayload.getBytes();
-                pongPacket = new DatagramPacket(sendBuf, sendBuf.length, destinationHost, destinationPort);
+                String replyPayload = "REPLY " + sequenceNumber + " " + nsDestinationSent + " " + nsReceived + " \n";
+                byte [] sendBuf = replyPayload.getBytes();
+                replyPacket = new DatagramPacket(sendBuf, sendBuf.length, destinationHost, destinationPort);
                 
-                mgmSocket.send(pongPacket);
+                mgmSocket.send(replyPacket);
                 
                 if (mgmSocket.getSoTimeout() == 0) {
-                    mgmSocket.setSoTimeout(MAX_TIMEOUT);
+                    mgmSocket.setSoTimeout(timeout);
                 }
                 
             } catch (SocketTimeoutException te) {
-                LOGGER.warn("Timeout for packet " + sequenceNumberValue);
-                lastTimedOut = sequenceNumberValue;
-                if (sequenceNumberValue.equals(lastTimedOut)) 
-                   timedOut++; 
-                if (timedOut >= 3)
-                    return false;
+                LOGGER.warn("Timeout for packet: " + (sequenceNumber + 1));
+                timedOut++; 
+                if (timedOut == packets/2)
+                    return timedOut;
                 
             } catch (IOException ioe) {
-                LOGGER.error("Error while sending reply PONG message: " + ioe.getMessage());
+                LOGGER.error("Error while sending REPLY message to PING: " + sequenceNumber);
             }
-        }
-        return true;
+        } while (received < packets);
+        return timedOut;
     }
-
 }
 

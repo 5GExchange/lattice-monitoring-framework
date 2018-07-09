@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.appl.probes.rtt.unidirectional;
+package eu.fivegex.monitoring.appl.probes.delay.unidirectional;
 
 import eu.reservoir.monitoring.appl.datarate.EveryNSeconds;
 import eu.reservoir.monitoring.core.AbstractProbe;
@@ -20,6 +20,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -30,10 +31,10 @@ import org.slf4j.LoggerFactory;
  *
  * @author uceeftu
  */
-public class RTTDestProbe extends AbstractProbe implements Probe {
-    
-    private static final int MAX_TIMEOUT = 5000;
-    private static final int REQUESTS_NUM = 20;
+public class DelayDestProbe extends AbstractProbe implements Probe {
+    int packets = 5;
+    int timeout = 1000;
+    int dataRate = 30; // seconds
     
     UDPReceiver dataReceiver;
     
@@ -45,31 +46,41 @@ public class RTTDestProbe extends AbstractProbe implements Probe {
     
     LinkedBlockingQueue<Long> queue;
     
-    private Logger LOGGER = LoggerFactory.getLogger(RTTDestProbe.class);
+    private Logger LOGGER = LoggerFactory.getLogger(DelayDestProbe.class);
     
     
-    public RTTDestProbe(String probeName,
+    
+    public DelayDestProbe(String probeName,
                         String mgmLocalAddr,
                         String mgmLocalPort,
                         String dataLocalAddr,
                         String dataLocalPort,
                         String mgmSourceAddr, 
-                        String mgmSourcePort) throws SocketException, UnknownHostException {
-        
-        queue = new LinkedBlockingQueue<>();
-        
-        mgmSocket = new DatagramSocket(Integer.valueOf(mgmLocalPort), InetAddress.getByName(mgmLocalAddr));
-        dataReceiver = new UDPReceiver(Integer.valueOf(dataLocalPort), dataLocalAddr, queue); 
+                        String mgmSourcePort,
+                        String packets,
+                        String timeout,
+                        String dataRate) throws SocketException, UnknownHostException {
         
         this.mgmSourceAddr = InetAddress.getByName(mgmSourceAddr);
         this.mgmSourcePort = Integer.valueOf(mgmSourcePort);
         
+        this.packets = Integer.valueOf(packets);
+        this.timeout = Integer.valueOf(timeout);
+        this.dataRate = Integer.valueOf(dataRate);
+        
+        queue = new LinkedBlockingQueue<>();
+        
+        mgmSocket = new DatagramSocket(Integer.valueOf(mgmLocalPort), InetAddress.getByName(mgmLocalAddr));
+        dataReceiver = new UDPReceiver(Integer.valueOf(dataLocalPort), dataLocalAddr, queue, this.packets, this.timeout); 
+        
         setName(probeName);
-        setDataRate(new EveryNSeconds(60));
+        setDataRate(new EveryNSeconds(this.dataRate));
 
-        addProbeAttribute(new DefaultProbeAttribute(0, "PATH", ProbeAttributeType.STRING, "name"));
-        addProbeAttribute(new DefaultProbeAttribute(1, "RTT", ProbeAttributeType.LONG, "milliseconds"));
-    }
+        addProbeAttribute(new DefaultProbeAttribute(0, "link", ProbeAttributeType.STRING, "id"));
+        addProbeAttribute(new DefaultProbeAttribute(1, "delay", ProbeAttributeType.LONG, "milliseconds"));
+    }  
+    
+    
     
     
     @Override
@@ -91,8 +102,9 @@ public class RTTDestProbe extends AbstractProbe implements Probe {
     public ProbeMeasurement collect() {
         
         try {
+            LOGGER.info("queue size: " + queue.size());
             Long dataDelay = queue.take();
-            LOGGER.info("Measured delay value: " + dataDelay);
+            LOGGER.info("Measured delay just taken off the queue: " + dataDelay);
             
             ArrayList<ProbeValue> list = new ArrayList<>(2);
             list.add(new DefaultProbeValue(0, "vnf1vnf2")); // TODO check this and see if we need to use a parameter
@@ -117,7 +129,7 @@ public class RTTDestProbe extends AbstractProbe implements Probe {
     private Long measureTimeOffset() {
         
         DatagramPacket pingPacket;
-        DatagramPacket pongPacket;
+        DatagramPacket replyPacket;
         
         
 	int sequenceNumber = 0;
@@ -125,7 +137,7 @@ public class RTTDestProbe extends AbstractProbe implements Probe {
 
         long timeOffsetSum = 0;
         
-	while (sequenceNumber < REQUESTS_NUM) {            
+	while (sequenceNumber < packets) {            
             long nsSend = System.nanoTime();
             
             String pingPayload = "PING " + sequenceNumber + " " + nsSend + " \n";
@@ -137,20 +149,20 @@ public class RTTDestProbe extends AbstractProbe implements Probe {
                 mgmSocket.send(pingPacket);
                 
                 byte[] rcvBuf = new byte[1024];
-		pongPacket = new DatagramPacket(rcvBuf, rcvBuf.length);
-                mgmSocket.setSoTimeout(MAX_TIMEOUT);
-		mgmSocket.receive(pongPacket);
+		replyPacket = new DatagramPacket(rcvBuf, rcvBuf.length);
+                mgmSocket.setSoTimeout(timeout);
+		mgmSocket.receive(replyPacket);
 
 		long nsReceived = System.nanoTime();
                 
-                String pongPayload = new String(pongPacket.getData());
+                String pongPayload = new String(replyPacket.getData());
                 String [] pongPayloadFields = pongPayload.split(" ");
                 
                 Integer receivedSequenceNumber = Integer.valueOf(pongPayloadFields[1]);
                 Long nsSent = Long.valueOf(pongPayloadFields[2]);
                 Long nsSourceReceived = Long.valueOf(pongPayloadFields[3]);
                 
-                LOGGER.debug("receivedRequenceNumber => " + receivedSequenceNumber);
+                LOGGER.debug("receivedSequenceNumber => " + receivedSequenceNumber);
                 
                 // this should always be true as an exception would be raised before
                 if (receivedSequenceNumber.equals(sequenceNumber) && nsSent.equals(nsSend)) {
@@ -162,30 +174,19 @@ public class RTTDestProbe extends AbstractProbe implements Probe {
                     timeOffsetSum += timeOffsetSample;
                     LOGGER.debug("Offset evaluated: " + timeOffsetSample);
                 }
-		} catch (IOException e) {
+		} catch (SocketTimeoutException e) {
                     timedOut++;
-                    LOGGER.warn("Timeout for packet " + sequenceNumber);
-		} 
+                    LOGGER.warn("Timeout for REPLY packet " + sequenceNumber);
+		} catch (IOException e) {
+                    LOGGER.warn("Error while sending PING packet: " + sequenceNumber);
+                }
             
 		sequenceNumber++;
 	}
-        
-        try {
-            long nsSend = System.nanoTime();
-            
-            String pingPayload = "PING -1 " + nsSend + " \n";
-            byte[] SendBuf = pingPayload.getBytes();
-            
-            pingPacket = new DatagramPacket(SendBuf, SendBuf.length, mgmSourceAddr, mgmSourcePort);
-            mgmSocket.send(pingPacket);
-        } catch (IOException e) {
-            LOGGER.warn("Error sending last packet" + e.getMessage());
-	}
-        
-        Long avgTimeOffsetMs = timeOffsetSum/(REQUESTS_NUM - timedOut)/(1000*1000);
+
+        Long avgTimeOffsetMs = timeOffsetSum/(packets - timedOut)/(1000*1000);
         LOGGER.debug("AVG offset => " + avgTimeOffsetMs);
         return avgTimeOffsetMs;
-        
     }
 }
 

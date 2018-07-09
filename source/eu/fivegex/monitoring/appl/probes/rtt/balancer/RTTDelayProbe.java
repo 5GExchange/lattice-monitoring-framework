@@ -24,18 +24,18 @@ import org.slf4j.LoggerFactory;
  *
  * @author uceeftu
  */
-public class BalancerRTTProbe extends AbstractProbe implements Probe {
+public class RTTDelayProbe extends AbstractProbe implements Probe {
     Dispatcher dispatcher;
     
     LinkedBlockingQueue<String> queue;
     
-    private Logger LOGGER = LoggerFactory.getLogger(BalancerRTTProbe.class);
+    private Logger LOGGER = LoggerFactory.getLogger(RTTDelayProbe.class);
     
     String containerId;
     String resourceId;
     
 
-    public BalancerRTTProbe(String probeName, String cId, String resId) {
+    public RTTDelayProbe(String probeName, String cId, String resId) {
         setName(probeName);
         setDataRate(new EveryNSeconds(5));
         
@@ -88,7 +88,7 @@ public class BalancerRTTProbe extends AbstractProbe implements Probe {
                 list.add(new DefaultProbeValue(0, resourceId));
                 list.add(new DefaultProbeValue(1, RTTvalue));
 
-                ProbeMeasurement m = new ProducerMeasurement(this, list, "Container");
+                ProbeMeasurement m = new ProducerMeasurement(this, list, "Link");
                 LOGGER.debug("Returning measurement: " + m.toString());
                 return m; 
             }   

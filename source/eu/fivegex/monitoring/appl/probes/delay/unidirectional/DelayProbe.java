@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.fivegex.monitoring.appl.probes.rtt.unidirectional;
+package eu.fivegex.monitoring.appl.probes.delay.unidirectional;
 
 import eu.fivegex.monitoring.test.LatticeTest;
 import java.io.BufferedReader;
@@ -19,7 +19,7 @@ import us.monoid.json.JSONObject;
  *
  * @author uceeftu
  */
-public final class RTTTest {
+public final class DelayProbe {
     
     String username;
     Integer port;
@@ -31,6 +31,10 @@ public final class RTTTest {
     
     String dcAddress;
     Integer dcPort;
+    
+    Integer packets;
+    Integer timeout;
+    Integer dataRate;
     
     String sourceProbeMgmAddress;
     Integer sourceProbeMgmPort;
@@ -49,7 +53,7 @@ public final class RTTTest {
     JSONObject configuration;
     
     
-    public RTTTest(String filename) throws IOException {
+    public DelayProbe(String filename) throws IOException {
         loadConfiguration(filename);
         parseConfiguration();
         init();
@@ -88,11 +92,34 @@ public final class RTTTest {
     
     
     private void parseConfiguration() throws IOException {
+        JSONObject latticeConf;
+        JSONObject probes;
+        
+        try {
+            latticeConf = configuration.getJSONObject("lattice");
+            probes = latticeConf.getJSONObject("probes");
+        
+        } catch (JSONException je) {
+            throw new IOException("Error while parsing configuration:" + je.getMessage());
+        }    
+        
+        
+        try {
+            packets = probes.getInt("packets");
+            timeout = probes.getInt("timeout");
+            dataRate = probes.getInt("rate");
+            
+        } catch (JSONException je) {
+            System.out.println("Using default values for packets, timeout and rate: 5, 1s, 30s");
+            packets = 5;
+            timeout = 1000;
+            dataRate = 30;
+        }
+        
+        
         try {
             username = configuration.getJSONObject("ssh").getString("username");
             port = configuration.getJSONObject("ssh").getInt("port");
-
-            JSONObject latticeConf = configuration.getJSONObject("lattice");
 
             controllerAddress = latticeConf.getJSONObject("controller").getString("address");
             controllerAPIPort = latticeConf.getJSONObject("controller").getInt("apiPort");
@@ -101,8 +128,6 @@ public final class RTTTest {
 
             dcAddress = latticeConf.getJSONObject("dataConsumer").getString("address");
             dcPort = latticeConf.getJSONObject("dataConsumer").getInt("port");
-
-            JSONObject probes = latticeConf.getJSONObject("probes");
 
             sourceProbeMgmAddress = probes.getJSONObject("source").getString("mgmAddress");
             sourceProbeMgmPort = probes.getJSONObject("source").getInt("mgmPort");
@@ -114,7 +139,7 @@ public final class RTTTest {
             destProbeDataAddress = probes.getJSONObject("destination").getString("dataAddress");
             destProbeDataPort = probes.getJSONObject("destination").getInt("dataPort");
         } catch (JSONException je) {
-            throw new IOException("Error while parsing configuration file:" + je.getMessage());
+            throw new IOException("Error while parsing configuration:" + je.getMessage());
         }
     }
     
@@ -141,12 +166,31 @@ public final class RTTTest {
     
     
     public void  loadProbes() throws JSONException {
-        System.out.println("Loading monitoring probes");
-        String sourceProbeArgs = "RTTSource" + "+" + sourceProbeMgmAddress + "+" + sourceProbeMgmPort + "+" + sourceProbeDataAddress + "+" + sourceProbeDataPort + "+" + destProbeDataAddress + "+" + destProbeDataPort; 
-        String destProbeArgs = "RTTDestination" + "+" + destProbeMgmAddress + "+" + destProbeMgmPort + "+" + destProbeDataAddress + "+" + destProbeDataPort + "+" + sourceProbeMgmAddress + "+" + sourceProbeMgmPort;
+        System.out.println("Loading Delay monitoring probes");
+        String sourceProbeArgs = "DelaySource" + "+" + 
+                                 sourceProbeMgmAddress + "+" + 
+                                 sourceProbeMgmPort + "+" + 
+                                 sourceProbeDataAddress + "+" + 
+                                 sourceProbeDataPort + "+" + 
+                                 destProbeDataAddress + "+" + 
+                                 destProbeDataPort + "+" +
+                                 packets + "+" +
+                                 timeout + "+" +
+                                 dataRate; 
+        
+        String destProbeArgs = "DelayDestination" + "+" + 
+                               destProbeMgmAddress + "+" + 
+                               destProbeMgmPort + "+" + 
+                               destProbeDataAddress + "+" + 
+                               destProbeDataPort + "+" + 
+                               sourceProbeMgmAddress + "+" + 
+                               sourceProbeMgmPort + "+" +
+                               packets + "+" +
+                               timeout + "+" +
+                               dataRate;  
 
-        uuids.put("sourceprobe", rest.loadProbe(uuids.get("dssource"), "eu.fivegex.monitoring.appl.probes.rtt.unidirectional.RTTSourceProbe", sourceProbeArgs).getString("createdProbeID"));
-        uuids.put("destprobe", rest.loadProbe(uuids.get("dsdest"), "eu.fivegex.monitoring.appl.probes.rtt.unidirectional.RTTDestProbe", destProbeArgs).getString("createdProbeID"));
+        uuids.put("sourceprobe", rest.loadProbe(uuids.get("dssource"), "eu.fivegex.monitoring.appl.probes.delay.unidirectional.DelaySourceProbe", sourceProbeArgs).getString("createdProbeID"));
+        uuids.put("destprobe", rest.loadProbe(uuids.get("dsdest"), "eu.fivegex.monitoring.appl.probes.delay.unidirectional.DelayDestProbe", destProbeArgs).getString("createdProbeID"));
     }
     
     
@@ -187,7 +231,7 @@ public final class RTTTest {
         String filename = args[0];
         
         try {
-            RTTTest rttTest = new RTTTest(filename);
+            DelayProbe rttTest = new DelayProbe(filename);
             
             rttTest.deployComponents();
             rttTest.loadReporters();
