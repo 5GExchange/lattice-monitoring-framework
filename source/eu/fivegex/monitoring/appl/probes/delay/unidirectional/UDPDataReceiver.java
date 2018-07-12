@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author uceeftu
  */
-public class UDPReceiver implements Runnable {
+public class UDPDataReceiver implements Runnable {
     int packets;
     int timeout;
     
@@ -31,9 +31,9 @@ public class UDPReceiver implements Runnable {
     
     LinkedBlockingQueue<Long> queue;
     
-    private Logger LOGGER = LoggerFactory.getLogger(UDPReceiver.class);
+    private Logger LOGGER = LoggerFactory.getLogger(UDPDataReceiver.class);
     
-    public UDPReceiver(int port, String address, LinkedBlockingQueue<Long> q, int packets, int timeout) throws SocketException, UnknownHostException {
+    public UDPDataReceiver(int port, String address, LinkedBlockingQueue<Long> q, int packets, int timeout) throws SocketException, UnknownHostException {
         socket = new DatagramSocket(port, InetAddress.getByName(address));
         queue = q;
         this.packets = packets;
@@ -75,6 +75,8 @@ public class UDPReceiver implements Runnable {
                         DatagramPacket packet = new DatagramPacket(buf, buf.length);
                         socket.receive(packet);
                         long nsReceived = System.nanoTime();
+                        
+                        receivedPackets++;
 
                         String receivedData = new String(packet.getData());
                         String [] receivedDataFields = receivedData.split(" ");
@@ -83,7 +85,7 @@ public class UDPReceiver implements Runnable {
                         long nsSent = Long.valueOf(receivedDataFields[2]);
                         dataDelay = nsReceived - nsSent;
                         dataDelaySum += dataDelay;
-                        receivedPackets++;
+                        
                         if (socket.getSoTimeout() == 0) {
                             socket.setSoTimeout(timeout);
                         }
@@ -95,8 +97,8 @@ public class UDPReceiver implements Runnable {
                 
                 avgDelayMs = dataDelaySum/receivedPackets/(1000*1000);
                 queue.put(avgDelayMs);
-                LOGGER.info("measurement " + avgDelayMs + " just added to the queue");
-                LOGGER.info("queue size: " + queue.size());
+                LOGGER.info("Measured delay just added to the queue (size=" + queue.size() + "): " + avgDelayMs);
+                
                 socket.setSoTimeout(0);
             }
         }

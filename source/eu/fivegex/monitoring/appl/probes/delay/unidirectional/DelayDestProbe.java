@@ -15,12 +15,8 @@ import eu.reservoir.monitoring.core.ProbeMeasurement;
 import eu.reservoir.monitoring.core.ProbeValue;
 import eu.reservoir.monitoring.core.ProducerMeasurement;
 import eu.reservoir.monitoring.core.TypeException;
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -32,15 +28,16 @@ import org.slf4j.LoggerFactory;
  * @author uceeftu
  */
 public class DelayDestProbe extends AbstractProbe implements Probe {
-    int packets = 5;
-    int timeout = 1000;
-    int dataRate = 30; // seconds
+    int mgmPackets = 5;
+    int mgmTimeout = 1000;
+    int mgmInterval = 120; // seconds
     
-    UDPReceiver dataReceiver;
+    int dataPackets = 5;
+    int dataTimeout = 1000;
+    int probeInterval = 30; // seconds, used also as the actual probe rate
     
-    DatagramSocket mgmSocket;
-    InetAddress mgmSourceAddr;
-    int mgmSourcePort;
+    UDPDataReceiver dataReceiver;
+    UDPMgmSender mgmSender;
     
     Long timeOffset;
     
@@ -57,24 +54,37 @@ public class DelayDestProbe extends AbstractProbe implements Probe {
                         String dataLocalPort,
                         String mgmSourceAddr, 
                         String mgmSourcePort,
-                        String packets,
-                        String timeout,
-                        String dataRate) throws SocketException, UnknownHostException {
+                        String mgmPackets,
+                        String mgmTimeout,
+                        String mgmInterval,
+                        String dataPackets,
+                        String dataTimeout,
+                        String dataInterval) throws SocketException, UnknownHostException {
         
-        this.mgmSourceAddr = InetAddress.getByName(mgmSourceAddr);
-        this.mgmSourcePort = Integer.valueOf(mgmSourcePort);
+        this.mgmPackets = Integer.valueOf(mgmPackets);
+        this.mgmTimeout = Integer.valueOf(mgmTimeout);
+        this.mgmInterval = Integer.valueOf(mgmInterval);
         
-        this.packets = Integer.valueOf(packets);
-        this.timeout = Integer.valueOf(timeout);
-        this.dataRate = Integer.valueOf(dataRate);
+        this.dataPackets = Integer.valueOf(dataPackets);
+        this.dataTimeout = Integer.valueOf(dataTimeout);
+        this.probeInterval = Integer.valueOf(dataInterval);
+        
+        
         
         queue = new LinkedBlockingQueue<>();
         
-        mgmSocket = new DatagramSocket(Integer.valueOf(mgmLocalPort), InetAddress.getByName(mgmLocalAddr));
-        dataReceiver = new UDPReceiver(Integer.valueOf(dataLocalPort), dataLocalAddr, queue, this.packets, this.timeout); 
+        mgmSender = new UDPMgmSender(InetAddress.getByName(mgmLocalAddr), 
+                                        Integer.valueOf(mgmLocalPort), 
+                                        InetAddress.getByName(mgmSourceAddr), 
+                                        Integer.valueOf(mgmSourcePort),
+                                        this.mgmPackets,
+                                        this.mgmTimeout,
+                                        this.mgmInterval);
+        
+        dataReceiver = new UDPDataReceiver(Integer.valueOf(dataLocalPort), dataLocalAddr, queue, this.dataPackets, this.dataTimeout); 
         
         setName(probeName);
-        setDataRate(new EveryNSeconds(this.dataRate));
+        setDataRate(new EveryNSeconds(this.probeInterval));
 
         addProbeAttribute(new DefaultProbeAttribute(0, "link", ProbeAttributeType.STRING, "id"));
         addProbeAttribute(new DefaultProbeAttribute(1, "delay", ProbeAttributeType.LONG, "milliseconds"));
@@ -85,15 +95,14 @@ public class DelayDestProbe extends AbstractProbe implements Probe {
     
     @Override
     public void beginThreadBody() {
-        timeOffset = measureTimeOffset();
-        LOGGER.info("Calculated time offset: " + timeOffset);
-        LOGGER.info("Starting measuring link delay");
+        mgmSender.start();
         dataReceiver.start();
     }
     
     
     @Override
     public void endThreadBody() {
+        mgmSender.stop();
         dataReceiver.stop();
     }
     
@@ -102,9 +111,11 @@ public class DelayDestProbe extends AbstractProbe implements Probe {
     public ProbeMeasurement collect() {
         
         try {
-            LOGGER.info("queue size: " + queue.size());
             Long dataDelay = queue.take();
-            LOGGER.info("Measured delay just taken off the queue: " + dataDelay);
+            LOGGER.info("Measured delay just taken off the queue (size=" + queue.size() + "): " + dataDelay);
+            
+            timeOffset = mgmSender.getTimeOffset();
+            LOGGER.info("current time offset: " + timeOffset);
             
             ArrayList<ProbeValue> list = new ArrayList<>(2);
             list.add(new DefaultProbeValue(0, "vnf1vnf2")); // TODO check this and see if we need to use a parameter
@@ -124,69 +135,6 @@ public class DelayDestProbe extends AbstractProbe implements Probe {
         }
         return null;
     }
-
     
-    private Long measureTimeOffset() {
-        
-        DatagramPacket pingPacket;
-        DatagramPacket replyPacket;
-        
-        
-	int sequenceNumber = 0;
-        int timedOut = 0;
-
-        long timeOffsetSum = 0;
-        
-	while (sequenceNumber < packets) {            
-            long nsSend = System.nanoTime();
-            
-            String pingPayload = "PING " + sequenceNumber + " " + nsSend + " \n";
-            byte[] sendBuf = pingPayload.getBytes();
-            
-            pingPacket = new DatagramPacket(sendBuf, sendBuf.length, mgmSourceAddr, mgmSourcePort);
-            
-            try {
-                mgmSocket.send(pingPacket);
-                
-                byte[] rcvBuf = new byte[1024];
-		replyPacket = new DatagramPacket(rcvBuf, rcvBuf.length);
-                mgmSocket.setSoTimeout(timeout);
-		mgmSocket.receive(replyPacket);
-
-		long nsReceived = System.nanoTime();
-                
-                String pongPayload = new String(replyPacket.getData());
-                String [] pongPayloadFields = pongPayload.split(" ");
-                
-                Integer receivedSequenceNumber = Integer.valueOf(pongPayloadFields[1]);
-                Long nsSent = Long.valueOf(pongPayloadFields[2]);
-                Long nsSourceReceived = Long.valueOf(pongPayloadFields[3]);
-                
-                LOGGER.debug("receivedSequenceNumber => " + receivedSequenceNumber);
-                
-                // this should always be true as an exception would be raised before
-                if (receivedSequenceNumber.equals(sequenceNumber) && nsSent.equals(nsSend)) {
-                    // we double check we got the correct reply
-                    long rtt = (nsReceived - nsSend);
-                
-                    long timeOffsetSample = nsSourceReceived - nsSent - (rtt/2);
-
-                    timeOffsetSum += timeOffsetSample;
-                    LOGGER.debug("Offset evaluated: " + timeOffsetSample);
-                }
-		} catch (SocketTimeoutException e) {
-                    timedOut++;
-                    LOGGER.warn("Timeout for REPLY packet " + sequenceNumber);
-		} catch (IOException e) {
-                    LOGGER.warn("Error while sending PING packet: " + sequenceNumber);
-                }
-            
-		sequenceNumber++;
-	}
-
-        Long avgTimeOffsetMs = timeOffsetSum/(packets - timedOut)/(1000*1000);
-        LOGGER.debug("AVG offset => " + avgTimeOffsetMs);
-        return avgTimeOffsetMs;
-    }
 }
 

@@ -32,9 +32,13 @@ public final class DelayProbe {
     String dcAddress;
     Integer dcPort;
     
-    Integer packets;
-    Integer timeout;
-    Integer dataRate;
+    Integer mgmPackets;
+    Integer mgmTimeout;
+    Integer mgmInterval;
+    
+    Integer dataPackets;
+    Integer dataTimeout;
+    Integer dataInterval;
     
     String sourceProbeMgmAddress;
     Integer sourceProbeMgmPort;
@@ -94,26 +98,39 @@ public final class DelayProbe {
     private void parseConfiguration() throws IOException {
         JSONObject latticeConf;
         JSONObject probes;
+        JSONObject mgm;
+        JSONObject data;
         
         try {
             latticeConf = configuration.getJSONObject("lattice");
+            System.out.println(latticeConf);
             probes = latticeConf.getJSONObject("probes");
-        
         } catch (JSONException je) {
             throw new IOException("Error while parsing configuration:" + je.getMessage());
         }    
         
         
         try {
-            packets = probes.getInt("packets");
-            timeout = probes.getInt("timeout");
-            dataRate = probes.getInt("rate");
+            mgm = probes.getJSONObject("mgm");
+            data = probes.getJSONObject("data");
+            
+            mgmPackets = mgm.getInt("packets");
+            mgmTimeout = mgm.getInt("timeout");
+            mgmInterval = mgm.getInt("interval");
+            
+            dataPackets = data.getInt("packets");
+            dataTimeout = data.getInt("timeout");
+            dataInterval = data.getInt("interval");
             
         } catch (JSONException je) {
-            System.out.println("Using default values for packets, timeout and rate: 5, 1s, 30s");
-            packets = 5;
-            timeout = 1000;
-            dataRate = 30;
+            System.out.println("Using default values for packets, timeout and rate parameters (mgm and data)" + je.getMessage());
+            mgmPackets = 5;
+            mgmTimeout = 1000;
+            mgmInterval = 120;
+            
+            dataPackets = 5;
+            dataTimeout = 1000;
+            dataInterval = 30;
         }
         
         
@@ -174,9 +191,11 @@ public final class DelayProbe {
                                  sourceProbeDataPort + "+" + 
                                  destProbeDataAddress + "+" + 
                                  destProbeDataPort + "+" +
-                                 packets + "+" +
-                                 timeout + "+" +
-                                 dataRate; 
+                                 mgmPackets + "+" +
+                                 mgmTimeout + "+" +
+                                 dataPackets + "+" +
+                                 dataTimeout + "+" +
+                                 dataInterval; 
         
         String destProbeArgs = "DelayDestination" + "+" + 
                                destProbeMgmAddress + "+" + 
@@ -185,9 +204,12 @@ public final class DelayProbe {
                                destProbeDataPort + "+" + 
                                sourceProbeMgmAddress + "+" + 
                                sourceProbeMgmPort + "+" +
-                               packets + "+" +
-                               timeout + "+" +
-                               dataRate;  
+                               mgmPackets + "+" +
+                               mgmTimeout + "+" +
+                               mgmInterval + "+" +
+                               dataPackets + "+" +
+                               dataTimeout + "+" +
+                               dataInterval; 
 
         uuids.put("sourceprobe", rest.loadProbe(uuids.get("dssource"), "eu.fivegex.monitoring.appl.probes.delay.unidirectional.DelaySourceProbe", sourceProbeArgs).getString("createdProbeID"));
         uuids.put("destprobe", rest.loadProbe(uuids.get("dsdest"), "eu.fivegex.monitoring.appl.probes.delay.unidirectional.DelayDestProbe", destProbeArgs).getString("createdProbeID"));
