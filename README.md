@@ -6,9 +6,9 @@ The main components of the framework are:
 - Data Sources
 - Data Consumers
 
-The Intelligent Resource Monitor (IRM) component in the MdO interacts with the Lattice Controller using a REST API (which represents the I3-Mon interface).
+The Intelligent MOnitoring Subsystem (IMoS) of the 5GEx MdO interacts with the Lattice Controller using a REST API (which represents an implementation of  the I3-Mon interface).
 
-In general we can assume that a single Controller instance is up and running in a given 5GEx technological domain.
+In general, we can assume that a single Controller instance is up and running in a given 5GEx technological domain. However, alternative monitoring topologies might be used.
 
 ### Build
 The provided `build.xml` (under `source/`) can be used both for compiling the source code and generating the deployable jar files.
@@ -35,17 +35,17 @@ The `controller.properties` file contains the configuration settings for the con
 ```
 info.localport = 6699
 ``` 
-is the local port used by the Controller when connecting to the Information Plane. Other Lattice entities (e.g., Data Sources) will connect to this port.
+is the local port used by the Controller when connecting to the Information Plane. Other Lattice entities (e.g., Data Sources) will remotely connect to this port once started.
 
 ```
 restconsole.localport = 6666
 ```
-is the port where the controller will listen for HTTP control requests coming from the orchestration layer.
+is the port where the controller will listen for HTTP control requests coming from the orchestration layer (i.e., IMoS).
 ```
-probes.package = eu.fivegex.demo.probes
+probes.package = eu.fivegex.appl.probes
 probes.suffix = Probe
 ```
-When generating the probe catalogue, the Controller will look for all the class files whose package name matches `eu.fivegex.demo.probes` and whose name terminates with `Probe` (e.g., `eu.fivegex.demo.probes.docker.DockerProbe.class`).
+When generating the probe catalogue, the Controller will look for all the class files whose package name matches `eu.fivegex.appl.probes` and whose name terminates with the `Probe` suffix (e.g., `eu.fivegex.appl.probes.docker.DockerProbe.class`).
 
 ```
 deployment.enabled = true
@@ -55,13 +55,20 @@ Can be set either to `true` or `false` and enables/disables respectively the aut
 deployment.localJarPath = /Users/lattice
 deployment.jarFileName = monitoring-bin-core.jar
 deployment.remoteJarPath = /tmp
-deployment.dsClassName = eu.fivegex.demo.SimpleDataSourceDaemon
+deployment.ds.className = eu.fivegex.monitoring.appl.datasources.ZMQDataSourceDaemon
+deployment.dc.className = eu.fivegex.monitoring.appl.dataconsumers.ZMQControllableDataConsumerDaemon
 ```
 The above settings allow to specify (in order):
-- the path where the jar (to be used for the Data Source automated remote deployment) is located
+- the path where the jar (to be used for the Data Sources / Consumers automated remote deployment) is located
 - the file name of the above jar file
 - the path where the jar will be copied on the remote machine where the Data Source is being deployed
-- the class name of the Data Source to be started (it must be in the specified jar)
+- the class name of the Data Source to be started (it must exist in the specified jar)
+- the class name of the Data Consumer to be started (it must exist in the specified jar)
+
 
 ### Testing
 In order to verify that the Controller is up and running, a quick check consists in performing a `GET` request to `/probe/catalogue/`. The expected result is a response code `200` and `Content-Type: application/json`.
+
+
+### Usage for the vCDN experiment
+Lattice is the monitoring backend that will enable collecting measurements from the VNFs deployed via the 5GEx Orchestration System. It can be used e.g., to retrieve measurements from Docker containers and / or Openstack VMs. When Lattice is used with Docker, the system running the Docker Engine has to be configured to expose the REST API on port 4243 (see [Docker documentation](https://success.docker.com/article/how-do-i-enable-the-remote-api-for-dockerd)).
